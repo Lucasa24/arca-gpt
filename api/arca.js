@@ -63,6 +63,8 @@ export default async function handler(req, res) {
     const messagesData = await messagesRes.json();
     const finalMessage = messagesData.data?.[0]?.content?.[0]?.text?.value;
 
+console.log("Mensagens da Arca:", JSON.stringify(messagesData, null, 2));
+
     res.status(200).json({ reply: finalMessage || "Sem resposta ritual." });
   } catch (error) {
     res.status(500).json({ error: "Erro ao invocar a Arca: " + error.message });
