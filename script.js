@@ -32,11 +32,8 @@ async function sendMessage() {
 
     setTimeout(() => {
       loader.style.display = "none";
-
-      // ✨ Aqui entra o ritual de renderização com markdown:
       responseDiv.innerHTML = marked.parse(data.reply);
 
-      // 🔥 Aqui é o marcador ritual:
       console.log("ritual executado");
     }, 300);
   } catch (error) {
