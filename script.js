@@ -35,7 +35,7 @@ async function sendMessage() {
 // Aguarda um instante e esconde a barra
     setTimeout(() => {
       loader.style.display = "none";
-      responseDiv.innerHTML = data.reply;
+      responseDiv.innerHTML = marked.parse(data.reply);
     }, 300);
 
     responseDiv.innerHTML = data.reply;
