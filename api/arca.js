@@ -19,17 +19,16 @@ export default async function handler(req, res) {
     const thread = await threadRes.json();
     const threadId = thread.id;
 
-    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${api_key}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        role: "user",
-        content: userInput
-      })
-    });
+    await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${api_key}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    assistant_id // <-- sem hardcode, com ID vindo do env
+  })
+});
 
     const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: "POST",
