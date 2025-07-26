@@ -8,7 +8,6 @@ async function sendMessage() {
   loader.style.display = "block";
   loadingBar.style.width = "0%";
 
-  // Animação simulada da barra de carregamento
   let width = 0;
   const interval = setInterval(() => {
     if (width >= 90) {
@@ -17,7 +16,7 @@ async function sendMessage() {
       width += 1;
       loadingBar.style.width = width + "%";
     }
-  }, 25); // velocidade da animação
+  }, 25);
 
   try {
     const res = await fetch("/api/arca", {
@@ -28,17 +27,18 @@ async function sendMessage() {
 
     const data = await res.json();
 
-   // Finaliza a barra
     clearInterval(interval);
     loadingBar.style.width = "100%";
 
-// Aguarda um instante e esconde a barra
     setTimeout(() => {
       loader.style.display = "none";
-      responseDiv.innerHTML = marked.parse(data.reply);
-    }, 300);
 
-    responseDiv.innerHTML = data.reply;
+      // ✨ Aqui entra o ritual de renderização com markdown:
+      responseDiv.innerHTML = marked.parse(data.reply);
+
+      // 🔥 Aqui é o marcador ritual:
+      console.log("ritual executado");
+    }, 300);
   } catch (error) {
     clearInterval(interval);
     loader.style.display = "none";
