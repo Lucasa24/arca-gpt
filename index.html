@@ -4,7 +4,7 @@
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>⛰ A Arca - Travessia Ritual</title>
+  <title>🛥️ A Arca - Travessia Ritual</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body {
@@ -66,7 +66,7 @@
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: stretch;
+  align-items: center; /* ← ISSO corrige o desalinhamento */
   gap: 0.5rem;
   max-width: 700px;
   margin: 0 auto;
@@ -92,9 +92,11 @@ button {
   cursor: pointer;
   letter-spacing: 1px;
   padding: 0.5rem 1rem;
-  white-space: nowrap;
   height: 55px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 button:hover {
@@ -129,14 +131,17 @@ button:hover {
   <div id="response"></div>
 
   <div class="fixed-footer">
-    <div class="input-group">
-      <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
-      <button onclick="sendMessage()">Invocar</button>
-      <div id="loader" style="display:none;">
-        <div id="loadingBar"></div>
-      </div>
-<p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
+  <div class="input-group">
+    <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
+    <button onclick="sendMessage()">Invocar</button>
+    <div id="loader" style="display:none;">
+      <div id="loadingBar"></div>
     </div>
+  </div>
+  
+  <!-- Aqui está a posição correta -->
+  <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
+</div>
   </div>
 
   <script src="script.js"></script>
