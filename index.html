@@ -113,7 +113,6 @@ button:hover {
       background-color: #b30000;
       width: 0%;
       transition: width 0.3s ease-in-out;
-
     }
 
 .footer-note {
@@ -134,12 +133,14 @@ button:hover {
   <div class="input-group">
     <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
     <button onclick="sendMessage()">Invocar</button>
-    <div id="loader" style="display:none;">
-      <div id="loadingBar"></div>
-    </div>
   </div>
-  
-  <!-- Aqui está a posição correta -->
+
+  <!-- Barra de carregamento aqui -->
+  <div id="loader" style="display:none;">
+    <div id="loadingBar"></div>
+  </div>
+
+  <!-- Aviso de privacidade -->
   <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
 </div>
   </div>
