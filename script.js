@@ -4,7 +4,7 @@ async function sendMessage() {
   const loader = document.getElementById("loader");
   const loadingBar = document.getElementById("loadingBar");
 
-  responseDiv.innerHTML = "Invocando...";
+  responseDiv.innerHTML = "";
   loader.style.display = "block";
   loadingBar.style.width = "0%";
 
@@ -25,17 +25,40 @@ async function sendMessage() {
       body: JSON.stringify({ input })
     });
 
-    const data = await res.json();
+    if (!res.body) {
+      throw new Error("Resposta vazia");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
 
     clearInterval(interval);
     loadingBar.style.width = "100%";
 
-    setTimeout(() => {
-      loader.style.display = "none";
-      responseDiv.innerHTML = marked.parse(data.reply);
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-      console.log("ritual executado");
-    }, 300);
+      buffer += decoder.decode(value, { stream: true });
+
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop();
+
+      for (const part of parts) {
+        if (part.startsWith("data: ")) {
+          const content = part.slice(6);
+          if (content === "[DONE]") {
+            loader.style.display = "none";
+            return;
+          }
+
+          responseDiv.innerHTML += content;
+        }
+      }
+    }
+
+    loader.style.display = "none";
   } catch (error) {
     clearInterval(interval);
     loader.style.display = "none";
