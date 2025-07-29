@@ -16,29 +16,32 @@ async function sendMessage() {
       width += 1;
       loadingBar.style.width = width + "%";
     }
-  }, 25);
+  }, 30);
 
-  try {
-    const res = await fetch("/api/arca", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input })
-    });
+  const eventSource = new EventSource("/api/arca-stream?input=" + encodeURIComponent(input));
+  let result = "";
 
-    const data = await res.json();
+  eventSource.onmessage = function (event) {
+    result += event.data;
+    responseDiv.innerHTML = result;
+  };
 
+  eventSource.onerror = function () {
     clearInterval(interval);
     loadingBar.style.width = "100%";
-
     setTimeout(() => {
       loader.style.display = "none";
-      responseDiv.innerHTML = marked.parse(data.reply);
+    }, 500);
+    eventSource.close();
+  };
 
-      console.log("ritual executado");
-    }, 300);
-  } catch (error) {
+  eventSource.addEventListener("done", () => {
     clearInterval(interval);
-    loader.style.display = "none";
-    responseDiv.innerHTML = "Erro na invocação: " + error.message;
-  }
+    loadingBar.style.width = "100%";
+    setTimeout(() => {
+      loader.style.display = "none";
+    }, 500);
+    eventSource.close();
+    console.log("ritual executado");
+  });
 }
