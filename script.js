@@ -8,40 +8,33 @@ async function sendMessage() {
   loader.style.display = "block";
   loadingBar.style.width = "0%";
 
-  let width = 0;
-  const interval = setInterval(() => {
-    if (width >= 90) {
-      clearInterval(interval);
-    } else {
-      width += 1;
-      loadingBar.style.width = width + "%";
+  let progress = 0;
+  const loadingInterval = setInterval(() => {
+    if (progress < 95) {
+      progress += 1;
+      loadingBar.style.width = progress + "%";
     }
-  }, 30);
+  }, 50); // mais lento e gradual
 
-  const eventSource = new EventSource("/api/arca-stream?input=" + encodeURIComponent(input));
-  let result = "";
+  try {
+    const res = await fetch("/api/arca", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input })
+    });
 
-  eventSource.onmessage = function (event) {
-    result += event.data;
-    responseDiv.innerHTML = result;
-  };
+    const data = await res.json();
 
-  eventSource.onerror = function () {
-    clearInterval(interval);
+    clearInterval(loadingInterval);
     loadingBar.style.width = "100%";
+
     setTimeout(() => {
       loader.style.display = "none";
-    }, 500);
-    eventSource.close();
-  };
-
-  eventSource.addEventListener("done", () => {
-    clearInterval(interval);
-    loadingBar.style.width = "100%";
-    setTimeout(() => {
-      loader.style.display = "none";
-    }, 500);
-    eventSource.close();
-    console.log("ritual executado");
-  });
+      responseDiv.innerHTML = marked.parse(data.reply);
+    }, 300); // pequena pausa após o final
+  } catch (error) {
+    clearInterval(loadingInterval);
+    loader.style.display = "none";
+    responseDiv.innerHTML = "Erro na invocação: " + error.message;
+  }
 }
