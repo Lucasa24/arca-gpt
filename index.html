@@ -124,6 +124,8 @@
     <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
   <script>
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
@@ -163,7 +165,7 @@
         setTimeout(() => {
           loader.style.display = "none";
           if (data.reply) {
-            responseDiv.innerHTML = data.reply;
+            responseDiv.innerHTML = marked.parse(data.reply);
           } else if (data.error) {
             responseDiv.innerHTML = "⚠️ A Arca falhou: " + data.error;
           } else {
