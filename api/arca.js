@@ -1,66 +1,101 @@
-<script type="module">
-import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
-
-async function sendMessage() {
-  const input = document.getElementById("userInput").value;
-  const responseDiv = document.getElementById("response");
-  const loader = document.getElementById("loader");
-  const loadingBar = document.getElementById("loadingBar");
-
-  responseDiv.innerHTML = "Invocando...";
-  loader.style.display = "block";
-  loadingBar.style.width = "0%";
-
-  // Barra de carregamento visual
-  let progress = 0;
-  const interval = setInterval(() => {
-    if (progress < 90) {
-      progress += 1;
-      loadingBar.style.width = progress + "%";
-    }
-  }, 30);
-
-  // Invocação via streaming SSE
-  const eventSource = new EventSourcePolyfill("/api/arca", {
-    headers: { "Content-Type": "application/json" },
-    payload: JSON.stringify({ input }),
-    method: "POST"
-  });
-
-  eventSource.onmessage = (event) => {
-    if (event.data === "[DONE]") {
-      clearInterval(interval);
-      loader.style.display = "none";
-      eventSource.close();
-    } else {
-      if (responseDiv.innerHTML === "Invocando...") responseDiv.innerHTML = "";
-      responseDiv.innerHTML += event.data;
-      loadingBar.style.width = "100%";
-    }
-  };
-
-  eventSource.onerror = async (error) => {
-  clearInterval(interval);
-  loader.style.display = "none";
-
-  const reader = error.currentTarget;
-  try {
-    const text = await reader.response.text();
-    const json = JSON.parse(text);
-    responseDiv.innerHTML = "⚠️ A Arca silenciou: " + (json.error || "Erro desconhecido.");
-  } catch (e) {
-    responseDiv.innerHTML = "⚠️ A Arca silenciou brutalmente.";
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
   }
 
-  eventSource.close();
-};
+  const userInput = req.body.input;
 
-  eventSource.addEventListener("done", () => {
-    clearInterval(interval);
-    loader.style.display = "none";
-    eventSource.close();
-  });
+const userInput = req.body.input;
+
+if (!userInput || userInput.trim() === "") {
+  return res.status(400).json({ error: "Nada foi invocado." });
 }
 
-window.sendMessage = sendMessage;
-</script>
+  const api_key = process.env.OPENAI_API_KEY;
+  const assistant_id = process.env.ASSISTANT_ID;
+
+  try {
+    // 1. Criar thread
+    const threadRes = await fetch("https://api.openai.com/v1/threads", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v2"
+      }
+    });
+    const thread = await threadRes.json();
+    const threadId = thread.id;
+
+    // 2. Enviar mensagem
+    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v2"
+      },
+      body: JSON.stringify({
+        role: "user",
+        content: userInput
+      })
+    });
+
+    // 3. Rodar execução
+    const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v2"
+      },
+      body: JSON.stringify({
+        assistant_id
+      })
+    });
+
+    const run = await runRes.json();
+
+    // 4. Aguardar resposta completa
+    let status = run.status;
+    let result;
+
+    while (status === "queued" || status === "in_progress") {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const statusRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`, {
+        headers: {
+          Authorization: `Bearer ${api_key}`,
+          "OpenAI-Beta": "assistants=v2"
+        }
+      });
+
+      result = await statusRes.json();
+      status = result.status;
+    }
+
+    // 5. Obter a resposta final
+    const messagesRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "OpenAI-Beta": "assistants=v2"
+      }
+    });
+
+    const messagesData = await messagesRes.json();
+    let finalMessage = "⚠️ A Arca silenciou...";
+
+if (messagesData?.data?.length > 0) {
+  const firstMsg = messagesData.data[0];
+  const firstContent = firstMsg.content?.find(c => c.type === "text");
+  if (firstContent?.text?.value) {
+    finalMessage = firstContent.text.value;
+  }
+}
+
+    res.status(200).json({ reply: finalMessage });
+  } catch (err) {
+    console.error("ERRO:", err);
+    res.status(500).json({ error: "Erro na invocação: " + err.message });
+  }
+}
