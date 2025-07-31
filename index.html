@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>🛥️ A Arca - Ritual de Travessia 🌊</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
     body {
-  background-color: #0e0e0e;
-  color: #f5f5f5;
-  font-family: 'Georgia', serif;
-  padding: 40px 1rem 300px; /* aumenta espaço no fundo */
-  line-height: 1.6;
-  max-width: 700px;
-  margin: auto;
-  position: relative;
-}
+      background-color: #0e0e0e;
+      color: #f5f5f5;
+      font-family: 'Georgia', serif;
+      padding: 40px 1rem 300px;
+      line-height: 1.6;
+      max-width: 700px;
+      margin: auto;
+      position: relative;
+    }
 
     h1 {
       font-size: 2rem;
@@ -33,79 +33,62 @@
       border-left: 4px solid #b30000;
     }
 
-    #response blockquote {
-      margin: 1rem 0;
-      padding-left: 1rem;
-      border-left: 3px solid #999;
-      color: #ccc;
-      font-style: italic;
-    }
-
-    #response pre {
-      background: #111;
-      padding: 0.75rem;
-      overflow-x: auto;
-      margin: 1rem 0;
-      color: #0f0;
-    }
-
     .fixed-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #0e0e0e;
-  padding: 0.5rem 1rem 0.75rem;
-  border-top: 1px solid #333;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
-  font-size: 0.85rem;
-}
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #0e0e0e;
+      padding: 0.5rem 1rem 0.75rem;
+      border-top: 1px solid #333;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+      font-size: 0.85rem;
+    }
 
-.fixed-footer .input-group {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center; /* ← ISSO corrige o desalinhamento */
-  gap: 0.5rem;
-  max-width: 700px;
-  margin: 0 auto;
-}
+    .input-group {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
 
-textarea {
-  flex: 1;
-  background: #1a1a1a;
-  color: #f5f5f5;
-  border: 1px solid #333;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-  resize: none;
-  height: 55px;
-  font-family: 'Georgia', serif;
-}
+    textarea {
+      flex: 1;
+      background: #1a1a1a;
+      color: #f5f5f5;
+      border: 1px solid #333;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      resize: none;
+      height: 55px;
+      font-family: 'Georgia', serif;
+    }
 
-button {
-  background-color: #b30000;
-  color: #fff;
-  border: none;
-  font-size: 0.75rem;
-  cursor: pointer;
-  letter-spacing: 1px;
-  padding: 0.5rem 1rem;
-  height: 55px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    button {
+      background-color: #b30000;
+      color: #fff;
+      border: none;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 1px;
+      padding: 0.5rem 1rem;
+      height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-button:hover {
-  background-color: #ff1a1a;
-}
+    button:hover {
+      background-color: #ff1a1a;
+    }
 
-#loader {
-  height: 4px;
-  margin-top: 0.25rem;
-}
+    #loader {
+      height: 4px;
+      margin-top: 0.25rem;
+    }
 
     #loadingBar {
       height: 100%;
@@ -114,14 +97,13 @@ button:hover {
       transition: width 0.3s ease-in-out;
     }
 
-.footer-note {
-  font-size: 0.55rem;
-  color: #555;
-  margin-top: 0.25rem;
-  text-align: center;
-  opacity: 0.7;
-}
-
+    .footer-note {
+      font-size: 0.55rem;
+      color: #555;
+      margin-top: 0.25rem;
+      text-align: center;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
@@ -130,20 +112,73 @@ button:hover {
   <div id="response"></div>
 
   <div class="fixed-footer">
-  <div class="input-group">
-    <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
-    <button onclick="sendMessage()">Invocar</button>
+    <div class="input-group">
+      <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
+      <button onclick="sendMessage()">Invocar</button>
+    </div>
+
+    <div id="loader" style="display:none;">
+      <div id="loadingBar"></div>
+    </div>
+
+    <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
   </div>
 
-  <!-- Barra de carregamento aqui -->
-  <div id="loader" style="display:none;">
-    <div id="loadingBar"></div>
-  </div>
+  <!-- Script do Ritual com STREAMING habilitado -->
+  <script type="module">
+    import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
 
-  <!-- Aviso de privacidade -->
-  <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
-</div>
-  </div>
+    async function sendMessage() {
+      const input = document.getElementById("userInput").value;
+      const responseDiv = document.getElementById("response");
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
 
+      responseDiv.innerHTML = "Invocando...";
+      loader.style.display = "block";
+      loadingBar.style.width = "0%";
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        if (progress < 90) {
+          progress += 1;
+          loadingBar.style.width = progress + "%";
+        }
+      }, 30);
+
+      const eventSource = new EventSourcePolyfill("/api/arca", {
+        headers: { "Content-Type": "application/json" },
+        payload: JSON.stringify({ input }),
+        method: "POST"
+      });
+
+      eventSource.onmessage = (event) => {
+        if (event.data === "[DONE]") {
+          clearInterval(interval);
+          loader.style.display = "none";
+          eventSource.close();
+        } else {
+          if (responseDiv.innerHTML === "Invocando...") responseDiv.innerHTML = "";
+          responseDiv.innerHTML += event.data;
+          loadingBar.style.width = "100%";
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        clearInterval(interval);
+        loader.style.display = "none";
+        responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
+        eventSource.close();
+      };
+
+      eventSource.addEventListener("done", () => {
+        clearInterval(interval);
+        loader.style.display = "none";
+        eventSource.close();
+      });
+    }
+
+    window.sendMessage = sendMessage;
+  </script>
 </body>
 </html>
