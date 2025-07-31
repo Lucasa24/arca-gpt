@@ -1,5 +1,5 @@
 <script type="module">
-import { EventSourcePolyfill } from 'event-source-polyfill';
+import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
 
 async function sendMessage() {
   const input = document.getElementById("userInput").value;
@@ -11,7 +11,7 @@ async function sendMessage() {
   loader.style.display = "block";
   loadingBar.style.width = "0%";
 
-// Simula início da barra de carregamento
+  // Barra de carregamento visual
   let progress = 0;
   const interval = setInterval(() => {
     if (progress < 90) {
@@ -20,74 +20,37 @@ async function sendMessage() {
     }
   }, 30);
 
-const eventSource = new EventSourcePolyfill("/api/arca", {
+  // Invocação via streaming SSE
+  const eventSource = new EventSourcePolyfill("/api/arca", {
     headers: { "Content-Type": "application/json" },
     payload: JSON.stringify({ input }),
     method: "POST"
   });
 
-eventSource.onmessage = (event) => {
-    // Recebe fragmentos e mostra ao vivo
-    responseDiv.innerHTML += event.data;
-    responseDiv.scrollTop = responseDiv.scrollHeight;
-    loadingBar.style.width = "100%";
-  };
-
-function sendMessage() {
-  const input = document.getElementById("userInput").value;
-  const responseDiv = document.getElementById("response");
-  const loadingBar = document.getElementById("loadingBar");
-
-  responseDiv.innerHTML = ""; // limpa resposta
-  loadingBar.style.width = "0%";
-  loadingBar.style.display = "block";
-
   eventSource.onmessage = (event) => {
-    responseDiv.innerHTML += event.data;
-    loadingBar.style.width = "100%";
+    if (event.data === "[DONE]") {
+      clearInterval(interval);
+      loader.style.display = "none";
+      eventSource.close();
+    } else {
+      if (responseDiv.innerHTML === "Invocando...") responseDiv.innerHTML = "";
+      responseDiv.innerHTML += event.data;
+      loadingBar.style.width = "100%";
+    }
   };
 
-  eventSource.onerror = (err) => {
-    console.error("Erro no stream:", err);
-    loadingBar.style.display = "none";
+  eventSource.onerror = (error) => {
+    clearInterval(interval);
+    loader.style.display = "none";
+    responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
     eventSource.close();
   };
 
   eventSource.addEventListener("done", () => {
-    eventSource.close();
-    loadingBar.style.display = "none";
-  });
-}
-
-  let progress = 0;
-  const loadingInterval = setInterval(() => {
-    if (progress < 95) {
-      progress += 1;
-      loadingBar.style.width = progress + "%";
-    }
-  }, 50); // mais lento e gradual
-
-  try {
-    const res = await fetch("/api/arca", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input })
-    });
-
-    const data = await res.json();
-
-    clearInterval(loadingInterval);
-    loadingBar.style.width = "100%";
-
-    setTimeout(() => {
-      loader.style.display = "none";
-      responseDiv.innerHTML = marked.parse(data.reply);
-    }, 300); // pequena pausa após o final
-  } catch (error) {
-    clearInterval(loadingInterval);
+    clearInterval(interval);
     loader.style.display = "none";
-    responseDiv.innerHTML = "Erro na invocação: " + error.message;
-  }
+    eventSource.close();
+  });
 }
 
 window.sendMessage = sendMessage;
