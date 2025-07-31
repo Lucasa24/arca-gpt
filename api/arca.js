@@ -18,9 +18,10 @@ export default async function handler(req, res) {
       }
     });
     const thread = await threadRes.json();
+    const threadId = thread.id;
 
     // 2. Enviar mensagem
-    await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${api_key}`,
@@ -33,8 +34,8 @@ export default async function handler(req, res) {
       })
     });
 
-    // 3. Iniciar execução
-    const runRes = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+    // 3. Rodar execução
+    const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${api_key}`,
@@ -42,54 +43,44 @@ export default async function handler(req, res) {
         "OpenAI-Beta": "assistants=v2"
       },
       body: JSON.stringify({
-        assistant_id,
-        stream: true
+        assistant_id
       })
     });
 
-    res.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive"
-    });
+    const run = await runRes.json();
 
-    const reader = runRes.body.getReader();
-    const decoder = new TextDecoder("utf-8");
+    // 4. Aguardar resposta completa
+    let status = run.status;
+    let result;
 
-    let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    while (status === "queued" || status === "in_progress") {
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n\n");
-
-      for (let line of lines) {
-        if (line.startsWith("data: ")) {
-          const data = line.replace("data: ", "");
-          if (data === "[DONE]") {
-            res.write("event: done\ndata: [DONE]\n\n");
-            res.end();
-            return;
-          }
-
-          try {
-            const parsed = JSON.parse(data);
-            const delta = parsed?.choices?.[0]?.delta?.content;
-            if (delta) {
-              res.write(`data: ${delta}\n\n`);
-            }
-          } catch (e) {
-            console.error("Erro ao parsear chunk:", e);
-          }
+      const statusRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`, {
+        headers: {
+          Authorization: `Bearer ${api_key}`,
+          "OpenAI-Beta": "assistants=v2"
         }
-      }
+      });
+
+      result = await statusRes.json();
+      status = result.status;
     }
 
-    res.end();
+    // 5. Obter a resposta final
+    const messagesRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "OpenAI-Beta": "assistants=v2"
+      }
+    });
+
+    const messagesData = await messagesRes.json();
+    const finalMessage = messagesData.data?.[0]?.content?.[0]?.text?.value || "⚠️ A Arca silenciou...";
+
+    res.status(200).json({ reply: finalMessage });
   } catch (err) {
     console.error("ERRO:", err);
-    res.write(`data: Erro: ${err.message}\n\n`);
-    res.end();
+    res.status(500).json({ error: "Erro na invocação: " + err.message });
   }
 }
