@@ -3,8 +3,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const userInput = req.body.input;
-
 const userInput = req.body.input;
 
 if (!userInput || userInput.trim() === "") {
