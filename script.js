@@ -1,3 +1,4 @@
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 async function sendMessage() {
   const input = document.getElementById("userInput").value;
@@ -30,7 +31,7 @@ async function sendMessage() {
 
     setTimeout(() => {
       loader.style.display = "none";
-      responseDiv.innerHTML = data.reply || "⚠️ A Arca silenciou...";
+      responseDiv.innerHTML = marked.parse(data.reply || "⚠️ A Arca silenciou...");
     }, 300);
   } catch (err) {
     clearInterval(interval);
