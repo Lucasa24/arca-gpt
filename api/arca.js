@@ -4,6 +4,13 @@ export default async function handler(req, res) {
   }
 
   const userInput = req.body.input;
+
+const userInput = req.body.input;
+
+if (!userInput || userInput.trim() === "") {
+  return res.status(400).json({ error: "Nada foi invocado." });
+}
+
   const api_key = process.env.OPENAI_API_KEY;
   const assistant_id = process.env.ASSISTANT_ID;
 
@@ -76,7 +83,15 @@ export default async function handler(req, res) {
     });
 
     const messagesData = await messagesRes.json();
-    const finalMessage = messagesData.data?.[0]?.content?.[0]?.text?.value || "⚠️ A Arca silenciou...";
+    let finalMessage = "⚠️ A Arca silenciou...";
+
+if (messagesData?.data?.length > 0) {
+  const firstMsg = messagesData.data[0];
+  const firstContent = firstMsg.content?.find(c => c.type === "text");
+  if (firstContent?.text?.value) {
+    finalMessage = firstContent.text.value;
+  }
+}
 
     res.status(200).json({ reply: finalMessage });
   } catch (err) {
