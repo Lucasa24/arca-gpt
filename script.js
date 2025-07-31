@@ -39,12 +39,21 @@ async function sendMessage() {
     }
   };
 
-  eventSource.onerror = (error) => {
-    clearInterval(interval);
-    loader.style.display = "none";
-    responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
-    eventSource.close();
-  };
+  eventSource.onerror = async (error) => {
+  clearInterval(interval);
+  loader.style.display = "none";
+
+  const reader = error.currentTarget;
+  try {
+    const text = await reader.response.text();
+    const json = JSON.parse(text);
+    responseDiv.innerHTML = "⚠️ A Arca silenciou: " + (json.error || "Erro desconhecido.");
+  } catch (e) {
+    responseDiv.innerHTML = "⚠️ A Arca silenciou brutalmente.";
+  }
+
+  eventSource.close();
+};
 
   eventSource.addEventListener("done", () => {
     clearInterval(interval);
