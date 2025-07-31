@@ -1,6 +1,4 @@
-<script type="module">
-import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
-
+<script>
 async function sendMessage() {
   const input = document.getElementById("userInput").value;
   const responseDiv = document.getElementById("response");
@@ -11,55 +9,34 @@ async function sendMessage() {
   loader.style.display = "block";
   loadingBar.style.width = "0%";
 
-  // Barra de carregamento visual
   let progress = 0;
   const interval = setInterval(() => {
-    if (progress < 90) {
+    if (progress < 95) {
       progress += 1;
       loadingBar.style.width = progress + "%";
     }
-  }, 30);
+  }, 35);
 
-  // Invocação via streaming SSE
-  const eventSource = new EventSourcePolyfill("/api/arca", {
-    headers: { "Content-Type": "application/json" },
-    payload: JSON.stringify({ input }),
-    method: "POST"
-  });
-
-  eventSource.onmessage = (event) => {
-    if (event.data === "[DONE]") {
-      clearInterval(interval);
-      loader.style.display = "none";
-      eventSource.close();
-    } else {
-      if (responseDiv.innerHTML === "Invocando...") responseDiv.innerHTML = "";
-      responseDiv.innerHTML += event.data;
-      loadingBar.style.width = "100%";
-    }
-  };
-
-  eventSource.onerror = async (error) => {
-  clearInterval(interval);
-  loader.style.display = "none";
-
-  const reader = error.currentTarget;
   try {
-    const text = await reader.response.text();
-    const json = JSON.parse(text);
-    responseDiv.innerHTML = "⚠️ A Arca silenciou: " + (json.error || "Erro desconhecido.");
-  } catch (e) {
-    responseDiv.innerHTML = "⚠️ A Arca silenciou brutalmente.";
-  }
+    const res = await fetch("/api/arca", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input })
+    });
 
-  eventSource.close();
-};
+    const data = await res.json();
+    clearInterval(interval);
+    loadingBar.style.width = "100%";
 
-  eventSource.addEventListener("done", () => {
+    setTimeout(() => {
+      loader.style.display = "none";
+      responseDiv.innerHTML = data.reply || "⚠️ A Arca silenciou...";
+    }, 300);
+  } catch (err) {
     clearInterval(interval);
     loader.style.display = "none";
-    eventSource.close();
-  });
+    responseDiv.innerHTML = "⚠️ A Arca falhou: " + err.message;
+  }
 }
 
 window.sendMessage = sendMessage;
