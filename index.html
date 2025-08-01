@@ -108,76 +108,53 @@
 </head>
 
 <script type="module">
-  import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+  import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
 
   async function sendMessage() {
-  const input = document.getElementById("userInput").value.trim();
-  const responseDiv = document.getElementById("response");
-  const loader = document.getElementById("loader");
-  const loadingBar = document.getElementById("loadingBar");
+    const input = document.getElementById("userInput").value;
+    const responseDiv = document.getElementById("response");
+    const loader = document.getElementById("loader");
+    const loadingBar = document.getElementById("loadingBar");
 
-  if (!input) {
-    responseDiv.innerHTML = "⚠️ Nada foi invocado.";
-    return;
-  }
-
-  responseDiv.innerHTML = "Invocando...";
-  loader.style.display = "block";
-  loadingBar.style.width = "0%";
-
-  let progress = 0;
-  const interval = setInterval(() => {
-    if (progress < 95) {
-      progress += 1;
-      loadingBar.style.width = progress + "%";
+    if (!input) {
+      responseDiv.innerHTML = "⚠️ Nada foi invocado.";
+      return;
     }
-  }, 30);
 
-  const response = await fetch("/api/arca", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ input }),
-  });
+    responseDiv.innerHTML = "Invocando...";
+    loader.style.display = "block";
+    loadingBar.style.width = "0%";
 
-  if (!response.ok) {
-    clearInterval(interval);
-    loader.style.display = "none";
-    responseDiv.innerHTML = "⚠️ A Arca silenciou... " + response.statusText;
-    return;
-  }
+    let progress = 0;
+    const interval = setInterval(() => {
+      if (progress < 95) {
+        progress += 1;
+        loadingBar.style.width = progress + "%";
+      }
+    }, 35);
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let rawData = "";
+    const eventSource = new EventSourcePolyfill("/api/arca", {
+      headers: { "Content-Type": "application/json" },
+      payload: JSON.stringify({ input }),
+      method: "POST"
+    });
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    const chunk = decoder.decode(value, { stream: true });
-    rawData += chunk;
-    responseDiv.innerHTML = rawData;
-  }
-
-  clearInterval(interval);
-  loader.style.display = "none";
-  loadingBar.style.width = "100%";
-}
-
+    eventSource.onmessage = (event) => {
+      if (event.data === "[DONE]") {
+        clearInterval(interval);
+        loader.style.display = "none";
         eventSource.close();
-        responseDiv.innerHTML = marked.parse(rawData);
       } else {
-        if (responseDiv.innerHTML === "Invocando...") rawData = "";
-        rawData += event.data;
+        if (responseDiv.innerHTML === "Invocando...") responseDiv.innerHTML = "";
+        responseDiv.innerHTML += event.data;
       }
     };
 
     eventSource.onerror = (error) => {
       clearInterval(interval);
       loader.style.display = "none";
+      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
       eventSource.close();
-      console.error("Erro SSE:", error);
-responseDiv.innerHTML = "⚠️ A Arca silenciou... Verifique os logs do servidor.";
     };
   }
 
@@ -202,5 +179,64 @@ responseDiv.innerHTML = "⚠️ A Arca silenciou... Verifique os logs do servido
     <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("userInput").value.trim();
+      const responseDiv = document.getElementById("response");
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+
+      if (!input) {
+        responseDiv.innerHTML = "⚠️ Nada foi invocado.";
+        return;
+      }
+
+      responseDiv.innerHTML = "Invocando...";
+      loader.style.display = "block";
+      loadingBar.style.width = "0%";
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        if (progress < 90) {
+          progress += 1;
+          loadingBar.style.width = progress + "%";
+        }
+      }, 30);
+
+      try {
+        const res = await fetch("/api/arca", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input })
+        });
+
+        const data = await res.json();
+
+        clearInterval(interval);
+        loadingBar.style.width = "100%";
+
+        setTimeout(() => {
+          loader.style.display = "none";
+          if (data.reply) {
+            responseDiv.innerHTML = marked.parse(data.reply);
+          } else if (data.error) {
+            responseDiv.innerHTML = "⚠️ A Arca falhou: " + data.error;
+          } else {
+            responseDiv.innerHTML = "⚠️ A Arca silenciou... (sem conteúdo)";
+          }
+        }, 400);
+      } catch (error) {
+        clearInterval(interval);
+        loader.style.display = "none";
+        responseDiv.innerHTML = "⚠️ Falha na invocação: " + error.message;
+      }
+    }
+
+    window.sendMessage = sendMessage;
+  </script>
+
+<script type="module" src="/script.js"></script>
 </body>
 </html>
