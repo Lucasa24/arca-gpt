@@ -171,7 +171,17 @@
 
           const chunk = decoder.decode(value, { stream: true });
           buffer += chunk;
-          document.getElementById("response").innerHTML = marked.parse(buffer);
+
+const lines = buffer.split("\n\n");
+buffer = lines.pop();
+
+for (let line of lines) {
+  if (line.startsWith("data: ")) {
+    const content = line.replace("data: ", "").trim();
+    if (content === "[DONE]") return;
+    responseDiv.innerHTML += marked.parse(content);
+  }
+}
         }
 
         clearInterval(interval);
