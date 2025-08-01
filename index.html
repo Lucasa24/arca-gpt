@@ -179,7 +179,17 @@ for (let line of lines) {
   if (line.startsWith("data: ")) {
     const content = line.replace("data: ", "").trim();
     if (content === "[DONE]") return;
-    responseDiv.innerHTML += marked.parse(content);
+    let fullText = "";
+
+...
+
+if (content === "[DONE]") {
+  responseDiv.innerHTML = marked.parse(fullText.trim());
+  return;
+}
+
+fullText += content;
+responseDiv.innerHTML = fullText; // ou sem parse
   }
 }
         }
