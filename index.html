@@ -109,9 +109,10 @@
 
 <script type="module">
   import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
+  import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
   async function sendMessage() {
-    const input = document.getElementById("userInput").value;
+    const input = document.getElementById("userInput").value.trim();
     const responseDiv = document.getElementById("response");
     const loader = document.getElementById("loader");
     const loadingBar = document.getElementById("loadingBar");
@@ -127,7 +128,7 @@
 
     let progress = 0;
     const interval = setInterval(() => {
-      if (progress < 95) {
+      if (progress < 90) {
         progress += 1;
         loadingBar.style.width = progress + "%";
       }
@@ -139,22 +140,26 @@
       method: "POST"
     });
 
+    let rawData = "";
+
     eventSource.onmessage = (event) => {
       if (event.data === "[DONE]") {
         clearInterval(interval);
         loader.style.display = "none";
+        loadingBar.style.width = "100%";
         eventSource.close();
+        responseDiv.innerHTML = marked.parse(rawData);
       } else {
-        if (responseDiv.innerHTML === "Invocando...") responseDiv.innerHTML = "";
-        responseDiv.innerHTML += event.data;
+        if (responseDiv.innerHTML === "Invocando...") rawData = "";
+        rawData += event.data;
       }
     };
 
     eventSource.onerror = (error) => {
       clearInterval(interval);
       loader.style.display = "none";
-      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
       eventSource.close();
+      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
     };
   }
 
