@@ -1,7 +1,9 @@
+export const config = {
+  runtime: "nodejs" // 👈 ISSO aqui força a Vercel a não usar Edge
+};
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).end("Método não permitido");
-  }
+  if (req.method !== "POST") return res.status(405).end("Método não permitido");
 
   const userInput = req.body.input;
   const apiKey = process.env.OPENAI_API_KEY;
@@ -18,9 +20,8 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4", // ou gpt-4o, gpt-3.5-turbo
+        model: "gpt-4", // ou gpt-4o
         messages: [{ role: "user", content: userInput }],
-        temperature: 0.7,
         stream: true
       })
     });
@@ -61,9 +62,7 @@ export default async function handler(req, res) {
               res.write(`data: ${delta}\n\n`);
             }
           } catch (err) {
-            console.error("ERRO STREAM:", err);
-res.write(`data: ⚠️ Erro interno\n\n`);
-res.end();
+            console.error("Erro no parse:", err);
           }
         }
       }
@@ -71,8 +70,8 @@ res.end();
 
     res.end();
   } catch (err) {
-    console.error("ERRO:", err);
-    res.write(`data: ⚠️ Erro: ${err.message}\n\n`);
+    console.error("ERRO STREAM:", err);
+    res.write(`data: ⚠️ Erro interno\n\n`);
     res.end();
   }
 }
