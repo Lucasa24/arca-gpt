@@ -19,11 +19,11 @@
 
     let progress = 0;
     const interval = setInterval(() => {
-      if (progress < 90) {
+      if (progress < 95) {
         progress += 1;
         loadingBar.style.width = progress + "%";
       }
-    }, 35);
+    }, 30);
 
     const eventSource = new EventSourcePolyfill("/api/arca", {
       headers: { "Content-Type": "application/json" },
@@ -38,19 +38,20 @@
         clearInterval(interval);
         loader.style.display = "none";
         loadingBar.style.width = "100%";
-        eventSource.close();
         responseDiv.innerHTML = marked.parse(rawData);
-      } else {
-        if (responseDiv.innerHTML === "Invocando...") rawData = "";
-        rawData += event.data;
+        eventSource.close();
+        return;
       }
+
+      if (responseDiv.innerHTML === "Invocando...") rawData = "";
+      rawData += event.data;
     };
 
-    eventSource.onerror = (error) => {
+    eventSource.onerror = (err) => {
       clearInterval(interval);
       loader.style.display = "none";
       eventSource.close();
-      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
+      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
     };
   }
 
