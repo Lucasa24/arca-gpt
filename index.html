@@ -106,6 +106,61 @@
     }
   </style>
 </head>
+
+<script type="module">
+  import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
+
+  async function sendMessage() {
+    const input = document.getElementById("userInput").value;
+    const responseDiv = document.getElementById("response");
+    const loader = document.getElementById("loader");
+    const loadingBar = document.getElementById("loadingBar");
+
+    if (!input) {
+      responseDiv.innerHTML = "⚠️ Nada foi invocado.";
+      return;
+    }
+
+    responseDiv.innerHTML = "Invocando...";
+    loader.style.display = "block";
+    loadingBar.style.width = "0%";
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      if (progress < 95) {
+        progress += 1;
+        loadingBar.style.width = progress + "%";
+      }
+    }, 35);
+
+    const eventSource = new EventSourcePolyfill("/api/arca", {
+      headers: { "Content-Type": "application/json" },
+      payload: JSON.stringify({ input }),
+      method: "POST"
+    });
+
+    eventSource.onmessage = (event) => {
+      if (event.data === "[DONE]") {
+        clearInterval(interval);
+        loader.style.display = "none";
+        eventSource.close();
+      } else {
+        if (responseDiv.innerHTML === "Invocando...") responseDiv.innerHTML = "";
+        responseDiv.innerHTML += event.data;
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      clearInterval(interval);
+      loader.style.display = "none";
+      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
+      eventSource.close();
+    };
+  }
+
+  window.sendMessage = sendMessage;
+</script>
+
 <body>
   <h1>🛥️ A Arca - Ritual de Travessia 🌊</h1>
   <p>Digite sua invocação abaixo e sinta a resposta da Arca:</p>
