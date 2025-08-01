@@ -1,44 +1,58 @@
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script>
-async function sendMessage() {
-  const input = document.getElementById("userInput").value;
-  const responseDiv = document.getElementById("response");
-  const loader = document.getElementById("loader");
-  const loadingBar = document.getElementById("loadingBar");
+<script type="module">
+  import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
+  import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
-  responseDiv.innerHTML = "Invocando...";
-  loader.style.display = "block";
-  loadingBar.style.width = "0%";
+  async function sendMessage() {
+    const input = document.getElementById("userInput").value.trim();
+    const responseDiv = document.getElementById("response");
+    const loader = document.getElementById("loader");
+    const loadingBar = document.getElementById("loadingBar");
 
-  let progress = 0;
-  const interval = setInterval(() => {
-    if (progress < 95) {
-      progress += 1;
-      loadingBar.style.width = progress + "%";
+    if (!input) {
+      responseDiv.innerHTML = "⚠️ Nada foi invocado.";
+      return;
     }
-  }, 35);
 
-  try {
-    const res = await fetch("/api/arca", {
-      method: "POST",
+    responseDiv.innerHTML = "Invocando...";
+    loader.style.display = "block";
+    loadingBar.style.width = "0%";
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      if (progress < 90) {
+        progress += 1;
+        loadingBar.style.width = progress + "%";
+      }
+    }, 35);
+
+    const eventSource = new EventSourcePolyfill("/api/arca", {
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input })
+      payload: JSON.stringify({ input }),
+      method: "POST"
     });
 
-    const data = await res.json();
-    clearInterval(interval);
-    loadingBar.style.width = "100%";
+    let rawData = "";
 
-    setTimeout(() => {
+    eventSource.onmessage = (event) => {
+      if (event.data === "[DONE]") {
+        clearInterval(interval);
+        loader.style.display = "none";
+        loadingBar.style.width = "100%";
+        eventSource.close();
+        responseDiv.innerHTML = marked.parse(rawData);
+      } else {
+        if (responseDiv.innerHTML === "Invocando...") rawData = "";
+        rawData += event.data;
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      clearInterval(interval);
       loader.style.display = "none";
-      responseDiv.innerHTML = marked.parse(data.reply || "⚠️ A Arca silenciou...");
-    }, 300);
-  } catch (err) {
-    clearInterval(interval);
-    loader.style.display = "none";
-    responseDiv.innerHTML = "⚠️ A Arca falhou: " + err.message;
+      eventSource.close();
+      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
+    };
   }
-}
 
-window.sendMessage = sendMessage;
+  window.sendMessage = sendMessage;
 </script>
