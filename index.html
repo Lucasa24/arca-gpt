@@ -126,7 +126,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <script type="module">
+  <script>
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
       const responseDiv = document.getElementById("response");
@@ -157,46 +157,37 @@
           body: JSON.stringify({ input })
         });
 
-        if (!response.ok) {
-          throw new Error("Resposta inválida: " + response.statusText);
-        }
+        if (!response.ok) throw new Error("Falha ao invocar: " + response.statusText);
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
+        let fullText = "";
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          buffer += chunk;
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop();
 
-const lines = buffer.split("\n\n");
-buffer = lines.pop();
+          for (let part of parts) {
+            if (!part.startsWith("data: ")) continue;
 
-for (let line of lines) {
-  if (line.startsWith("data: ")) {
-    const content = line.replace("data: ", "").trim();
-    if (content === "[DONE]") return;
-    let fullText = "";
+            const content = part.replace("data: ", "").trim();
+            if (content === "[DONE]") {
+              clearInterval(interval);
+              loader.style.display = "none";
+              loadingBar.style.width = "100%";
+              responseDiv.innerHTML = marked.parse(fullText.trim());
+              return;
+            }
 
-...
-
-if (content === "[DONE]") {
-  responseDiv.innerHTML = marked.parse(fullText.trim());
-  return;
-}
-
-fullText += content;
-responseDiv.innerHTML = fullText; // ou sem parse
-  }
-}
+            fullText += content;
+            responseDiv.innerHTML = fullText;
+          }
         }
-
-        clearInterval(interval);
-        loader.style.display = "none";
-        loadingBar.style.width = "100%";
       } catch (err) {
         clearInterval(interval);
         loader.style.display = "none";
