@@ -1,6 +1,15 @@
+import fetch from "node-fetch";
+import { Agent } from "agentkeepalive";
+
 export const config = {
-  runtime: "nodejs" // 👈 ISSO aqui força a Vercel a não usar Edge
+  runtime: "nodejs"
 };
+
+const keepAliveAgent = new Agent({
+  keepAlive: true,
+  timeout: 60000,
+  freeSocketTimeout: 30000
+});
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Método não permitido");
@@ -20,10 +29,12 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4", // ou gpt-4o
+        model: "gpt-4",
         messages: [{ role: "user", content: userInput }],
+        temperature: 0.7,
         stream: true
-      })
+      }),
+      agent: keepAliveAgent // 🔥 ESSENCIAL PARA STREAM FUNCIONAR NA VERCEL
     });
 
     res.writeHead(200, {
@@ -43,7 +54,7 @@ export default async function handler(req, res) {
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n\n");
-      buffer = lines.pop(); // mantém o que sobrou
+      buffer = lines.pop();
 
       for (let line of lines) {
         if (line.startsWith("data: ")) {
