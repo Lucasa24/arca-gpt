@@ -1,43 +1,58 @@
 <script type="module">
-  import { EventSourcePolyfill } from "https://cdn.skypack.dev/event-source-polyfill";
   import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
   async function sendMessage() {
-    const input = document.getElementById("userInput").value.trim();
-    const responseDiv = document.getElementById("response");
-    const loader = document.getElementById("loader");
-    const loadingBar = document.getElementById("loadingBar");
+  const input = document.getElementById("userInput").value.trim();
+  const responseDiv = document.getElementById("response");
+  const loader = document.getElementById("loader");
+  const loadingBar = document.getElementById("loadingBar");
 
-    if (!input) {
-      responseDiv.innerHTML = "⚠️ Nada foi invocado.";
-      return;
+  if (!input) {
+    responseDiv.innerHTML = "⚠️ Nada foi invocado.";
+    return;
+  }
+
+  responseDiv.innerHTML = "Invocando...";
+  loader.style.display = "block";
+  loadingBar.style.width = "0%";
+
+  let progress = 0;
+  const interval = setInterval(() => {
+    if (progress < 95) {
+      progress += 1;
+      loadingBar.style.width = progress + "%";
     }
+  }, 30);
 
-    responseDiv.innerHTML = "Invocando...";
-    loader.style.display = "block";
-    loadingBar.style.width = "0%";
+  const response = await fetch("/api/arca", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ input }),
+  });
 
-    let progress = 0;
-    const interval = setInterval(() => {
-      if (progress < 95) {
-        progress += 1;
-        loadingBar.style.width = progress + "%";
-      }
-    }, 30);
+  if (!response.ok) {
+    clearInterval(interval);
+    loader.style.display = "none";
+    responseDiv.innerHTML = "⚠️ A Arca silenciou... " + response.statusText;
+    return;
+  }
 
-    const eventSource = new EventSourcePolyfill("/api/arca", {
-      headers: { "Content-Type": "application/json" },
-      payload: JSON.stringify({ input }),
-      method: "POST"
-    });
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let rawData = "";
 
-    let rawData = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
 
-    eventSource.onmessage = (event) => {
-      if (event.data === "[DONE]") {
-        clearInterval(interval);
-        loader.style.display = "none";
-        loadingBar.style.width = "100%";
+    const chunk = decoder.decode(value, { stream: true });
+    rawData += chunk;
+    responseDiv.innerHTML = rawData;
+  }
+
+  clearInterval(interval);
+  loader.style.display = "none";
+  loadingBar.style.width = "100%";
         responseDiv.innerHTML = marked.parse(rawData);
         eventSource.close();
         return;
