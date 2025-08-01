@@ -159,7 +159,8 @@
       clearInterval(interval);
       loader.style.display = "none";
       eventSource.close();
-      responseDiv.innerHTML = "⚠️ A Arca silenciou: " + error.message;
+      console.error("Erro SSE:", error);
+responseDiv.innerHTML = "⚠️ A Arca silenciou... Verifique os logs do servidor.";
     };
   }
 
