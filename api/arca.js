@@ -61,7 +61,9 @@ export default async function handler(req, res) {
               res.write(`data: ${delta}\n\n`);
             }
           } catch (err) {
-            console.error("Erro no parse:", err);
+            console.error("ERRO STREAM:", err);
+res.write(`data: ⚠️ Erro interno\n\n`);
+res.end();
           }
         }
       }
