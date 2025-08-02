@@ -22,8 +22,6 @@
     }
 
     #mainContent {
-      transition: margin-left 0.3s ease;
-      margin-left: 0;
       padding: 40px 1rem 300px;
       max-width: 700px;
       width: 100%;
@@ -34,15 +32,20 @@
     #chatSidebar {
       position: fixed;
       top: 0;
-      left: 0;
+      left: -240px;
       bottom: 0;
-      width: 220px;
+      width: 240px;
       background: #111;
       border-right: 1px solid #333;
       padding: 1rem;
       overflow-y: auto;
       font-size: 0.8rem;
       z-index: 200;
+      transition: left 0.3s ease;
+    }
+
+    #chatSidebar.open {
+      left: 0;
     }
 
     #chatSidebar h3 {
@@ -326,13 +329,8 @@
     }
     
     @media (min-width: 769px) {
-      #chatSidebar.open {
-        display: block;
-      }
-
-      #mainContent.sidebar-open {
-        margin-left: 240px;
-        width: calc(100% - 240px);
+      #chatSidebar {
+        left: 0;
       }
     }
   </style>
@@ -575,7 +573,6 @@
           
           // Auto-close sidebar no mobile após clicar em sessão
           if (window.innerWidth <= 768) {
-            document.getElementById("chatSidebar").style.display = "none";
             document.getElementById("chatSidebar").classList.remove("open");
           }
         };
@@ -629,29 +626,7 @@
 
     function toggleSidebar() {
       const sidebar = document.getElementById("chatSidebar");
-      const main = document.getElementById("mainContent");
-
-      const isOpen = sidebar.classList.contains("open");
-
-      if (window.innerWidth <= 768) {
-        // Mobile toggle: apenas mostrar/ocultar
-        if (isOpen) {
-          sidebar.classList.remove("open");
-          sidebar.style.display = "none";
-        } else {
-          sidebar.classList.add("open");
-          sidebar.style.display = "block";
-        }
-      } else {
-        // Desktop toggle: alterar classe sidebar-open
-        if (isOpen) {
-          sidebar.classList.remove("open");
-          main.classList.remove("sidebar-open");
-        } else {
-          sidebar.classList.add("open");
-          main.classList.add("sidebar-open");
-        }
-      }
+      sidebar.classList.toggle("open");
     }
 
     // Carregar sidebar ao inicializar
@@ -661,7 +636,6 @@
       // Se for desktop, garante que o sidebar apareça
       if (window.innerWidth > 768) {
         document.getElementById("chatSidebar").classList.add("open");
-        document.getElementById("mainContent").classList.add("sidebar-open");
       }
     };
 
