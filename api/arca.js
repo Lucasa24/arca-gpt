@@ -100,10 +100,10 @@ export default async function handler(req, res) {
         for (const chunk of chunks) {
           if (chunk) {
             const delta = chunk;
-            // Aplicar a correção solicitada para normalizar espaços
-            const safe = delta.replace(/\n/g, " ").replace(/\s+/g, " ");
+            // Aplicar a correção solicitada para normalizar espaços, mantendo quebras e markdown
+            const safe = delta.replace(/[^\S\r\n]+/g, " "); // mantém quebras, markdown e emojis
             res.write(`data: ${safe}\n\n`);
-            await new Promise(resolve => setTimeout(resolve, 10)); // Pequeno atraso para simular streaming
+            await new Promise(resolve => setTimeout(resolve, 25)); // aumenta levemente a cadência
           }
         }
         
