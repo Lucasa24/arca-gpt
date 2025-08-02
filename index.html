@@ -40,6 +40,9 @@
       overflow-wrap: break-word;
       word-wrap: break-word;
       word-break: break-word;
+      text-align: justify;
+      line-height: 1.8;
+      letter-spacing: 0.5px;
     }
 
     .fixed-footer {
@@ -187,6 +190,79 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <script>
+    // Função para processar o texto e garantir que as palavras sejam separadas corretamente
+    function formatText(text) {
+      // Função auxiliar para separar palavras longas
+      function separateWords(longText) {
+        // Lista de palavras comuns em português para usar como referência
+        const commonWords = ['a', 'o', 'e', 'de', 'da', 'do', 'em', 'no', 'na', 'para', 'por', 'com', 'sem', 'que', 'se', 'como', 'mas', 'ou', 'seu', 'sua', 'meu', 'minha', 'teu', 'tua', 'nosso', 'nossa', 'este', 'esta', 'esse', 'essa', 'aquele', 'aquela', 'quando', 'onde', 'quem', 'qual', 'quanto', 'porque', 'pois', 'então', 'assim', 'também', 'muito', 'pouco', 'mais', 'menos', 'grande', 'pequeno', 'bom', 'bem', 'mal', 'melhor', 'pior', 'todo', 'toda', 'algum', 'alguma', 'nenhum', 'nenhuma', 'outro', 'outra', 'mesmo', 'mesma', 'cada', 'qualquer', 'vários', 'várias', 'alguns', 'algumas', 'todos', 'todas', 'entre', 'sobre', 'sob', 'após', 'antes', 'depois', 'durante', 'desde', 'até', 'contra', 'segundo', 'conforme', 'através', 'perante', 'mediante', 'exceto', 'salvo', 'senão', 'enquanto', 'embora', 'portanto', 'contudo', 'todavia', 'entretanto', 'porém', 'logo', 'pois', 'então', 'por isso', 'assim', 'desse modo', 'dessa forma', 'por conseguinte', 'consequentemente', 'por exemplo', 'isto é', 'ou seja', 'a saber', 'aliás', 'além disso', 'inclusive', 'também', 'ainda', 'não', 'sim', 'talvez', 'certamente', 'provavelmente', 'possivelmente', 'realmente', 'verdadeiramente', 'felizmente', 'infelizmente', 'principalmente', 'especialmente', 'particularmente', 'geralmente', 'frequentemente', 'raramente', 'dificilmente', 'facilmente', 'rapidamente', 'lentamente', 'cuidadosamente', 'completamente', 'parcialmente', 'totalmente', 'absolutamente', 'relativamente', 'aproximadamente', 'exatamente', 'precisamente', 'apenas', 'somente', 'exclusivamente', 'inclusive', 'também', 'ainda', 'já', 'agora', 'hoje', 'ontem', 'amanhã', 'sempre', 'nunca', 'jamais', 'aqui', 'ali', 'lá', 'acolá', 'dentro', 'fora', 'acima', 'abaixo', 'adiante', 'atrás', 'perto', 'longe', 'junto', 'separado', 'certo', 'errado', 'verdadeiro', 'falso', 'bom', 'mau', 'alto', 'baixo', 'grande', 'pequeno', 'forte', 'fraco', 'rápido', 'lento', 'fácil', 'difícil', 'simples', 'complexo', 'claro', 'escuro', 'quente', 'frio', 'novo', 'velho', 'jovem', 'idoso', 'bonito', 'feio', 'feliz', 'triste', 'alegre', 'melancólico', 'calmo', 'agitado', 'tranquilo', 'nervoso', 'seguro', 'inseguro', 'confiante', 'desconfiado', 'otimista', 'pessimista', 'realista', 'sonhador', 'prático', 'teórico', 'objetivo', 'subjetivo', 'racional', 'emocional', 'lógico', 'ilógico', 'coerente', 'incoerente', 'consistente', 'inconsistente', 'estável', 'instável', 'permanente', 'temporário', 'definitivo', 'provisório', 'absoluto', 'relativo', 'completo', 'incompleto', 'perfeito', 'imperfeito', 'exato', 'inexato', 'preciso', 'impreciso', 'correto', 'incorreto', 'adequado', 'inadequado', 'apropriado', 'inapropriado', 'conveniente', 'inconveniente', 'oportuno', 'inoportuno', 'vantajoso', 'desvantajoso', 'benéfico', 'prejudicial', 'útil', 'inútil', 'necessário', 'desnecessário', 'essencial', 'supérfluo', 'importante', 'insignificante', 'relevante', 'irrelevante', 'fundamental', 'acessório', 'primordial', 'secundário', 'prioritário', 'dispensável', 'indispensável', 'vital', 'trivial', 'crucial', 'banal', 'excepcional', 'comum', 'extraordinário', 'ordinário', 'especial', 'normal', 'peculiar', 'usual', 'singular', 'regular', 'único', 'típico', 'original', 'convencional', 'inovador', 'tradicional', 'moderno', 'antigo', 'contemporâneo', 'ultrapassado', 'atual', 'obsoleto', 'recente', 'remoto', 'presente', 'passado', 'futuro', 'imediato', 'distante', 'próximo', 'longínquo', 'breve', 'duradouro', 'efêmero', 'eterno', 'momentâneo', 'perpétuo', 'temporário', 'permanente', 'provisório', 'definitivo', 'transitório', 'estável', 'instável', 'fixo', 'móvel', 'estático', 'dinâmico', 'imóvel', 'ativo', 'passivo', 'inerte', 'enérgico', 'apático', 'vigoroso', 'fraco', 'forte', 'débil', 'robusto', 'frágil', 'resistente', 'vulnerável', 'sólido', 'fluido', 'rígido', 'flexível', 'duro', 'mole', 'áspero', 'suave', 'rugoso', 'liso', 'seco', 'úmido', 'molhado', 'seco', 'quente', 'frio', 'morno', 'gelado', 'fervente', 'congelado', 'claro', 'escuro', 'brilhante', 'opaco', 'luminoso', 'sombrio', 'transparente', 'opaco', 'visível', 'invisível', 'aparente', 'oculto', 'evidente', 'disfarçado', 'explícito', 'implícito', 'manifesto', 'latente', 'revelado', 'escondido', 'exposto', 'coberto', 'aberto', 'fechado', 'amplo', 'restrito', 'vasto', 'limitado', 'extenso', 'reduzido', 'expandido', 'contraído', 'aumentado', 'diminuído', 'crescente', 'decrescente', 'ascendente', 'descendente', 'superior', 'inferior', 'máximo', 'mínimo', 'ótimo', 'péssimo', 'excelente', 'terrível', 'maravilhoso', 'horrível', 'esplêndido', 'deplorável', 'magnífico', 'lastimável', 'sublime', 'ridículo', 'admirável', 'desprezível', 'louvável', 'condenável', 'honroso', 'vergonhoso', 'digno', 'indigno', 'respeitável', 'desprezível', 'honesto', 'desonesto', 'íntegro', 'corrupto', 'justo', 'injusto', 'imparcial', 'parcial', 'equitativo', 'tendencioso', 'legal', 'ilegal', 'legítimo', 'ilegítimo', 'lícito', 'ilícito', 'moral', 'imoral', 'ético', 'antiético', 'correto', 'incorreto', 'certo', 'errado', 'verdadeiro', 'falso', 'autêntico', 'falso', 'genuíno', 'artificial', 'natural', 'sintético', 'orgânico', 'inorgânico', 'puro', 'impuro', 'limpo', 'sujo', 'contaminado', 'estéril', 'infectado', 'saudável', 'doente', 'são', 'enfermo', 'robusto', 'debilitado', 'forte', 'fraco', 'vigoroso', 'frágil', 'resistente', 'vulnerável', 'imune', 'suscetível', 'sensível', 'insensível', 'consciente', 'inconsciente', 'ciente', 'ignorante', 'informado', 'desinformado', 'culto', 'inculto', 'educado', 'ignorante', 'instruído', 'desinstruído', 'alfabetizado', 'analfabeto', 'letrado', 'iletrado', 'erudito', 'leigo', 'especialista', 'generalista', 'profissional', 'amador', 'experiente', 'inexperiente', 'habilidoso', 'inábil', 'competente', 'incompetente', 'capaz', 'incapaz', 'apto', 'inapto', 'qualificado', 'desqualificado', 'preparado', 'despreparado', 'treinado', 'destreinado', 'disciplinado', 'indisciplinado', 'organizado', 'desorganizado', 'metódico', 'caótico', 'sistemático', 'assistemático', 'ordenado', 'desordenado', 'regular', 'irregular', 'uniforme', 'disforme', 'simétrico', 'assimétrico', 'proporcional', 'desproporcional', 'equilibrado', 'desequilibrado', 'estável', 'instável', 'constante', 'inconstante', 'consistente', 'inconsistente', 'coerente', 'incoerente', 'lógico', 'ilógico', 'racional', 'irracional', 'razoável', 'irrazoável', 'sensato', 'insensato', 'prudente', 'imprudente', 'cauteloso', 'descuidado', 'atento', 'desatento', 'vigilante', 'negligente', 'diligente', 'preguiçoso', 'aplicado', 'desleixado', 'esforçado', 'indolente', 'trabalhador', 'preguiçoso', 'produtivo', 'improdutivo', 'eficiente', 'ineficiente', 'eficaz', 'ineficaz', 'útil', 'inútil', 'proveitoso', 'improfícuo', 'vantajoso', 'desvantajoso', 'benéfico', 'prejudicial', 'favorável', 'desfavorável', 'propício', 'adverso', 'oportuno', 'inoportuno', 'conveniente', 'inconveniente', 'adequado', 'inadequado', 'apropriado', 'inapropriado', 'pertinente', 'impertinente', 'relevante', 'irrelevante', 'significativo', 'insignificante', 'importante', 'trivial', 'essencial', 'supérfluo', 'fundamental', 'acessório', 'indispensável', 'dispensável', 'necessário', 'desnecessário', 'obrigatório', 'facultativo', 'imperativo', 'opcional', 'compulsório', 'voluntário', 'forçado', 'espontâneo', 'imposto', 'livre', 'obrigado', 'permitido', 'proibido', 'autorizado', 'vetado', 'liberado', 'restrito', 'permitido', 'vedado', 'lícito', 'ilícito', 'legal', 'ilegal', 'legítimo', 'ilegítimo', 'regular', 'irregular', 'normal', 'anormal', 'comum', 'incomum', 'usual', 'inusual', 'frequente', 'raro', 'habitual', 'excepcional', 'ordinário', 'extraordinário', 'banal', 'notável', 'trivial', 'relevante', 'insignificante', 'importante', 'medíocre', 'excelente', 'comum', 'especial', 'vulgar', 'distinto', 'simples', 'complexo', 'fácil', 'difícil', 'complicado', 'descomplicado', 'intrincado', 'direto', 'confuso', 'claro', 'obscuro', 'evidente', 'ambíguo', 'explícito', 'implícito', 'definido', 'indefinido', 'preciso', 'vago', 'exato', 'aproximado', 'absoluto', 'relativo', 'concreto', 'abstrato', 'objetivo', 'subjetivo', 'real', 'imaginário', 'verdadeiro', 'falso', 'autêntico', 'fictício', 'genuíno', 'artificial', 'natural', 'sintético', 'original', 'cópia', 'primário', 'secundário', 'principal', 'acessório', 'central', 'periférico', 'essencial', 'acidental', 'intrínseco', 'extrínseco', 'inerente', 'adquirido', 'inato', 'aprendido', 'congênito', 'desenvolvido', 'hereditário', 'ambiental', 'genético', 'cultural', 'biológico', 'social', 'físico', 'mental', 'material', 'espiritual', 'corporal', 'psíquico', 'tangível', 'intangível', 'concreto', 'abstrato', 'visível', 'invisível', 'perceptível', 'imperceptível', 'sensível', 'insensível', 'audível', 'inaudível', 'palpável', 'impalpável', 'mensurável', 'imensurável', 'quantificável', 'inquantificável', 'finito', 'infinito', 'limitado', 'ilimitado', 'restrito', 'irrestrito', 'condicionado', 'incondicionado', 'relativo', 'absoluto', 'parcial', 'total', 'fragmentado', 'integral', 'incompleto', 'completo', 'parcial', 'inteiro', 'fracionado', 'íntegro', 'dividido', 'unificado', 'separado', 'junto', 'isolado', 'conectado', 'independente', 'dependente', 'autônomo', 'subordinado', 'livre', 'condicionado', 'emancipado', 'subjugado', 'dominante', 'submisso', 'superior', 'inferior', 'privilegiado', 'desfavorecido', 'vantajoso', 'desvantajoso', 'beneficiado', 'prejudicado', 'favorecido', 'desfavorecido', 'afortunado', 'desafortunado', 'sortudo', 'azarado', 'feliz', 'infeliz', 'contente', 'descontente', 'satisfeito', 'insatisfeito', 'realizado', 'frustrado', 'pleno', 'vazio', 'completo', 'incompleto', 'cheio', 'vazio', 'abundante', 'escasso', 'farto', 'carente', 'rico', 'pobre', 'próspero', 'miserável', 'opulento', 'indigente', 'abastado', 'necessitado', 'afluente', 'carente', 'privilegiado', 'desprivilegiado', 'afortunado', 'desafortunado', 'bem-sucedido', 'malsucedido', 'vitorioso', 'derrotado', 'triunfante', 'fracassado', 'vencedor', 'perdedor', 'campeão', 'derrotado', 'primeiro', 'último', 'superior', 'inferior', 'melhor', 'pior', 'ótimo', 'péssimo', 'excelente', 'terrível', 'excepcional', 'medíocre', 'extraordinário', 'ordinário', 'notável', 'comum', 'distinto', 'vulgar', 'especial', 'banal', 'único', 'comum', 'singular', 'plural', 'individual', 'coletivo', 'pessoal', 'impessoal', 'particular', 'geral', 'específico', 'genérico', 'concreto', 'abstrato', 'definido', 'indefinido', 'determinado', 'indeterminado', 'certo', 'incerto', 'seguro', 'inseguro', 'estável', 'instável', 'fixo', 'variável', 'constante', 'inconstante', 'permanente', 'temporário', 'duradouro', 'efêmero', 'eterno', 'transitório', 'perpétuo', 'momentâneo', 'infinito', 'finito', 'ilimitado', 'limitado', 'imenso', 'pequeno', 'vasto', 'restrito', 'amplo', 'estreito', 'extenso', 'reduzido', 'longo', 'curto', 'alto', 'baixo', 'profundo', 'raso', 'largo', 'estreito', 'grosso', 'fino', 'pesado', 'leve', 'denso', 'rarefeito', 'compacto', 'esparso', 'concentrado', 'diluído', 'espesso', 'fino', 'forte', 'fraco', 'intenso', 'suave', 'violento', 'moderado', 'extremo', 'médio', 'radical', 'conservador', 'revolucionário', 'tradicional', 'inovador', 'convencional', 'original', 'comum', 'incomum', 'normal', 'anormal', 'regular', 'irregular', 'padrão', 'atípico', 'típico', 'excepcional', 'usual', 'inusual', 'frequente', 'raro', 'comum', 'incomum', 'ordinário', 'extraordinário', 'banal', 'notável', 'trivial', 'relevante', 'insignificante', 'importante', 'medíocre', 'excelente', 'comum', 'especial', 'vulgar', 'distinto', 'simples', 'complexo', 'fácil', 'difícil', 'complicado', 'descomplicado', 'intrincado', 'direto', 'confuso', 'claro', 'obscuro', 'evidente', 'ambíguo', 'explícito', 'implícito', 'definido', 'indefinido', 'preciso', 'vago', 'exato', 'aproximado', 'absoluto', 'relativo', 'concreto', 'abstrato', 'objetivo', 'subjetivo', 'real', 'imaginário', 'verdadeiro', 'falso', 'autêntico', 'fictício', 'genuíno', 'artificial', 'natural', 'sintético', 'original', 'cópia', 'primário', 'secundário', 'principal', 'acessório', 'central', 'periférico', 'essencial', 'acidental', 'intrínseco', 'extrínseco', 'inerente', 'adquirido', 'inato', 'aprendido', 'congênito', 'desenvolvido', 'hereditário', 'ambiental', 'genético', 'cultural', 'biológico', 'social', 'físico', 'mental', 'material', 'espiritual', 'corporal', 'psíquico', 'tangível', 'intangível', 'concreto', 'abstrato', 'visível', 'invisível', 'perceptível', 'imperceptível', 'sensível', 'insensível', 'audível', 'inaudível', 'palpável', 'impalpável', 'mensurável', 'imensurável', 'quantificável', 'inquantificável', 'finito', 'infinito', 'limitado', 'ilimitado', 'restrito', 'irrestrito', 'condicionado', 'incondicionado', 'relativo', 'absoluto', 'parcial', 'total', 'fragmentado', 'integral', 'incompleto', 'completo', 'parcial', 'inteiro', 'fracionado', 'íntegro', 'dividido', 'unificado', 'separado', 'junto', 'isolado', 'conectado', 'independente', 'dependente', 'autônomo', 'subordinado', 'livre', 'condicionado', 'emancipado', 'subjugado', 'dominante', 'submisso', 'superior', 'inferior', 'privilegiado', 'desfavorecido', 'vantajoso', 'desvantajoso', 'beneficiado', 'prejudicado', 'favorecido', 'desfavorecido', 'afortunado', 'desafortunado', 'sortudo', 'azarado', 'feliz', 'infeliz', 'contente', 'descontente', 'satisfeito', 'insatisfeito', 'realizado', 'frustrado', 'pleno', 'vazio', 'completo', 'incompleto', 'cheio', 'vazio', 'abundante', 'escasso', 'farto', 'carente', 'rico', 'pobre', 'próspero', 'miserável', 'opulento', 'indigente', 'abastado', 'necessitado', 'afluente', 'carente', 'privilegiado', 'desprivilegiado', 'afortunado', 'desafortunado', 'bem-sucedido', 'malsucedido', 'vitorioso', 'derrotado', 'triunfante', 'fracassado', 'vencedor', 'perdedor', 'campeão', 'derrotado', 'primeiro', 'último', 'superior', 'inferior', 'melhor', 'pior', 'ótimo', 'péssimo', 'excelente', 'terrível', 'excepcional', 'medíocre', 'extraordinário', 'ordinário', 'notável', 'comum', 'distinto', 'vulgar', 'especial', 'banal', 'único', 'comum', 'singular', 'plural', 'individual', 'coletivo', 'pessoal', 'impessoal', 'particular', 'geral', 'específico', 'genérico', 'concreto', 'abstrato', 'definido', 'indefinido', 'determinado', 'indeterminado', 'certo', 'incerto', 'seguro', 'inseguro', 'estável', 'instável', 'fixo', 'variável', 'constante', 'inconstante', 'permanente', 'temporário', 'duradouro', 'efêmero', 'eterno', 'transitório', 'perpétuo', 'momentâneo', 'infinito', 'finito', 'ilimitado', 'limitado', 'imenso', 'pequeno', 'vasto', 'restrito', 'amplo', 'estreito', 'extenso', 'reduzido', 'longo', 'curto', 'alto', 'baixo', 'profundo', 'raso', 'largo', 'estreito', 'grosso', 'fino', 'pesado', 'leve', 'denso', 'rarefeito', 'compacto', 'esparso', 'concentrado', 'diluído', 'espesso', 'fino', 'forte', 'fraco', 'intenso', 'suave', 'violento', 'moderado', 'extremo', 'médio', 'radical', 'conservador', 'revolucionário', 'tradicional', 'inovador', 'convencional', 'original', 'comum', 'incomum', 'normal', 'anormal', 'regular', 'irregular', 'padrão', 'atípico', 'típico', 'excepcional', 'usual', 'inusual', 'frequente', 'raro', 'comum', 'incomum', 'ordinário', 'extraordinário', 'banal', 'notável', 'trivial', 'relevante', 'insignificante', 'importante'];
+        
+        // Função para verificar se uma substring é uma palavra comum
+        function isCommonWord(word) {
+          return commonWords.includes(word.toLowerCase());
+        }
+        
+        // Tenta identificar palavras em uma string longa
+        let result = '';
+        let currentWord = '';
+        
+        for (let i = 0; i < longText.length; i++) {
+          const char = longText[i];
+          currentWord += char;
+          
+          // Verifica se a palavra atual é uma palavra comum
+          if (currentWord.length >= 3) {
+            for (let j = 3; j <= currentWord.length; j++) {
+              const possibleWord = currentWord.substring(0, j);
+              if (isCommonWord(possibleWord)) {
+                result += possibleWord + ' ';
+                currentWord = currentWord.substring(j);
+                i = i - (currentWord.length);
+                break;
+              }
+            }
+          }
+          
+          // Se a palavra atual ficar muito longa, adiciona um espaço
+          if (currentWord.length >= 10) {
+            result += currentWord + ' ';
+            currentWord = '';
+          }
+        }
+        
+        // Adiciona qualquer palavra restante
+        if (currentWord.length > 0) {
+          result += currentWord;
+        }
+        
+        return result;
+      }
+      
+      // Adiciona espaços entre palavras que possam estar juntas
+      return text
+        // Regras básicas de separação
+        .replace(/([a-zA-Z0-9])([A-Z])/g, '$1 $2') // Adiciona espaço entre camelCase
+        .replace(/([.:;,?!])([a-zA-Z])/g, '$1 $2') // Adiciona espaço após pontuação
+        .replace(/([a-zA-Z])([.:;,?!])/g, '$1$2 ') // Adiciona espaço após pontuação seguida de letra
+        
+        // Regras específicas para palavras coladas
+        .replace(/([a-záàâãéèêíïóôõöúçñ])([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ])/g, '$1 $2') // Adiciona espaço entre minúscula e maiúscula
+        .replace(/([a-zA-Z])([0-9])/g, '$1 $2') // Adiciona espaço entre letra e número
+        .replace(/([0-9])([a-zA-Z])/g, '$1 $2') // Adiciona espaço entre número e letra
+        
+        // Processa palavras longas
+        .replace(/(\w{15,})/g, function(match) {
+          return separateWords(match);
+        })
+        
+        // Adiciona espaços a cada 5-8 caracteres em palavras muito longas
+        .replace(/(\w{10,14})/g, function(match) {
+          return match.replace(/(\w{5,8})(?=\w)/g, '$1 ');
+        })
+        
+        .trim();
+    }
+    
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
       const responseDiv = document.getElementById("response");
@@ -240,12 +316,16 @@
               clearInterval(interval);
               loader.style.display = "none";
               loadingBar.style.width = "100%";
-              responseDiv.innerHTML = marked.parse(fullText.trim());
+              // Aplica formatação final ao texto completo
+              const formattedText = formatText(fullText.trim());
+              responseDiv.innerHTML = marked.parse(formattedText);
               return;
             }
 
             fullText += content;
-            responseDiv.innerHTML = fullText;
+            // Formata o texto para exibição enquanto está sendo recebido
+            const formattedText = formatText(fullText.trim());
+            responseDiv.innerHTML = marked.parse(formattedText);
           }
         }
       } catch (err) {
