@@ -33,7 +33,7 @@
 
     #response {
       margin-top: 2rem;
-      white-space: pre-wrap;
+      white-space: normal;
       background: #1c1c1c;
       padding: 1rem;
       border-left: 4px solid #b30000;
@@ -255,7 +255,7 @@
 
             fullText += content;
             // Exibe o texto sem formatação enquanto está sendo recebido
-            responseDiv.innerHTML = fullText;
+            responseDiv.innerText = fullText;
           }
         }
       } catch (err) {
