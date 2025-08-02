@@ -94,14 +94,17 @@ export default async function handler(req, res) {
       if (firstContent?.text?.value) {
         finalMessage = firstContent.text.value;
         
+        // Duplicar quebras de linha para melhorar a respiração do texto no Markdown
+        finalMessage = finalMessage.replace(/\n/g, '\n\n');
+        
         // Enviar a resposta em pequenos pedaços para simular streaming
         const chunks = finalMessage.split(/(?<=\s+)/g); // Divide mantendo espaços no final
         
         for (const chunk of chunks) {
           if (chunk) {
             const delta = chunk;
-            // Aplicar a correção solicitada para normalizar espaços, mantendo quebras e markdown
-            const safe = delta.replace(/[^\S\r\n]+/g, " "); // mantém quebras, markdown e emojis
+            // Não modificar o texto vindo da OpenAI para preservar formatação e quebras de linha
+            const safe = delta;
             res.write(`data: ${safe}\n\n`);
             await new Promise(resolve => setTimeout(resolve, 25)); // aumenta levemente a cadência
           }
