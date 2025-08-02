@@ -339,7 +339,7 @@
 </head>
 <body>
   <div id="chatSidebar">
-    <button id="toggleSidebar" onclick="toggleSidebar()">☰ Sessões</button>
+    <button id="toggleSidebar" onclick="toggleSidebar()">☰ Menu</button>
   </div>
   
   <div id="resetModal" class="modal">
@@ -546,7 +546,7 @@
       const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
       const currentThreadId = localStorage.getItem("threadId");
 
-      sidebar.innerHTML = "<button id='toggleSidebar' onclick='toggleSidebar()'>☰ Sessões</button><h3>⛵ Sessões</h3>";
+      sidebar.innerHTML = "<button id='toggleSidebar' onclick='toggleSidebar()'>☰ Menu</button><h3>⛵ Sessões</h3>";
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
