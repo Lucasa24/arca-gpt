@@ -182,13 +182,14 @@
     <div class="input-group">
       <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
       <button onclick="sendMessage()">Invocar</button>
+      <button onclick="resetMemory()" style="background-color: #666; min-width: 60px; font-size: 0.65rem;">Reset</button>
     </div>
 
     <div id="loader" style="display:none;">
       <div id="loadingBar"></div>
     </div>
 
-    <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
+    <p class="footer-note">Os dados fornecidos são privados e protegidos! • Memória persistente ativa</p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -219,10 +220,25 @@
       }, 30);
 
       try {
+        // Verificar se já existe threadId salvo
+        let threadId = localStorage.getItem("threadId");
+        
+        if (!threadId) {
+          // Criar nova thread
+          const threadRes = await fetch("/api/thread", {
+            method: "POST"
+          });
+          const threadData = await threadRes.json();
+          threadId = threadData.threadId;
+          
+          // Salvar no navegador
+          localStorage.setItem("threadId", threadId);
+        }
+
         const response = await fetch("/api/arca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ input })
+          body: JSON.stringify({ input, threadId })
         });
 
         if (!response.ok) throw new Error("Falha ao invocar: " + response.statusText);
@@ -265,7 +281,13 @@
       }
     }
 
+    function resetMemory() {
+      localStorage.removeItem("threadId");
+      document.getElementById("response").innerHTML = "🔄 Memória resetada. Nova travessia iniciada.";
+    }
+
     window.sendMessage = sendMessage;
+    window.resetMemory = resetMemory;
   </script>
 </body>
 </html>
