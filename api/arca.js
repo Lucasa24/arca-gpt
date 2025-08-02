@@ -9,26 +9,20 @@ export default async function handler(req, res) {
   res.setHeader('Connection', 'keep-alive');
 
   const userInput = req.body.input;
+  const threadId = req.body.threadId;
 
   if (!userInput || userInput.trim() === "") {
     return res.status(400).json({ error: "Nada foi invocado." });
+  }
+
+  if (!threadId) {
+    return res.status(400).json({ error: "threadId ausente" });
   }
 
   const api_key = process.env.OPENAI_API_KEY;
   const assistant_id = process.env.ASSISTANT_ID;
 
   try {
-    // 1. Criar thread
-    const threadRes = await fetch("https://api.openai.com/v1/threads", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${api_key}`,
-        "Content-Type": "application/json",
-        "OpenAI-Beta": "assistants=v2"
-      }
-    });
-    const thread = await threadRes.json();
-    const threadId = thread.id;
 
     // 2. Enviar mensagem
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
