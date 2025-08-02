@@ -326,6 +326,17 @@
         font-size: 0.7rem;
       }
     }
+    
+    @media (min-width: 769px) {
+      #chatSidebar.open {
+        display: block;
+      }
+
+      #mainContent.sidebar-open {
+        margin-left: 240px;
+        width: calc(100% - 240px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -633,15 +644,13 @@
           sidebar.style.display = "block";
         }
       } else {
-        // Desktop toggle: alterar margem lateral do conteúdo
+        // Desktop toggle: alterar classe sidebar-open
         if (isOpen) {
           sidebar.classList.remove("open");
-          main.style.marginLeft = "0";
-          main.style.width = "100%";
+          main.classList.remove("sidebar-open");
         } else {
           sidebar.classList.add("open");
-          main.style.marginLeft = "240px";
-          main.style.width = "calc(100% - 240px)";
+          main.classList.add("sidebar-open");
         }
       }
     }
@@ -653,8 +662,7 @@
       // Se for desktop, garante que o sidebar apareça
       if (window.innerWidth > 768) {
         document.getElementById("chatSidebar").classList.add("open");
-        document.getElementById("mainContent").style.marginLeft = "240px";
-        document.getElementById("mainContent").style.width = "calc(100% - 240px)";
+        document.getElementById("mainContent").classList.add("sidebar-open");
       }
     };
 
