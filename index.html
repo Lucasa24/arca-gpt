@@ -253,9 +253,9 @@
               return;
             }
 
-            fullText += content;
-            // Exibe o texto com formatação Markdown em tempo real
-            responseDiv.innerHTML = marked.parse(fullText);
+            fullText += content + "\n\n";
+            // Mostra texto parcial durante streaming sem reprocessar markdown
+            responseDiv.innerText = fullText;
           }
         }
       } catch (err) {
