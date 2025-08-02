@@ -1,78 +1,124 @@
-import { request } from "undici";
-
-export const config = {
-  runtime: "nodejs"
-};
-
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end("Método não permitido");
-
-  const userInput = req.body.input;
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!userInput || userInput.trim() === "") {
-    return res.status(400).end("Nada foi invocado.");
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
   }
 
+  // Configurar cabeçalhos para streaming
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const userInput = req.body.input;
+
+  if (!userInput || userInput.trim() === "") {
+    return res.status(400).json({ error: "Nada foi invocado." });
+  }
+
+  const api_key = process.env.OPENAI_API_KEY;
+  const assistant_id = process.env.ASSISTANT_ID;
+
   try {
-    const { body } = await request("https://api.openai.com/v1/chat/completions", {
+    // 1. Criar thread
+    const threadRes = await fetch("https://api.openai.com/v1/threads", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${api_key}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v2"
+      }
+    });
+    const thread = await threadRes.json();
+    const threadId = thread.id;
+
+    // 2. Enviar mensagem
+    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v2"
       },
       body: JSON.stringify({
-        model: "gpt-4",
-        messages: [
-  { role: "system", content: "Você é um agente místico chamado A Arca. Responda com profundidade, metáforas ritualísticas e voz sagrada." },
-  { role: "user", content: userInput }
-],
-        temperature: 0.7,
-        stream: true
+        role: "user",
+        content: userInput
       })
     });
 
-    res.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive"
+    // 3. Rodar execução
+    const runRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v2"
+      },
+      body: JSON.stringify({
+        assistant_id
+      })
     });
 
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
+    const run = await runRes.json();
 
-    for await (const chunk of body) {
-      buffer += decoder.decode(chunk, { stream: true });
-      const lines = buffer.split("\n\n");
-      buffer = lines.pop(); // keep any partial
+    // 4. Aguardar resposta completa
+    let status = run.status;
+    let result;
 
-      for (let line of lines) {
-        if (!line.startsWith("data: ")) continue;
+    while (status === "queued" || status === "in_progress") {
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-        const data = line.replace("data: ", "").trim();
-
-        if (data === "[DONE]") {
-          res.write("data: [DONE]\n\n");
-          res.end();
-          return;
+      const statusRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`, {
+        headers: {
+          Authorization: `Bearer ${api_key}`,
+          "OpenAI-Beta": "assistants=v2"
         }
+      });
 
-        try {
-          const parsed = JSON.parse(data);
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) {
-            res.write(`data: ${delta}\n\n`);
-          }
-        } catch (err) {
-          console.error("Erro ao parsear chunk:", err);
-        }
-      }
+      result = await statusRes.json();
+      status = result.status;
     }
 
+    // 5. Obter a resposta final
+    const messagesRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      headers: {
+        Authorization: `Bearer ${api_key}`,
+        "OpenAI-Beta": "assistants=v2"
+      }
+    });
+
+    const messagesData = await messagesRes.json();
+    let finalMessage = "⚠️ A Arca silenciou...";
+
+    if (messagesData?.data?.length > 0) {
+      const firstMsg = messagesData.data[0];
+      const firstContent = firstMsg.content?.find(c => c.type === "text");
+      if (firstContent?.text?.value) {
+        finalMessage = firstContent.text.value;
+        
+        // Enviar a resposta em pequenos pedaços para simular streaming
+        const chunks = finalMessage.split(/(?<=\s+)/g); // Divide mantendo espaços no final
+        
+        for (const chunk of chunks) {
+          if (chunk) {
+            const delta = chunk;
+            // Aplicar a correção solicitada para normalizar espaços
+            const safe = delta.replace(/\n/g, " ").replace(/\s+/g, " ");
+            res.write(`data: ${safe}\n\n`);
+            await new Promise(resolve => setTimeout(resolve, 10)); // Pequeno atraso para simular streaming
+          }
+        }
+        
+        res.write(`data: [DONE]\n\n`);
+        res.end();
+        return;
+      }
+    }
+    
+    // Se não houver mensagem, enviar resposta padrão
+    res.write(`data: ${finalMessage}\n\n`);
+    res.write(`data: [DONE]\n\n`);
     res.end();
   } catch (err) {
-    console.error("ERRO STREAM:", err);
-    res.write(`data: ⚠️ Erro: ${err.message}\n\n`);
-    res.end();
+    console.error("ERRO:", err);
+    res.status(500).json({ error: "Erro na invocação: " + err.message });
   }
 }
