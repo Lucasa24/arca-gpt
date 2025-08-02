@@ -190,118 +190,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <script>
-    // Função para processar o texto e garantir que as palavras sejam separadas corretamente
-    function formatText(text) {
-      // Otimização: verifica se o texto precisa ser processado
-      if (!text || text.length < 15 || !/\w{15,}/.test(text)) {
-        return text;
-      }
-      
-      // Lista reduzida de palavras comuns em português para usar como referência
-      const commonWords = ['a', 'o', 'e', 'de', 'da', 'do', 'em', 'no', 'na', 'para', 'por', 'com', 'sem', 'que', 'se', 'como', 'mas', 'ou', 'seu', 'sua', 'meu', 'minha', 'nosso', 'nossa', 'este', 'esta', 'esse', 'essa', 'aquele', 'aquela', 'quando', 'onde', 'quem', 'qual', 'quanto', 'porque', 'pois', 'então', 'assim', 'também', 'muito', 'pouco', 'mais', 'menos', 'grande', 'pequeno', 'bom', 'bem', 'mal', 'melhor', 'pior', 'todo', 'toda', 'algum', 'alguma', 'nenhum', 'nenhuma', 'outro', 'outra', 'mesmo', 'mesma', 'cada', 'qualquer', 'vários', 'várias', 'alguns', 'algumas', 'todos', 'todas', 'entre', 'sobre', 'sob', 'após', 'antes', 'depois', 'durante', 'desde', 'até', 'contra', 'segundo', 'conforme', 'através', 'perante', 'mediante', 'exceto', 'salvo', 'senão', 'enquanto', 'embora', 'portanto', 'contudo', 'todavia', 'entretanto', 'porém', 'logo', 'pois', 'então', 'por isso', 'assim', 'desse modo', 'dessa forma', 'por conseguinte', 'consequentemente', 'por exemplo', 'isto é', 'ou seja', 'a saber', 'aliás', 'além disso', 'inclusive', 'também', 'ainda', 'não', 'sim', 'talvez', 'certamente', 'provavelmente', 'possivelmente', 'realmente', 'verdadeiramente', 'felizmente', 'infelizmente'], 'medíocre', 'excelente', 'comum', 'especial', 'vulgar', 'distinto', 'simples', 'complexo', 'fácil', 'difícil', 'complicado', 'descomplicado', 'intrincado', 'direto', 'confuso', 'claro', 'obscuro', 'evidente', 'ambíguo', 'explícito', 'implícito', 'definido', 'indefinido', 'preciso', 'vago', 'exato', 'aproximado', 'absoluto', 'relativo', 'concreto', 'abstrato', 'objetivo', 'subjetivo', 'real', 'imaginário', 'verdadeiro', 'falso', 'autêntico', 'fictício', 'genuíno', 'artificial', 'natural', 'sintético', 'original', 'cópia', 'primário', 'secundário', 'principal', 'acessório', 'central', 'periférico', 'essencial', 'acidental', 'intrínseco', 'extrínseco', 'inerente', 'adquirido', 'inato', 'aprendido', 'congênito', 'desenvolvido', 'hereditário', 'ambiental', 'genético', 'cultural', 'biológico', 'social', 'físico', 'mental', 'material', 'espiritual', 'corporal', 'psíquico', 'tangível', 'intangível', 'concreto', 'abstrato', 'visível', 'invisível', 'perceptível', 'imperceptível', 'sensível', 'insensível', 'audível', 'inaudível', 'palpável', 'impalpável', 'mensurável', 'imensurável', 'quantificável', 'inquantificável', 'finito', 'infinito', 'limitado', 'ilimitado', 'restrito', 'irrestrito', 'condicionado', 'incondicionado', 'relativo', 'absoluto', 'parcial', 'total', 'fragmentado', 'integral', 'incompleto', 'completo', 'parcial', 'inteiro', 'fracionado', 'íntegro', 'dividido', 'unificado', 'separado', 'junto', 'isolado', 'conectado', 'independente', 'dependente', 'autônomo', 'subordinado', 'livre', 'condicionado', 'emancipado', 'subjugado', 'dominante', 'submisso', 'superior', 'inferior', 'privilegiado', 'desfavorecido', 'vantajoso', 'desvantajoso', 'beneficiado', 'prejudicado', 'favorecido', 'desfavorecido', 'afortunado', 'desafortunado', 'sortudo', 'azarado', 'feliz', 'infeliz', 'contente', 'descontente', 'satisfeito', 'insatisfeito', 'realizado', 'frustrado', 'pleno', 'vazio', 'completo', 'incompleto', 'cheio', 'vazio', 'abundante', 'escasso', 'farto', 'carente', 'rico', 'pobre', 'próspero', 'miserável', 'opulento', 'indigente', 'abastado', 'necessitado', 'afluente', 'carente', 'privilegiado', 'desprivilegiado', 'afortunado', 'desafortunado', 'bem-sucedido', 'malsucedido', 'vitorioso', 'derrotado', 'triunfante', 'fracassado', 'vencedor', 'perdedor', 'campeão', 'derrotado', 'primeiro', 'último', 'superior', 'inferior', 'melhor', 'pior', 'ótimo', 'péssimo', 'excelente', 'terrível', 'excepcional', 'medíocre', 'extraordinário', 'ordinário', 'notável', 'comum', 'distinto', 'vulgar', 'especial', 'banal', 'único', 'comum', 'singular', 'plural', 'individual', 'coletivo', 'pessoal', 'impessoal', 'particular', 'geral', 'específico', 'genérico', 'concreto', 'abstrato', 'definido', 'indefinido', 'determinado', 'indeterminado', 'certo', 'incerto', 'seguro', 'inseguro', 'estável', 'instável', 'fixo', 'variável', 'constante', 'inconstante', 'permanente', 'temporário', 'duradouro', 'efêmero', 'eterno', 'transitório', 'perpétuo', 'momentâneo', 'infinito', 'finito', 'ilimitado', 'limitado', 'imenso', 'pequeno', 'vasto', 'restrito', 'amplo', 'estreito', 'extenso', 'reduzido', 'longo', 'curto', 'alto', 'baixo', 'profundo', 'raso', 'largo', 'estreito', 'grosso', 'fino', 'pesado', 'leve', 'denso', 'rarefeito', 'compacto', 'esparso', 'concentrado', 'diluído', 'espesso', 'fino', 'forte', 'fraco', 'intenso', 'suave', 'violento', 'moderado', 'extremo', 'médio', 'radical', 'conservador', 'revolucionário', 'tradicional', 'inovador', 'convencional', 'original', 'comum', 'incomum', 'normal', 'anormal', 'regular', 'irregular', 'padrão', 'atípico', 'típico', 'excepcional', 'usual', 'inusual', 'frequente', 'raro', 'comum', 'incomum', 'ordinário', 'extraordinário', 'banal', 'notável', 'trivial', 'relevante', 'insignificante', 'importante'];
-        
-      // Função para verificar se uma substring é uma palavra comum
-      function isCommonWord(word) {
-        return commonWords.includes(word.toLowerCase());
-      }
-      
-      // Função para separar palavras longas usando um algoritmo mais robusto
-      function separateWords(longText) {
-        // Primeiro, tenta separar por padrões conhecidos
-        let processedText = longText
-          // Regras básicas de separação
-          .replace(/([a-zA-Z0-9])([A-Z])/g, '$1 $2') // camelCase
-          .replace(/([.:;,?!])([a-zA-Z])/g, '$1 $2') // após pontuação
-          .replace(/([a-zA-Z])([.:;,?!])/g, '$1$2 ') // pontuação seguida de letra
-          .replace(/([a-záàâãéèêíïóôõöúçñ])([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ])/g, '$1 $2') // minúscula e maiúscula
-          .replace(/([a-zA-Z])([0-9])/g, '$1 $2') // letra e número
-          .replace(/([0-9])([a-zA-Z])/g, '$1 $2'); // número e letra
-        
-        // Se já conseguimos separar algumas palavras, retorna o texto com as separações feitas
-        if (processedText.includes(' ')) {
-          return processedText;
-        }
-        
-        // Caso contrário, tenta identificar palavras comuns
-        let result = '';
-        let currentWord = '';
-        let i = 0;
-        
-        while (i < longText.length) {
-          const char = longText[i];
-          currentWord += char;
-          i++;
-          
-          // Verifica se a palavra atual é uma palavra comum
-          if (currentWord.length >= 2) {
-            let foundWord = false;
-            
-            // Tenta encontrar a maior palavra comum possível
-            for (let j = Math.min(currentWord.length, 10); j >= 2; j--) {
-              const possibleWord = currentWord.substring(0, j);
-              if (isCommonWord(possibleWord)) {
-                result += possibleWord + ' ';
-                currentWord = '';
-                i--; // Volta um caractere para recomeçar a análise
-                foundWord = true;
-                break;
-              }
-            }
-            
-            // Se não encontrou uma palavra comum e a palavra atual está ficando muito longa
-            if (!foundWord && currentWord.length >= 8) {
-              // Adiciona a palavra atual com um espaço e recomeça
-              result += currentWord + ' ';
-              currentWord = '';
-            }
-          }
-        }
-        
-        // Adiciona qualquer palavra restante
-        if (currentWord.length > 0) {
-          result += currentWord;
-        }
-        
-        // Se ainda não conseguimos separar bem, adiciona espaços a cada 4-6 caracteres
-        if (!result.includes(' ') || result.length > 20) {
-          return longText.replace(/(.{4,6})(?=.)/g, '$1 ').trim();
-        }
-        
-        return result.trim();
-      }
-      
-      // Processa o texto em partes para evitar problemas de desempenho
-      let processedText = text;
-      
-      // Aplica regras básicas de separação em todo o texto
-      processedText = processedText
-        // Regras básicas de separação
-        .replace(/([a-zA-Z0-9])([A-Z])/g, '$1 $2') // Adiciona espaço entre camelCase
-        .replace(/([.:;,?!])([a-zA-Z])/g, '$1 $2') // Adiciona espaço após pontuação
-        .replace(/([a-zA-Z])([.:;,?!])/g, '$1$2 ') // Adiciona espaço após pontuação seguida de letra
-        
-        // Regras específicas para palavras coladas
-        .replace(/([a-záàâãéèêíïóôõöúçñ])([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ])/g, '$1 $2') // Adiciona espaço entre minúscula e maiúscula
-        .replace(/([a-zA-Z])([0-9])/g, '$1 $2') // Adiciona espaço entre letra e número
-        .replace(/([0-9])([a-zA-Z])/g, '$1 $2'); // Adiciona espaço entre número e letra
-      
-      // Processa palavras muito longas (provavelmente concatenadas)
-      processedText = processedText.replace(/\b(\w{15,})\b/g, function(match) {
-        return separateWords(match);
-      });
-      
-      // Adiciona espaços a cada 4-6 caracteres em palavras longas mas não tão longas
-      processedText = processedText.replace(/\b(\w{10,14})\b/g, function(match) {
-        // Verifica se a palavra parece ser uma concatenação
-        if (!/[aeiouáàâãéèêíïóôõöúç]/i.test(match)) {
-          // Se não tiver vogais, provavelmente é uma concatenação ou código
-          return match.replace(/(.{4,6})(?=.)/g, '$1 ');
-        }
-        return match;
-      });
-      
-      return processedText.trim();
-    }
     
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
@@ -356,16 +244,14 @@
               clearInterval(interval);
               loader.style.display = "none";
               loadingBar.style.width = "100%";
-              // Aplica formatação final ao texto completo
-              const formattedText = formatText(fullText.trim());
-              responseDiv.innerHTML = marked.parse(formattedText);
+              // Exibe o texto completo diretamente
+              responseDiv.innerHTML = marked.parse(fullText.trim());
               return;
             }
 
             fullText += content;
-            // Formata o texto para exibição enquanto está sendo recebido
-            const formattedText = formatText(fullText.trim());
-            responseDiv.innerHTML = marked.parse(formattedText);
+            // Exibe o texto diretamente enquanto está sendo recebido
+            responseDiv.innerHTML = marked.parse(fullText.trim());
           }
         }
       } catch (err) {
