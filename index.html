@@ -16,13 +16,18 @@
       background-color: #0e0e0e;
       color: #f5f5f5;
       font-family: 'Georgia', serif;
-      padding: 40px 1rem 300px;
       line-height: 1.6;
-      max-width: 700px;
-      width: 100%;
-      margin: 0 auto;
-      position: relative;
+      margin: 0;
+      padding: 0;
+    }
+
+    #mainContent {
+      transition: margin-left 0.3s ease;
       margin-left: 240px;
+      padding: 40px 1rem 300px;
+      max-width: 700px;
+      width: calc(100% - 240px);
+      position: relative;
     }
 
     #chatSidebar {
@@ -248,8 +253,9 @@
     }
     /* Media Queries para responsividade */
     @media (max-width: 768px) {
-      body {
+      #mainContent {
         margin-left: 0;
+        width: 100%;
         padding: 20px 0.75rem 250px;
       }
       
@@ -277,7 +283,7 @@
     }
     
     @media (max-width: 600px) {
-      body {
+      #mainContent {
         padding: 20px 0.75rem 250px;
       }
       
@@ -306,7 +312,7 @@
     }
     
     @media (max-width: 400px) {
-      body {
+      #mainContent {
         padding: 15px 0.5rem 220px;
       }
       
@@ -337,23 +343,25 @@
     </div>
   </div>
 
-  <h1>🛥️ A Arca - Ritual de Travessia 🌊</h1>
-  <p>Digite sua invocação abaixo e sinta a resposta da Arca:</p>
-  <div id="response"></div>
+  <main id="mainContent">
+    <h1>🛥️ A Arca - Ritual de Travessia 🌊</h1>
+    <p>Digite sua invocação abaixo e sinta a resposta da Arca:</p>
+    <div id="response"></div>
 
-  <div class="fixed-footer">
-    <div class="input-group">
-      <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
-      <button onclick="sendMessage()">Invocar</button>
-      <button onclick="showResetModal()" style="background-color: #666; min-width: 60px; font-size: 0.65rem;">Reset</button>
+    <div class="fixed-footer">
+      <div class="input-group">
+        <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
+        <button onclick="sendMessage()">Invocar</button>
+        <button onclick="showResetModal()" style="background-color: #666; min-width: 60px; font-size: 0.65rem;">Reset</button>
+      </div>
+
+      <div id="loader" style="display:none;">
+        <div id="loadingBar"></div>
+      </div>
+
+      <p class="footer-note">Os dados fornecidos são privados e protegidos! • Memória persistente ativa</p>
     </div>
-
-    <div id="loader" style="display:none;">
-      <div id="loadingBar"></div>
-    </div>
-
-    <p class="footer-note">Os dados fornecidos são privados e protegidos! • Memória persistente ativa</p>
-  </div>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -554,6 +562,12 @@
           loadThreadMessages(session.id);
           document.getElementById("userInput").value = "";
           loadSidebar();
+          
+          // Auto-close sidebar no mobile após clicar em sessão
+          if (window.innerWidth <= 768) {
+            document.getElementById("chatSidebar").style.display = "none";
+            document.getElementById("chatSidebar").classList.remove("open");
+          }
         };
         
         // Duplo clique para renomear
@@ -605,7 +619,27 @@
 
     function toggleSidebar() {
       const sidebar = document.getElementById("chatSidebar");
+      const main = document.getElementById("mainContent");
+
       sidebar.classList.toggle("open");
+
+      if (window.innerWidth <= 768) {
+        // Mobile: controla apenas a visibilidade do sidebar
+        if (sidebar.classList.contains("open")) {
+          sidebar.style.display = "block";
+        } else {
+          sidebar.style.display = "none";
+        }
+      } else {
+        // Desktop: controla margem do conteúdo principal
+        if (sidebar.classList.contains("open")) {
+          main.style.marginLeft = "240px";
+          main.style.width = "calc(100% - 240px)";
+        } else {
+          main.style.marginLeft = "0";
+          main.style.width = "100%";
+        }
+      }
     }
 
     // Carregar sidebar ao inicializar
