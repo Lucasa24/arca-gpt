@@ -44,6 +44,10 @@
       line-height: 1.8;
       letter-spacing: 0.5px;
     }
+    
+    #response p {
+      margin-bottom: 1rem;
+    }
 
     .fixed-footer {
       position: fixed;
@@ -244,14 +248,14 @@
               clearInterval(interval);
               loader.style.display = "none";
               loadingBar.style.width = "100%";
-              // Exibe o texto completo diretamente
+              // Exibe o texto completo com formatação Markdown apenas no final
               responseDiv.innerHTML = marked.parse(fullText.trim());
               return;
             }
 
             fullText += content;
-            // Exibe o texto diretamente enquanto está sendo recebido
-            responseDiv.innerHTML = marked.parse(fullText.trim());
+            // Exibe o texto sem formatação enquanto está sendo recebido
+            responseDiv.innerHTML = fullText;
           }
         }
       } catch (err) {
