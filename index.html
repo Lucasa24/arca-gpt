@@ -78,6 +78,25 @@
       background-color: #ff1a1a !important;
     }
 
+    #toggleSidebar {
+      display: none;
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 999;
+      background-color: #b30000;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      font-size: 0.9rem;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #toggleSidebar:hover {
+      background-color: #ff1a1a;
+    }
+
     .modal {
       display: none;
       position: fixed;
@@ -232,8 +251,26 @@
         padding: 20px 0.75rem 250px;
       }
       
+      #toggleSidebar {
+        display: block;
+      }
+      
       #chatSidebar {
         display: none;
+        position: fixed;
+        width: 80%;
+        max-width: 260px;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        background: #111;
+        z-index: 998;
+        overflow-y: auto;
+        padding: 1rem;
+      }
+      
+      #chatSidebar.open {
+        display: block;
       }
     }
     
@@ -284,6 +321,7 @@
   </style>
 </head>
 <body>
+  <button id="toggleSidebar" onclick="toggleSidebar()">☰ Sessões</button>
   <div id="chatSidebar"></div>
   
   <div id="resetModal" class="modal">
@@ -318,6 +356,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <script>
+    let messages = [];
     
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
@@ -330,6 +369,10 @@
         return;
       }
 
+      // Adicionar mensagem do usuário ao histórico
+      messages.push({ role: "user", content: input });
+      messages.push({ role: "assistant", content: "" });
+      
       responseDiv.innerHTML = "Invocando...";
       loader.style.display = "block";
       loadingBar.style.width = "0%";
@@ -347,7 +390,8 @@
         let threadId = localStorage.getItem("threadId");
         
         if (!threadId) {
-          // Criar nova thread
+          // Criar nova thread e limpar mensagens
+          messages = [{ role: "user", content: input }, { role: "assistant", content: "" }];
           const threadRes = await fetch("/api/thread", {
             method: "POST"
           });
@@ -369,7 +413,6 @@
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
-        let fullText = "";
 
         while (true) {
           const { done, value } = await reader.read();
@@ -387,17 +430,20 @@
               clearInterval(interval);
               loader.style.display = "none";
               loadingBar.style.width = "100%";
-              // Exibe o texto completo com formatação Markdown apenas no final
-              responseDiv.innerHTML = marked.parse(fullText.trim());
+              
+              // Renderizar histórico completo
+              renderMessages();
               
               // Salvar no histórico após resposta completa
               saveToHistory(input, threadId);
               return;
             }
 
-            fullText += content + "\n\n";
-            // Mostra texto parcial durante streaming sem reprocessar markdown
-            responseDiv.innerText = fullText;
+            // Acumular conteúdo na última mensagem (assistant)
+            messages[messages.length - 1].content += content + " ";
+            
+            // Renderizar mensagens em tempo real
+            renderMessages();
           }
         }
       } catch (err) {
@@ -405,6 +451,35 @@
         loader.style.display = "none";
         responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
       }
+    }
+
+    function renderMessages() {
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerHTML = "";
+
+      messages.forEach(msg => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "5px";
+        
+        if (msg.role === "user") {
+          div.style.fontStyle = "italic";
+          div.style.color = "#ccc";
+          div.style.backgroundColor = "#1a1a1a";
+          div.style.borderLeft = "3px solid #666";
+          div.innerHTML = "<strong>Você:</strong> " + msg.content;
+        } else {
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
+          div.innerHTML = marked.parse(msg.content.trim());
+        }
+        
+        responseDiv.appendChild(div);
+      });
+
+      responseDiv.scrollTop = responseDiv.scrollHeight;
     }
 
     function saveToHistory(userInput, threadId) {
@@ -439,6 +514,7 @@
       newBtn.className = "new-session";
       newBtn.onclick = () => {
         localStorage.removeItem("threadId");
+        messages = []; // Limpar mensagens
         document.getElementById("response").innerHTML = "";
         document.getElementById("userInput").value = "";
         loadSidebar();
@@ -453,10 +529,27 @@
         btn.style.fontWeight = session.id === currentThreadId ? "bold" : "normal";
         btn.onclick = () => {
           localStorage.setItem("threadId", session.id);
+          messages = []; // Limpar mensagens ao trocar de sessão
           document.getElementById("response").innerHTML = "🔄 Sessão carregada. Continue a travessia...";
           document.getElementById("userInput").value = "";
           loadSidebar();
         };
+        
+        // Duplo clique para renomear
+        btn.ondblclick = () => {
+          const newTitle = prompt("Renomear sessão:", session.title);
+          if (newTitle && newTitle.trim()) {
+            session.title = newTitle.trim();
+            const fullHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+            const idx = fullHistory.findIndex(s => s.id === session.id);
+            if (idx !== -1) {
+              fullHistory[idx].title = newTitle.trim();
+              localStorage.setItem("chatHistory", JSON.stringify(fullHistory));
+              loadSidebar();
+            }
+          }
+        };
+        
         sidebar.appendChild(btn);
       });
     }
@@ -481,11 +574,17 @@
       
       // Resetar thread atual
       localStorage.removeItem("threadId");
+      messages = []; // Limpar mensagens
       document.getElementById("response").innerHTML = "🔄 Memória resetada. Nova travessia iniciada.";
       document.getElementById("userInput").value = "";
       
       closeModal();
       loadSidebar();
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("chatSidebar");
+      sidebar.classList.toggle("open");
     }
 
     // Carregar sidebar ao inicializar
@@ -503,6 +602,7 @@
     window.showResetModal = showResetModal;
     window.closeModal = closeModal;
     window.confirmReset = confirmReset;
+    window.toggleSidebar = toggleSidebar;
   </script>
 </body>
 </html>
