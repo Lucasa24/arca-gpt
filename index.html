@@ -161,6 +161,8 @@
       text-align: justify;
       line-height: 1.8;
       letter-spacing: 0.5px;
+      max-height: 70vh;
+      overflow-y: auto;
     }
     
     #response p {
@@ -434,6 +436,9 @@
               // Renderizar histórico completo
               renderMessages();
               
+              // Limpar campo de texto após envio
+              document.getElementById("userInput").value = "";
+              
               // Salvar no histórico após resposta completa
               saveToHistory(input, threadId);
               return;
@@ -479,7 +484,7 @@
         responseDiv.appendChild(div);
       });
 
-      responseDiv.scrollTop = responseDiv.scrollHeight;
+      responseDiv.scrollTo({ top: responseDiv.scrollHeight, behavior: "smooth" });
     }
 
     function saveToHistory(userInput, threadId) {
@@ -499,6 +504,23 @@
       
       localStorage.setItem("chatHistory", JSON.stringify(history));
       loadSidebar();
+    }
+
+    async function loadThreadMessages(threadId) {
+      try {
+        const res = await fetch("/api/getMessages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ threadId })
+        });
+
+        const data = await res.json();
+
+        messages = data.messages;
+        renderMessages();
+      } catch (err) {
+        document.getElementById("response").innerHTML = "⚠️ Falha ao carregar mensagens.";
+      }
     }
 
     function loadSidebar() {
@@ -529,8 +551,7 @@
         btn.style.fontWeight = session.id === currentThreadId ? "bold" : "normal";
         btn.onclick = () => {
           localStorage.setItem("threadId", session.id);
-          messages = []; // Limpar mensagens ao trocar de sessão
-          document.getElementById("response").innerHTML = "🔄 Sessão carregada. Continue a travessia...";
+          loadThreadMessages(session.id);
           document.getElementById("userInput").value = "";
           loadSidebar();
         };
