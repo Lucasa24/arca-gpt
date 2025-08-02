@@ -28,6 +28,7 @@
       max-width: 700px;
       width: 100%;
       position: relative;
+      z-index: 0;
     }
 
     #chatSidebar {
@@ -85,10 +86,7 @@
 
     #toggleSidebar {
       display: none;
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 999;
+      margin-bottom: 1rem;
       background-color: #b30000;
       color: white;
       padding: 0.5rem 1rem;
@@ -340,8 +338,9 @@
   </style>
 </head>
 <body>
-  <button id="toggleSidebar" onclick="toggleSidebar()">☰ Sessões</button>
-  <div id="chatSidebar"></div>
+  <div id="chatSidebar">
+    <button id="toggleSidebar" onclick="toggleSidebar()">☰ Sessões</button>
+  </div>
   
   <div id="resetModal" class="modal">
     <div class="modal-content">
@@ -547,7 +546,7 @@
       const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
       const currentThreadId = localStorage.getItem("threadId");
 
-      sidebar.innerHTML = "<h3>⛵ Sessões</h3>";
+      sidebar.innerHTML = "<button id='toggleSidebar' onclick='toggleSidebar()'>☰ Sessões</button><h3>⛵ Sessões</h3>";
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
