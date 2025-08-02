@@ -94,19 +94,13 @@ export default async function handler(req, res) {
       if (firstContent?.text?.value) {
         finalMessage = firstContent.text.value;
         
-        // Duplicar quebras de linha para melhorar a respiração do texto no Markdown
-        finalMessage = finalMessage.replace(/\n/g, '\n\n');
+        // Quebrar por parágrafos reais do Assistant
+        const paragraphs = finalMessage.split(/\n{2,}/);
         
-        // Enviar a resposta em pequenos pedaços para simular streaming
-        const chunks = finalMessage.split(/(?<=\s+)/g); // Divide mantendo espaços no final
-        
-        for (const chunk of chunks) {
-          if (chunk) {
-            const delta = chunk;
-            // Não modificar o texto vindo da OpenAI para preservar formatação e quebras de linha
-            const safe = delta;
-            res.write(`data: ${safe}\n\n`);
-            await new Promise(resolve => setTimeout(resolve, 25)); // aumenta levemente a cadência
+        for (const para of paragraphs) {
+          if (para.trim()) {
+            res.write(`data: ${para.trim()}\n\n`);
+            await new Promise(resolve => setTimeout(resolve, 350)); // ritmo poético
           }
         }
         
