@@ -254,8 +254,8 @@
             }
 
             fullText += content;
-            // Exibe o texto sem formatação enquanto está sendo recebido
-            responseDiv.innerText = fullText;
+            // Exibe o texto com formatação Markdown em tempo real
+            responseDiv.innerHTML = marked.parse(fullText);
           }
         }
       } catch (err) {
