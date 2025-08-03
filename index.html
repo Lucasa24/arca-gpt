@@ -448,6 +448,10 @@
             if (!part.startsWith("data: ")) continue;
 
             const content = part.replace("data: ", "").trim();
+            
+            // 🧪 DEBUG: Log para verificar se chunks estão chegando
+            console.log("🔹 Parte recebida:", content);
+            
             if (content === "[DONE]") {
               clearInterval(interval);
               loader.style.display = "none";
