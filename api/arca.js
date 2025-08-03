@@ -88,13 +88,13 @@ export default async function handler(req, res) {
       if (firstContent?.text?.value) {
         finalMessage = firstContent.text.value;
         
-        // Quebrar por parágrafos reais do Assistant
-        const paragraphs = finalMessage.split(/\n{2,}/);
+        // 🔥 STREAMING PALAVRA POR PALAVRA EM TEMPO REAL
+        const words = finalMessage.split(' ');
         
-        for (const para of paragraphs) {
-          if (para.trim()) {
-            res.write(`data: ${para.trim()}\n\n`);
-            await new Promise(resolve => setTimeout(resolve, 350)); // ritmo poético
+        for (const word of words) {
+          if (word.trim()) {
+            res.write(`data: ${word}\n\n`);
+            await new Promise(resolve => setTimeout(resolve, 25)); // ritmo fluido
           }
         }
         
