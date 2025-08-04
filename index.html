@@ -395,9 +395,6 @@
       messages.push({ role: "user", content: input });
       messages.push({ role: "assistant", content: "" });
       
-      // Renderizar mensagens iniciais (cria a div live-stream vazia)
-      renderMessages();
-      
       // Criar div live-stream para streaming em tempo real
       const liveDiv = document.createElement("div");
       liveDiv.style.color = "#f5f5f5";
@@ -487,6 +484,7 @@
             const liveStreamEl = document.getElementById("live-stream");
             if (liveStreamEl) {
               liveStreamEl.textContent += content + " ";
+              liveStreamEl.scrollIntoView({ behavior: "smooth", block: "end" });
             }
           }
         }
@@ -518,13 +516,7 @@
           div.style.backgroundColor = "#1c1c1c";
           div.style.borderLeft = "4px solid #b30000";
           
-          // Se é a última mensagem do assistant e está em streaming
-          if (index === messages.length - 1 && msg.content === "") {
-            div.id = "live-stream";
-            div.innerHTML = "";
-          } else {
-            div.innerHTML = marked.parse(msg.content.trim());
-          }
+          div.innerHTML = marked.parse(msg.content.trim());
         }
         
         responseDiv.appendChild(div);
