@@ -42,6 +42,7 @@
       font-size: 0.8rem;
       z-index: 200;
       transition: left 0.3s ease;
+      pointer-events: auto;
     }
 
     #chatSidebar.open {
@@ -69,6 +70,9 @@
       cursor: pointer;
       font-size: 0.75rem;
       transition: background-color 0.2s;
+      pointer-events: auto;
+      position: relative;
+      z-index: 201;
     }
 
     #chatSidebar button:hover {
@@ -262,6 +266,10 @@
       
       #toggleSidebar {
         display: block;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 999;
       }
       
       #chatSidebar {
@@ -279,7 +287,8 @@
       }
       
       #chatSidebar.open {
-        display: block;
+        display: block !important;
+        left: 0 !important;
       }
     }
     
@@ -331,6 +340,7 @@
     @media (min-width: 769px) {
       #chatSidebar {
         left: 0;
+        display: block !important;
       }
       
       #mainContent {
@@ -423,14 +433,6 @@
         if (!threadId) {
           // Criar nova thread e limpar mensagens
           // Manter histórico anterior intacto — só cria thread
-const threadRes = await fetch("/api/thread", {
-  method: "POST"
-});
-const threadData = await threadRes.json();
-threadId = threadData.threadId;
-
-// Salvar no navegador
-localStorage.setItem("threadId", threadId);
           const threadRes = await fetch("/api/thread", {
             method: "POST"
           });
@@ -593,6 +595,7 @@ localStorage.setItem("threadId", threadId);
       newBtn.textContent = "🌊 Nova Travessia";
       newBtn.className = "new-session";
       newBtn.onclick = () => {
+        console.log("🌊 Nova Travessia clicada!");
         localStorage.removeItem("threadId");
         messages = []; // Limpar mensagens
         document.getElementById("response").innerHTML = "";
@@ -639,14 +642,17 @@ localStorage.setItem("threadId", threadId);
     }
 
     function showResetModal() {
+      console.log("🔄 Reset modal aberto!");
       document.getElementById("resetModal").style.display = "block";
     }
 
     function closeModal() {
+      console.log("❌ Modal fechado!");
       document.getElementById("resetModal").style.display = "none";
     }
 
     function confirmReset() {
+      console.log("✅ Reset confirmado!");
       const currentThreadId = localStorage.getItem("threadId");
       
       // Remover sessão atual do histórico
@@ -669,6 +675,7 @@ localStorage.setItem("threadId", threadId);
     function toggleSidebar() {
       const sidebar = document.getElementById("chatSidebar");
       sidebar.classList.toggle("open");
+      console.log("Toggle sidebar chamado, estado atual:", sidebar.classList.contains("open"));
     }
 
     // Carregar sidebar ao inicializar
