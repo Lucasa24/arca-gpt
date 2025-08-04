@@ -395,7 +395,19 @@
       messages.push({ role: "user", content: input });
       messages.push({ role: "assistant", content: "" });
       
-      responseDiv.innerHTML = "Invocando...";
+      // Renderizar mensagens iniciais (cria a div live-stream vazia)
+      renderMessages();
+      
+      // Criar div live-stream para streaming em tempo real
+      const liveDiv = document.createElement("div");
+      liveDiv.style.color = "#f5f5f5";
+      liveDiv.style.backgroundColor = "#1c1c1c";
+      liveDiv.style.borderLeft = "4px solid #b30000";
+      liveDiv.style.padding = "0.5rem";
+      liveDiv.style.marginBottom = "1rem";
+      liveDiv.style.borderRadius = "5px";
+      liveDiv.id = "live-stream";
+      responseDiv.appendChild(liveDiv);
       loader.style.display = "block";
       loadingBar.style.width = "0%";
 
@@ -453,26 +465,29 @@
             console.log("🔹 Parte recebida:", content);
             
             if (content === "[DONE]") {
-              clearInterval(interval);
-              loader.style.display = "none";
-              loadingBar.style.width = "100%";
-              
-              // Renderizar histórico completo
-              renderMessages();
-              
-              // Limpar campo de texto após envio
-              document.getElementById("userInput").value = "";
-              
-              // Salvar no histórico após resposta completa
-              saveToHistory(input, threadId);
-              return;
-            }
+  clearInterval(interval);
+  loader.style.display = "none";
+  loadingBar.style.width = "100%";
+
+  // Converter para markdown bonito
+  const liveStreamEl = document.getElementById("live-stream");
+  if (liveStreamEl) {
+    liveStreamEl.innerHTML = marked.parse(messages[messages.length - 1].content.trim());
+  }
+
+  document.getElementById("userInput").value = "";
+  saveToHistory(input, threadId);
+  return;
+}
 
             // Acumular conteúdo na última mensagem (assistant)
             messages[messages.length - 1].content += content + " ";
             
-            // Renderizar mensagens em tempo real
-            renderMessages();
+            // ATUALIZAÇÃO DIRETA NA DIV
+            const liveStreamEl = document.getElementById("live-stream");
+            if (liveStreamEl) {
+              liveStreamEl.textContent += content + " ";
+            }
           }
         }
       } catch (err) {
@@ -486,7 +501,7 @@
       const responseDiv = document.getElementById("response");
       responseDiv.innerHTML = "";
 
-      messages.forEach(msg => {
+      messages.forEach((msg, index) => {
         const div = document.createElement("div");
         div.style.marginBottom = "1rem";
         div.style.padding = "0.5rem";
@@ -502,7 +517,14 @@
           div.style.color = "#f5f5f5";
           div.style.backgroundColor = "#1c1c1c";
           div.style.borderLeft = "4px solid #b30000";
-          div.innerHTML = marked.parse(msg.content.trim());
+          
+          // Se é a última mensagem do assistant e está em streaming
+          if (index === messages.length - 1 && msg.content === "") {
+            div.id = "live-stream";
+            div.innerHTML = "";
+          } else {
+            div.innerHTML = marked.parse(msg.content.trim());
+          }
         }
         
         responseDiv.appendChild(div);
