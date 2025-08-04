@@ -422,7 +422,15 @@
         
         if (!threadId) {
           // Criar nova thread e limpar mensagens
-          messages = [{ role: "user", content: input }, { role: "assistant", content: "" }];
+          // Manter histórico anterior intacto — só cria thread
+const threadRes = await fetch("/api/thread", {
+  method: "POST"
+});
+const threadData = await threadRes.json();
+threadId = threadData.threadId;
+
+// Salvar no navegador
+localStorage.setItem("threadId", threadId);
           const threadRes = await fetch("/api/thread", {
             method: "POST"
           });
