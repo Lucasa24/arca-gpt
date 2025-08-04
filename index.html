@@ -480,10 +480,18 @@
             // Acumular conteúdo na última mensagem (assistant)
             messages[messages.length - 1].content += content + " ";
             
-            // ATUALIZAÇÃO DIRETA NA DIV
+            // ATUALIZAÇÃO DIRETA NA DIV COM RESPIRAÇÃO VISUAL
             const liveStreamEl = document.getElementById("live-stream");
             if (liveStreamEl) {
-              liveStreamEl.textContent += content + " ";
+              // Acumular conteúdo com quebras visuais
+              const currentContent = messages[messages.length - 1].content;
+              const parsed = marked.parse(
+                currentContent
+                  .replace(/\n/g, '\n\n') // duplicar quebras
+                  .replace(/\. /g, '.\n\n') // quebra visual após pontos
+                  .trim()
+              );
+              liveStreamEl.innerHTML = parsed;
               liveStreamEl.scrollIntoView({ behavior: "smooth", block: "end" });
             }
           }
@@ -512,12 +520,16 @@
           div.style.borderLeft = "3px solid #666";
           div.innerHTML = "<strong>Você:</strong> " + msg.content;
         } else {
-          div.style.color = "#f5f5f5";
-          div.style.backgroundColor = "#1c1c1c";
-          div.style.borderLeft = "4px solid #b30000";
-          
-          div.innerHTML = marked.parse(msg.content.trim());
-        }
+  // Só renderizar assistant se conteúdo já estiver carregado
+  if (msg.content.trim()) {
+    div.style.color = "#f5f5f5";
+    div.style.backgroundColor = "#1c1c1c";
+    div.style.borderLeft = "4px solid #b30000";
+    div.innerHTML = marked.parse(msg.content.trim());
+  } else {
+    return; // Ignora a resposta ainda vazia (streaming cuidará disso)
+  }
+}
         
         responseDiv.appendChild(div);
       });
