@@ -22,31 +22,26 @@
     }
 
     #mainContent {
+      transition: margin-left 0.3s ease;
+      margin-left: 0;
       padding: 40px 1rem 300px;
       max-width: 700px;
       width: 100%;
       position: relative;
-      z-index: 0;
     }
 
     #chatSidebar {
       position: fixed;
       top: 0;
-      left: -240px;
+      left: 0;
       bottom: 0;
-      width: 240px;
+      width: 220px;
       background: #111;
       border-right: 1px solid #333;
       padding: 1rem;
       overflow-y: auto;
       font-size: 0.8rem;
       z-index: 200;
-      transition: left 0.3s ease;
-      pointer-events: auto;
-    }
-
-    #chatSidebar.open {
-      left: 0;
     }
 
     #chatSidebar h3 {
@@ -70,9 +65,6 @@
       cursor: pointer;
       font-size: 0.75rem;
       transition: background-color 0.2s;
-      pointer-events: auto;
-      position: relative;
-      z-index: 201;
     }
 
     #chatSidebar button:hover {
@@ -93,7 +85,10 @@
 
     #toggleSidebar {
       display: none;
-      margin-bottom: 1rem;
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 999;
       background-color: #b30000;
       color: white;
       padding: 0.5rem 1rem;
@@ -266,10 +261,6 @@
       
       #toggleSidebar {
         display: block;
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        z-index: 999;
       }
       
       #chatSidebar {
@@ -287,8 +278,7 @@
       }
       
       #chatSidebar.open {
-        display: block !important;
-        left: 0 !important;
+        display: block;
       }
     }
     
@@ -336,23 +326,11 @@
         font-size: 0.7rem;
       }
     }
-    
-    @media (min-width: 769px) {
-      #chatSidebar {
-        left: 0;
-        display: block !important;
-      }
-      
-      #mainContent {
-        margin-left: 260px;
-      }
-    }
   </style>
 </head>
 <body>
-  <div id="chatSidebar">
-    <button id="toggleSidebar" onclick="toggleSidebar()">☰ Menu</button>
-  </div>
+  <button id="toggleSidebar" onclick="toggleSidebar()">☰ Sessões</button>
+  <div id="chatSidebar"></div>
   
   <div id="resetModal" class="modal">
     <div class="modal-content">
@@ -405,16 +383,7 @@
       messages.push({ role: "user", content: input });
       messages.push({ role: "assistant", content: "" });
       
-      // Criar div live-stream para streaming em tempo real
-      const liveDiv = document.createElement("div");
-      liveDiv.style.color = "#f5f5f5";
-      liveDiv.style.backgroundColor = "#1c1c1c";
-      liveDiv.style.borderLeft = "4px solid #b30000";
-      liveDiv.style.padding = "0.5rem";
-      liveDiv.style.marginBottom = "1rem";
-      liveDiv.style.borderRadius = "5px";
-      liveDiv.id = "live-stream";
-      responseDiv.appendChild(liveDiv);
+      responseDiv.innerHTML = "Invocando...";
       loader.style.display = "block";
       loadingBar.style.width = "0%";
 
@@ -432,7 +401,7 @@
         
         if (!threadId) {
           // Criar nova thread e limpar mensagens
-          // Manter histórico anterior intacto — só cria thread
+          messages = [{ role: "user", content: input }, { role: "assistant", content: "" }];
           const threadRes = await fetch("/api/thread", {
             method: "POST"
           });
@@ -467,43 +436,27 @@
             if (!part.startsWith("data: ")) continue;
 
             const content = part.replace("data: ", "").trim();
-            
-            // 🧪 DEBUG: Log para verificar se chunks estão chegando
-            console.log("🔹 Parte recebida:", content);
-            
             if (content === "[DONE]") {
-  clearInterval(interval);
-  loader.style.display = "none";
-  loadingBar.style.width = "100%";
-
-  // Converter para markdown bonito
-  const liveStreamEl = document.getElementById("live-stream");
-  if (liveStreamEl) {
-    liveStreamEl.innerHTML = marked.parse(messages[messages.length - 1].content.trim());
-  }
-
-  document.getElementById("userInput").value = "";
-  saveToHistory(input, threadId);
-  return;
-}
+              clearInterval(interval);
+              loader.style.display = "none";
+              loadingBar.style.width = "100%";
+              
+              // Renderizar histórico completo
+              renderMessages();
+              
+              // Limpar campo de texto após envio
+              document.getElementById("userInput").value = "";
+              
+              // Salvar no histórico após resposta completa
+              saveToHistory(input, threadId);
+              return;
+            }
 
             // Acumular conteúdo na última mensagem (assistant)
             messages[messages.length - 1].content += content + " ";
             
-            // ATUALIZAÇÃO DIRETA NA DIV COM RESPIRAÇÃO VISUAL
-            const liveStreamEl = document.getElementById("live-stream");
-            if (liveStreamEl) {
-              // Acumular conteúdo com quebras visuais
-              const currentContent = messages[messages.length - 1].content;
-              const parsed = marked.parse(
-                currentContent
-                  .replace(/\n/g, '\n\n') // duplicar quebras
-                  .replace(/\. /g, '.\n\n') // quebra visual após pontos
-                  .trim()
-              );
-              liveStreamEl.innerHTML = parsed;
-              liveStreamEl.scrollIntoView({ behavior: "smooth", block: "end" });
-            }
+            // Renderizar mensagens em tempo real
+            renderMessages();
           }
         }
       } catch (err) {
@@ -517,7 +470,7 @@
       const responseDiv = document.getElementById("response");
       responseDiv.innerHTML = "";
 
-      messages.forEach((msg, index) => {
+      messages.forEach(msg => {
         const div = document.createElement("div");
         div.style.marginBottom = "1rem";
         div.style.padding = "0.5rem";
@@ -530,16 +483,11 @@
           div.style.borderLeft = "3px solid #666";
           div.innerHTML = "<strong>Você:</strong> " + msg.content;
         } else {
-  // Só renderizar assistant se conteúdo já estiver carregado
-  if (msg.content.trim()) {
-    div.style.color = "#f5f5f5";
-    div.style.backgroundColor = "#1c1c1c";
-    div.style.borderLeft = "4px solid #b30000";
-    div.innerHTML = marked.parse(msg.content.trim());
-  } else {
-    return; // Ignora a resposta ainda vazia (streaming cuidará disso)
-  }
-}
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
+          div.innerHTML = marked.parse(msg.content.trim());
+        }
         
         responseDiv.appendChild(div);
       });
@@ -588,14 +536,13 @@
       const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
       const currentThreadId = localStorage.getItem("threadId");
 
-      sidebar.innerHTML = "<button id='toggleSidebar' onclick='toggleSidebar()'>☰ Menu</button><h3>⛵ Sessões</h3>";
+      sidebar.innerHTML = "<h3>⛵ Sessões</h3>";
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
       newBtn.textContent = "🌊 Nova Travessia";
       newBtn.className = "new-session";
       newBtn.onclick = () => {
-        console.log("🌊 Nova Travessia clicada!");
         localStorage.removeItem("threadId");
         messages = []; // Limpar mensagens
         document.getElementById("response").innerHTML = "";
@@ -618,6 +565,7 @@
           
           // Auto-close sidebar no mobile após clicar em sessão
           if (window.innerWidth <= 768) {
+            document.getElementById("chatSidebar").style.display = "none";
             document.getElementById("chatSidebar").classList.remove("open");
           }
         };
@@ -642,17 +590,14 @@
     }
 
     function showResetModal() {
-      console.log("🔄 Reset modal aberto!");
       document.getElementById("resetModal").style.display = "block";
     }
 
     function closeModal() {
-      console.log("❌ Modal fechado!");
       document.getElementById("resetModal").style.display = "none";
     }
 
     function confirmReset() {
-      console.log("✅ Reset confirmado!");
       const currentThreadId = localStorage.getItem("threadId");
       
       // Remover sessão atual do histórico
@@ -674,8 +619,31 @@
 
     function toggleSidebar() {
       const sidebar = document.getElementById("chatSidebar");
-      sidebar.classList.toggle("open");
-      console.log("Toggle sidebar chamado, estado atual:", sidebar.classList.contains("open"));
+      const main = document.getElementById("mainContent");
+
+      const isOpen = sidebar.classList.contains("open");
+
+      if (window.innerWidth <= 768) {
+        // Mobile toggle: apenas mostrar/ocultar
+        if (isOpen) {
+          sidebar.classList.remove("open");
+          sidebar.style.display = "none";
+        } else {
+          sidebar.classList.add("open");
+          sidebar.style.display = "block";
+        }
+      } else {
+        // Desktop toggle: alterar margem lateral do conteúdo
+        if (isOpen) {
+          sidebar.classList.remove("open");
+          main.style.marginLeft = "0";
+          main.style.width = "100%";
+        } else {
+          sidebar.classList.add("open");
+          main.style.marginLeft = "240px";
+          main.style.width = "calc(100% - 240px)";
+        }
+      }
     }
 
     // Carregar sidebar ao inicializar
@@ -685,6 +653,8 @@
       // Se for desktop, garante que o sidebar apareça
       if (window.innerWidth > 768) {
         document.getElementById("chatSidebar").classList.add("open");
+        document.getElementById("mainContent").style.marginLeft = "240px";
+        document.getElementById("mainContent").style.width = "calc(100% - 240px)";
       }
     };
 
