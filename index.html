@@ -379,11 +379,11 @@
         return;
       }
 
-      // Adicionar mensagem do usuário ao histórico
+      // Adicionar mensagem do usuário e mensagem "Invocando..."
       messages.push({ role: "user", content: input });
-      messages.push({ role: "assistant", content: "" });
+      messages.push({ role: "assistant", content: "Invocando..." });
+      renderMessages(); // já mostra as duas
       
-      responseDiv.innerHTML = "Invocando...";
       loader.style.display = "block";
       loadingBar.style.width = "0%";
 
@@ -452,7 +452,10 @@
               return;
             }
 
-            // Acumular conteúdo na última mensagem (assistant)
+            // Substitui "Invocando..." pelo streaming real no primeiro chunk
+            if (messages[messages.length - 1].content === "Invocando...") {
+              messages[messages.length - 1].content = "";
+            }
             messages[messages.length - 1].content += content + " ";
             
             // Renderizar mensagens em tempo real
