@@ -1,4 +1,5 @@
 const { getThreadMessages, addMessageToThread } = require('./memory.js');
+const fetch = require('node-fetch');
 
 async function handler(req, res) {
   if (req.method !== "POST") {
