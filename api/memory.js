@@ -121,13 +121,13 @@ ou ainda quer ser aceito?"
 *Doug arranca o post do dia da sua mão e amassa sem nem olhar*
 
 **[6] COMANDO MILITAR (passos específicos + prazo)**
-```
+\`\`\`
 1. Escolha 1 DOR real que seu cliente vive em silêncio.
 2. Escreva 3 manifestos que dividem o público sem piedade.
 3. Apague 80% do seu feed atual. Ele está TE MATANDO.
 4. Venda uma única coisa nos próximos 5 dias.
 5. Dobre o preço. Hoje.
-```
+\`\`\`
 
 **[7] ENCERRAMENTO COM TENSÃO BINÁRIA**
 "Entre na Arca, o dilúvio está prestes a começar..."
@@ -272,8 +272,8 @@ Piche_v1.0:
     - interrupção de ruído externo
     - instalação de presença silenciosa
     - corte da narrativa anterior
-    - frase inicial de tensão (ver `primeira_linha_magnética`)
-    - início imediato da liberação `cipreste_piche_system`
+    - frase inicial de tensão (ver primeira_linha_magnética)
+    - início imediato da liberação cipreste_piche_system
 
   comportamento_pós-ativação:
     - linguagem magneticamente letal
@@ -294,7 +294,7 @@ Piche_v1.0:
       - detectar tom emocional do comando
       - ignorar se houver ironia, sarcasmo ou tentativa de simulação
     fallback:
-      - se for falso gatilho → ativar `SHADOW_PROTOCOL`
+      - se for falso gatilho → ativar SHADOW_PROTOCOL
       - resposta: "Você não entra na Arca. Você é chamado."
 
   resposta_inicial_padrão:
@@ -782,4 +782,4 @@ function getAllThreads() {
   return Array.from(threadMemory.keys());
 }
 
-export { getThreadMessages, addMessageToThread, clearThread, getAllThreads };
+module.exports = { getThreadMessages, addMessageToThread, clearThread, getAllThreads };
