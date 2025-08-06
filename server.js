@@ -7,6 +7,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+// Importar a API real da Arca
+const arcaHandler = require('./api/arca.js');
+
 const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/') {
     // Servir o index.html
@@ -35,36 +38,26 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ threadId: 'thread_' + Date.now() }));
   } else if (req.method === 'POST' && req.url === '/api/arca') {
-    // Mock da API da Arca
+    // Chamar a API real da Arca
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
     });
-    req.on('end', () => {
-      const { input } = JSON.parse(body);
-      
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      });
-      
-      // Simular resposta streaming
-      const response = `🌊 **Resposta da Arca para:** "${input}"\n\nA Arca ecoa suas palavras através das águas místicas. Esta é uma resposta de teste para demonstrar as funcionalidades implementadas:\n\n- ✅ **Confirmação no Reset**: Agora você precisa confirmar antes de perder a conversa\n- ✅ **Sidebar de Sessões**: Lista lateral com histórico de conversas\n- ✅ **Nova Travessia**: Botão para iniciar nova sessão\n- ✅ **Navegação entre Threads**: Clique nas sessões para alternar\n\n*As águas da memória agora fluem de forma organizada...*`;
-      
-      const words = response.split(' ');
-      let index = 0;
-      
-      const interval = setInterval(() => {
-        if (index < words.length) {
-          res.write(`data: ${words[index]} `);
-          index++;
-        } else {
-          res.write('data: [DONE]');
-          res.end();
-          clearInterval(interval);
-        }
-      }, 100);
+    req.on('end', async () => {
+      try {
+        // Criar objeto de requisição mock
+        const mockReq = {
+          method: 'POST',
+          body: JSON.parse(body)
+        };
+        
+        // Chamar o handler real da Arca
+        await arcaHandler(mockReq, res);
+      } catch (error) {
+        console.error('Erro na API da Arca:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Erro interno do servidor' }));
+      }
     });
   } else {
     res.writeHead(404);
