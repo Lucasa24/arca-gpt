@@ -1,4 +1,8 @@
-require('dotenv').config();
+// Carregar dotenv apenas em desenvolvimento local
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -68,7 +72,14 @@ const server = http.createServer((req, res) => {
   }
 });
 
-const PORT = 3000;
-server.listen(PORT, () => {
-  console.log(`🛥️ Servidor da Arca rodando em http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+
+// Para desenvolvimento local
+if (process.env.NODE_ENV !== 'production') {
+  server.listen(PORT, () => {
+    console.log(`🛥️ Servidor da Arca rodando em http://localhost:${PORT}`);
+  });
+}
+
+// Export para Vercel
+module.exports = server;
