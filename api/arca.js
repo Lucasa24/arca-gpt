@@ -1,7 +1,6 @@
-const { getThreadMessages, addMessageToThread } = require('./memory.js');
-const fetch = require('node-fetch');
+import { getThreadMessages, addMessageToThread } from './memory.js';
 
-async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
@@ -100,5 +99,3 @@ async function handler(req, res) {
     res.end();
   }
 }
-
-module.exports = handler;
