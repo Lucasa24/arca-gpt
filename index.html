@@ -456,7 +456,7 @@
             if (messages[messages.length - 1].content === "Invocando...") {
               messages[messages.length - 1].content = "";
             }
-            messages[messages.length - 1].content += content;
+            messages[messages.length - 1].content += content + " ";
             
             // Renderizar mensagens em tempo real
             renderMessages();
