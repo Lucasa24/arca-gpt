@@ -400,7 +400,8 @@
         let threadId = localStorage.getItem("threadId");
         
         if (!threadId) {
-          // Criar nova thread (mantém mensagens já adicionadas)
+          // Criar nova thread e limpar mensagens
+          messages = [{ role: "user", content: input }, { role: "assistant", content: "" }];
           const threadRes = await fetch("/api/thread", {
             method: "POST"
           });
