@@ -371,7 +371,7 @@
     let loaderInterval = null;
     let progress = 0;
     
-    // BARRA SÓ ENCOSTA NO HORIZONTE, NÃO COMPLETA
+    // Barra linear progressiva, nunca para nem oscila, só finaliza em 100% quando "invocando..." some.
     function startLoaderBar() {
       const loader = document.getElementById("loader");
       const loadingBar = document.getElementById("loadingBar");
@@ -380,36 +380,35 @@
       progress = 0;
       isInvocando = true;
     
-      const MAX = 92; // nunca chega a 100%
-      const MIN = 70; // oscilar tensão final ali
-      const DURATION = 2200; // tempo estimado só pra DÁR A SENSAÇÃO inicial
-      const intervalDuration = 23;
-      const step = (MAX) / (DURATION / intervalDuration);
+      const DURATION = 18000; // tempo até 99% em milissegundos (18s)
+      const intervalDuration = 18; // ms
+      const MAX = 99;
+      const step = (MAX / (DURATION / intervalDuration));
     
       if (loaderInterval) clearInterval(loaderInterval);
     
       loaderInterval = setInterval(() => {
-        if (!isInvocando) return;
+        if (!isInvocando) return; // NÃO mexer se já pediu pra parar
+    
         if (progress < MAX) {
           progress += step;
-          loadingBar.style.width = Math.min(progress, MAX) + "%";
         } else {
-          // Tensão: ENQUANTO ESTIVER "invocando...", oscila levemente em volta do horizonte MAX
-          progress += (Math.random() * 0.8 - 0.4); // jitter visual
-          if (progress < MIN) progress = MIN;
-          if (progress > MAX) progress = MAX;
-          loadingBar.style.width = progress + "%";
+          // Ficou em 99%, não passa disso até "invocando..." sumir de fato
+          progress = MAX;
         }
+        loadingBar.style.width = progress + "%";
       }, intervalDuration);
     }
     
+    // Chame APENAS quando "invocando..." despachar:
     function stopLoaderBar() {
       const loader = document.getElementById("loader");
       const loadingBar = document.getElementById("loadingBar");
       isInvocando = false;
-      progress = 100;
+    
+      // ANIMA rápido até 100, encerra, some
       loadingBar.style.width = "100%";
-      setTimeout(() => { loader.style.display = "none"; }, 200);
+      setTimeout(() => { loader.style.display = "none"; }, 220);
       if (loaderInterval) clearInterval(loaderInterval);
     }
     
