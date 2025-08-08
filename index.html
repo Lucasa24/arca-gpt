@@ -538,7 +538,15 @@
           div.style.color = "#f5f5f5";
           div.style.backgroundColor = "#1c1c1c";
           div.style.borderLeft = "4px solid #b30000";
-          div.innerHTML = marked.parse(msg.content.trim());
+          
+          // CORREÇÃO PARA HISTÓRICO: força parágrafos em dados legados sem \n\n
+          let content = msg.content.trim();
+          if (!/\n\n/.test(content)) {
+            // Para cada frase que termina em .!? aplica \n\n para virar parágrafo
+            content = content.replace(/([.!?])\s+/g, "$1\n\n");
+          }
+          
+          div.innerHTML = marked.parse(content);
         }
         
         responseDiv.appendChild(div);
@@ -570,8 +578,14 @@
           div.style.borderLeft = "4px solid #b30000";
           
           // PROCESSA MARKDOWN EM TEMPO REAL - mesmo com texto incompleto
-          const content = msg.content.trim();
+          let content = msg.content.trim();
           if (content) {
+            // CORREÇÃO PARA HISTÓRICO: força parágrafos em dados legados sem \n\n
+            if (!/\n\n/.test(content)) {
+              // Para cada frase que termina em .!? aplica \n\n para virar parágrafo
+              content = content.replace(/([.!?])\s+/g, "$1\n\n");
+            }
+            
             try {
               // Força quebras de linha e processa markdown parcial
               div.innerHTML = marked.parse(content);
