@@ -585,7 +585,7 @@
         responseDiv.appendChild(div);
       });
 
-      responseDiv.scrollTo({ top: responseDiv.scrollHeight, behavior: "smooth" });
+      responseDiv.scrollTop = responseDiv.scrollHeight;
     }
 
     function saveToHistory(userInput, threadId) {
