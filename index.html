@@ -371,7 +371,7 @@
     let loaderInterval = null;
     let progress = 0;
     
-    // RITUAL: BARRA RUMO AO LIMITE
+    // BARRA SÓ ENCOSTA NO HORIZONTE, NÃO COMPLETA
     function startLoaderBar() {
       const loader = document.getElementById("loader");
       const loadingBar = document.getElementById("loadingBar");
@@ -379,34 +379,37 @@
       loadingBar.style.width = "0%";
       progress = 0;
       isInvocando = true;
-      // Defina a duração desejada para a barra completar (ms)
-      const DURATION = 1800;  // 1.8 segundos
-      const intervalDuration = 20; // ms
-      const step = 100 / (DURATION / intervalDuration);
+    
+      const MAX = 92; // nunca chega a 100%
+      const MIN = 70; // oscilar tensão final ali
+      const DURATION = 2200; // tempo estimado só pra DÁR A SENSAÇÃO inicial
+      const intervalDuration = 23;
+      const step = (MAX) / (DURATION / intervalDuration);
     
       if (loaderInterval) clearInterval(loaderInterval);
+    
       loaderInterval = setInterval(() => {
         if (!isInvocando) return;
-        progress += step;
-        if (progress >= 100) {
-          progress = 100;
-          loadingBar.style.width = "100%";
-          // NÃO esconde automaticamente - deixa o requestAnimationFrame controlar
-          clearInterval(loaderInterval);
+        if (progress < MAX) {
+          progress += step;
+          loadingBar.style.width = Math.min(progress, MAX) + "%";
         } else {
+          // Tensão: ENQUANTO ESTIVER "invocando...", oscila levemente em volta do horizonte MAX
+          progress += (Math.random() * 0.8 - 0.4); // jitter visual
+          if (progress < MIN) progress = MIN;
+          if (progress > MAX) progress = MAX;
           loadingBar.style.width = progress + "%";
         }
       }, intervalDuration);
     }
     
-    // FECHAR a barra e garantir ocultação ao receber resposta
     function stopLoaderBar() {
       const loader = document.getElementById("loader");
       const loadingBar = document.getElementById("loadingBar");
       isInvocando = false;
       progress = 100;
       loadingBar.style.width = "100%";
-      setTimeout(() => { loader.style.display = "none"; }, 100);
+      setTimeout(() => { loader.style.display = "none"; }, 200);
       if (loaderInterval) clearInterval(loaderInterval);
     }
     
