@@ -173,6 +173,24 @@
     #response p {
       margin-bottom: 1rem;
     }
+    
+    /* Estilos para formatação markdown */
+    #response strong, #response b {
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    #response em, #response i {
+      font-style: italic;
+      color: #f0f0f0;
+    }
+    
+    #response strong em, #response em strong,
+    #response b i, #response i b {
+      font-weight: bold;
+      font-style: italic;
+      color: #fff;
+    }
 
     .fixed-footer {
       position: fixed;
