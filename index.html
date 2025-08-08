@@ -482,20 +482,32 @@
               return;
             }
 
-            // Ritual: elimina Invocando... e loader JÁ!
+            // RITUAL À PROVA DE RAÇA: sincronização absoluta via requestAnimationFrame
             if (isInvocando && content !== "[DONE]") {
-  if (messages[messages.length - 1].content === "Invocando...") {
-    messages[messages.length - 1].content = "";
-    renderMessages();   // atualiza o DOM: "Invocando..." removido
-    setTimeout(() => {  // espera o DOM re-renderizar
-      stopLoaderBar();  // AGORA pode parar (barra e "Invocando..." somem juntos)
-    }, 30); // espera 1 ciclo de pintura (ajuste 10-50ms para máxima garantia)
-  }
-}
-            
-            // Monta/responde o chunk real
-            messages[messages.length - 1].content += content + " ";
-            renderMessages();
+              const idx = messages.length - 1;
+              if (messages[idx].content === "Invocando...") {
+                // Remove "Invocando..." e substitui por resposta inicial vazia
+                messages[idx].content = "";
+                renderMessages();
+                
+                // Adiciona o primeiro chunk real da resposta
+                messages[idx].content += content + " ";
+                renderMessages();
+                
+                // Espera UM ciclo real de pintura antes de remover a barra
+                window.requestAnimationFrame(() => {
+                  stopLoaderBar();
+                });
+              } else {
+                // Demais chunks da resposta
+                messages[idx].content += content + " ";
+                renderMessages();
+              }
+            } else {
+              // Chunk normal quando não está invocando
+              messages[messages.length - 1].content += content + " ";
+              renderMessages();
+            }
           }
         }
       } catch (err) {
