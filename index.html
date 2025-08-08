@@ -475,6 +475,7 @@
             if (!part.startsWith("data: ")) continue;
 
             const content = part.replace("data: ", "").trim();
+            if (!content) continue; // IMPEDIR SÓ ESPAÇOS SEREM ADICIONADOS
             
             if (content === "[DONE]") {
               // Remove stopLoaderBar() daqui - deixa apenas o requestAnimationFrame controlar
@@ -489,10 +490,10 @@
               if (messages[idx].content === "Invocando...") {
                 // Remove "Invocando..." e substitui por resposta inicial vazia
                 messages[idx].content = "";
-                renderMessages();
+                renderMessagesWithLiveMarkdown();
                 
                 // Adiciona o primeiro chunk real da resposta
-                messages[idx].content += content + " ";
+                messages[idx].content += content;
                 renderMessagesWithLiveMarkdown();
                 
                 // Espera UM ciclo real de pintura antes de remover a barra
@@ -501,12 +502,12 @@
                 });
               } else {
                 // Demais chunks da resposta
-                messages[idx].content += content + " ";
+                messages[idx].content += content;
                 renderMessagesWithLiveMarkdown();
               }
             } else {
               // Chunk normal quando não está invocando
-              messages[messages.length - 1].content += content + " ";
+              messages[messages.length - 1].content += content;
               renderMessagesWithLiveMarkdown();
             }
           }
@@ -543,7 +544,7 @@
         responseDiv.appendChild(div);
       });
 
-      responseDiv.scrollTo({ top: responseDiv.scrollHeight, behavior: "smooth" });
+      responseDiv.scrollTop = responseDiv.scrollHeight;
     }
 
     // FUNÇÃO ESPECIAL: Renderiza mensagens com markdown em tempo real durante streaming
