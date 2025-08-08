@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+a barra de carregamento ainda não estão sincronizada com o "invocando..."
+
+
+meu index: "<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -16,9 +19,18 @@
       background-color: #0e0e0e;
       color: #f5f5f5;
       font-family: 'Georgia', serif;
+      line-height: 1.6;
       margin: 0;
       padding: 0;
-      min-height: 100vh;
+    }
+
+    #mainContent {
+      transition: margin-left 0.3s ease;
+      margin-left: 0;
+      padding: 40px 1rem 300px;
+      max-width: 700px;
+      width: 100%;
+      position: relative;
     }
 
     #chatSidebar {
@@ -26,79 +38,13 @@
       top: 0;
       left: 0;
       bottom: 0;
-      width: 240px;
+      width: 220px;
       background: #111;
       border-right: 1px solid #333;
       padding: 1rem;
       overflow-y: auto;
       font-size: 0.8rem;
       z-index: 200;
-      transition: transform 0.3s cubic-bezier(.25, .8, .5, 1);
-    }
-
-    /* SIDEBAR FECHADA DESKTOP */
-    #chatSidebar:not(.open) {
-      transform: translateX(-100%);
-    }
-    .sidebar-open #chatSidebar {
-      transform: translateX(0);
-    }
-
-    /* Main centralizado e adaptável */
-    #mainContent {
-      margin-left: 0;
-      padding: 40px 1rem 300px;
-      max-width: 700px;
-      width: 100%;
-      position: relative;
-      transition: margin-left 0.3s, width 0.3s;
-    }
-    .sidebar-open #mainContent {
-      margin-left: 240px;
-      width: calc(100% - 240px);
-    }
-
-    /* MOBILE — sidebar sobreposta, main ocupando tudo */
-    @media (max-width: 768px) {
-      #chatSidebar {
-        width: 80%;
-        max-width: 260px;
-        z-index: 999;
-        padding-top: 56px;
-      }
-      .sidebar-open #mainContent,
-      #mainContent {
-        margin-left: 0 !important;
-        width: 100% !important;
-        max-width: 100vw;
-      }
-      #chatSidebar:not(.open) {
-        display: none;
-      }
-      #toggleSidebar {
-        display: block;
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        z-index: 2000;
-      }
-    }
-    @media (min-width: 769px) {
-      #toggleSidebar {
-        display: none !important;
-      }
-    }
-
-    /* Prioridade absoluta do h1 */
-    #mainContent h1 {
-      font-size: clamp(1.5rem, 5vw, 2.5rem);
-      text-align: center;
-      margin: 0 0 1.5rem 0;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #fff;
-      position: relative;
-      z-index: 1;
     }
 
     #chatSidebar h3 {
@@ -387,13 +333,7 @@
 </head>
 <body>
   <button id="toggleSidebar" onclick="toggleSidebar()">☰ Sessões</button>
-  <div id="chatSidebar">
-    <div id="sidebarHeader">
-      <h3>🛥️ Sessões da Arca</h3>
-      <button id="newSessionBtn" onclick="startNewSession()">+ Nova Travessia</button>
-    </div>
-    <div id="sessionList"></div>
-  </div>
+  <div id="chatSidebar"></div>
   
   <div id="resetModal" class="modal">
     <div class="modal-content">
@@ -685,27 +625,42 @@
 
     function toggleSidebar() {
       const sidebar = document.getElementById("chatSidebar");
-      const isDesktop = window.innerWidth > 768;
-      if (isDesktop) {
-        document.body.classList.toggle('sidebar-open');
-        sidebar.classList.toggle('open');
-      } else {
-        if (sidebar.classList.contains('open')) {
-          sidebar.classList.remove('open');
-          sidebar.style.display = 'none';
+      const main = document.getElementById("mainContent");
+
+      const isOpen = sidebar.classList.contains("open");
+
+      if (window.innerWidth <= 768) {
+        // Mobile toggle: apenas mostrar/ocultar
+        if (isOpen) {
+          sidebar.classList.remove("open");
+          sidebar.style.display = "none";
         } else {
-          sidebar.classList.add('open');
-          sidebar.style.display = 'block';
+          sidebar.classList.add("open");
+          sidebar.style.display = "block";
+        }
+      } else {
+        // Desktop toggle: alterar margem lateral do conteúdo
+        if (isOpen) {
+          sidebar.classList.remove("open");
+          main.style.marginLeft = "0";
+          main.style.width = "100%";
+        } else {
+          sidebar.classList.add("open");
+          main.style.marginLeft = "240px";
+          main.style.width = "calc(100% - 240px)";
         }
       }
     }
 
-    // Open by default on desktop
+    // Carregar sidebar ao inicializar
     window.onload = function () {
-      loadSidebar && loadSidebar();
+      loadSidebar();
+
+      // Se for desktop, garante que o sidebar apareça
       if (window.innerWidth > 768) {
-        document.body.classList.add('sidebar-open');
-        document.getElementById('chatSidebar').classList.add('open');
+        document.getElementById("chatSidebar").classList.add("open");
+        document.getElementById("mainContent").style.marginLeft = "240px";
+        document.getElementById("mainContent").style.width = "calc(100% - 240px)";
       }
     };
 
@@ -725,3 +680,5 @@
   </script>
 </body>
 </html>
+
+"
