@@ -368,6 +368,7 @@
   <script>
     let messages = [];
     let isInvocando = false;
+    let loaderInterval = null;
     
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
@@ -391,10 +392,14 @@
       loader.style.display = "block";
       loadingBar.style.width = "0%";
 
+      // MOVIMENTO PERPÉTUO ENQUANTO INVOCANDO
       let progress = 0;
-      const interval = setInterval(() => {
-        if (progress < 95) {
-          progress += 1;
+      if (loaderInterval) clearInterval(loaderInterval);
+      loaderInterval = setInterval(() => {
+        // Enquanto não "invoca", oscila até 95% infinito:
+        if (isInvocando) {
+          progress += 4;     // Velocidade de avanço/aparente
+          if (progress >= 95) progress = 0;  // Zera pra looping
           loadingBar.style.width = progress + "%";
         }
       }, 30);
@@ -442,7 +447,7 @@
             const content = part.replace("data: ", "").trim();
             
             if (content === "[DONE]") {
-              clearInterval(interval);
+              if (loaderInterval) clearInterval(loaderInterval);
               loadingBar.style.width = "100%";
               document.getElementById("userInput").value = "";
               saveToHistory(input, threadId);
@@ -458,6 +463,7 @@
                 renderMessages();
                 // Aqui corta o loader/barra sem delay — CENTRO DA QUESTÃO!
                 loader.style.display = "none";
+                if (loaderInterval) clearInterval(loaderInterval);
               }
             }
             
@@ -467,7 +473,7 @@
           }
         }
       } catch (err) {
-        clearInterval(interval);
+        if (loaderInterval) clearInterval(loaderInterval);
         loader.style.display = "none";
         responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
       }
