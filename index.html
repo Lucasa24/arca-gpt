@@ -444,29 +444,20 @@
             if (content === "[DONE]") {
               clearInterval(interval);
               loadingBar.style.width = "100%";
-              
-              // Se por acaso ainda está em estado "invocando", elimine!
-              if (isInvocando && messages[messages.length - 1].content === "Invocando...") {
-                messages[messages.length - 1].content = "";
-                isInvocando = false;
-                renderMessages();
-              }
-            
-              setTimeout(() => {
-                loader.style.display = "none";
-                document.getElementById("userInput").value = "";
-                saveToHistory(input, threadId);
-              }, 250);
+              document.getElementById("userInput").value = "";
+              saveToHistory(input, threadId);
               return;
             }
 
-            // Limpa "Invocando..." no PRIMEIRO chunk real
+            // Ritual: elimina Invocando... e loader JÁ!
             if (isInvocando && content !== "[DONE]") {
               if (messages[messages.length - 1].content === "Invocando...") {
                 messages[messages.length - 1].content = "";
                 isInvocando = false;
-                loadingBar.style.width = "98%"; // feedback visual rápido
+                loadingBar.style.width = "100%";
                 renderMessages();
+                // Aqui corta o loader/barra sem delay — CENTRO DA QUESTÃO!
+                loader.style.display = "none";
               }
             }
             
