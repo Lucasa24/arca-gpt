@@ -436,21 +436,25 @@
             if (!part.startsWith("data: ")) continue;
 
             const content = part.replace("data: ", "").trim();
+            
             if (content === "[DONE]") {
-              clearInterval(interval);
-              loader.style.display = "none";
-              loadingBar.style.width = "100%";
-              
-              // Renderizar histórico completo
-              renderMessages();
-              
-              // Limpar campo de texto após envio
-              document.getElementById("userInput").value = "";
-              
-              // Salvar no histórico após resposta completa
-              saveToHistory(input, threadId);
-              return;
-            }
+  clearInterval(interval);
+  loadingBar.style.width = "100%";
+  
+  // Remove "Invocando..." caso ainda esteja persistindo
+  if (messages[messages.length - 1].content === "Invocando...") {
+    messages[messages.length - 1].content = "";
+    renderMessages();
+  }
+  
+  // Um pequeno delay para garantir transição visual suave e sincrônica
+  setTimeout(() => {
+    loader.style.display = "none";
+    document.getElementById("userInput").value = "";
+    saveToHistory(input, threadId);
+  }, 250); // ajuste se quiser mais tempo de fade
+  return;
+}
 
             // Substitui "Invocando..." pelo streaming real no primeiro chunk
             if (messages[messages.length - 1].content === "Invocando...") {
