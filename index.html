@@ -367,6 +367,7 @@
 
   <script>
     let messages = [];
+    let isInvocando = false;
     
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
@@ -378,6 +379,9 @@
         responseDiv.innerHTML = "⚠️ Nada foi invocado.";
         return;
       }
+
+      // Reset do status INVOCANDO
+      isInvocando = true;
 
       // Adicionar mensagem do usuário e mensagem "Invocando..."
       messages.push({ role: "user", content: input });
@@ -438,31 +442,36 @@
             const content = part.replace("data: ", "").trim();
             
             if (content === "[DONE]") {
-  clearInterval(interval);
-  loadingBar.style.width = "100%";
-  
-  // Remove "Invocando..." caso ainda esteja persistindo
-  if (messages[messages.length - 1].content === "Invocando...") {
-    messages[messages.length - 1].content = "";
-    renderMessages();
-  }
-  
-  // Um pequeno delay para garantir transição visual suave e sincrônica
-  setTimeout(() => {
-    loader.style.display = "none";
-    document.getElementById("userInput").value = "";
-    saveToHistory(input, threadId);
-  }, 250); // ajuste se quiser mais tempo de fade
-  return;
-}
-
-            // Substitui "Invocando..." pelo streaming real no primeiro chunk
-            if (messages[messages.length - 1].content === "Invocando...") {
-              messages[messages.length - 1].content = "";
-            }
-            messages[messages.length - 1].content += content + " ";
+              clearInterval(interval);
+              loadingBar.style.width = "100%";
+              
+              // Se por acaso ainda está em estado "invocando", elimine!
+              if (isInvocando && messages[messages.length - 1].content === "Invocando...") {
+                messages[messages.length - 1].content = "";
+                isInvocando = false;
+                renderMessages();
+              }
             
-            // Renderizar mensagens em tempo real
+              setTimeout(() => {
+                loader.style.display = "none";
+                document.getElementById("userInput").value = "";
+                saveToHistory(input, threadId);
+              }, 250);
+              return;
+            }
+
+            // Limpa "Invocando..." no PRIMEIRO chunk real
+            if (isInvocando && content !== "[DONE]") {
+              if (messages[messages.length - 1].content === "Invocando...") {
+                messages[messages.length - 1].content = "";
+                isInvocando = false;
+                loadingBar.style.width = "98%"; // feedback visual rápido
+                renderMessages();
+              }
+            }
+            
+            // Monta/responde o chunk real
+            messages[messages.length - 1].content += content + " ";
             renderMessages();
           }
         }
