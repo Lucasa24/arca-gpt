@@ -239,7 +239,7 @@
 
     #loadingBar {
       height: 100%;
-      background-color: #04c299;
+      background-color: #b30000;
       width: 0%;
       transition: width 0.3s ease-in-out;
     }
@@ -436,33 +436,21 @@
             if (!part.startsWith("data: ")) continue;
 
             const content = part.replace("data: ", "").trim();
-            
             if (content === "[DONE]") {
               clearInterval(interval);
+              loader.style.display = "none";
               loadingBar.style.width = "100%";
-            
-              // Remove "Invocando..." se ainda estiver
-              if (messages[messages.length-1].content === "Invocando...") {
-                messages[messages.length-1].content = "";
-              }
+              
+              // Renderizar histórico completo
               renderMessages();
-            
-              setTimeout(() => {
-                loader.style.display = "none";
-                document.getElementById("userInput").value = "";
-                saveToHistory(input, threadId);
-              }, 300); // ajuste o valor conforme preferência
+              
+              // Limpar campo de texto após envio
+              document.getElementById("userInput").value = "";
+              
+              // Salvar no histórico após resposta completa
+              saveToHistory(input, threadId);
               return;
             }
-    
-    // Limpa o campo de texto
-    document.getElementById("userInput").value = "";
-    
-    // Salva no histórico após resposta completa
-    saveToHistory(input, threadId);
-  }, 300); // ajuste o valor como achar mais fluido (0.2-0.5s geralmente fica agradável)
-  return;
-}
 
             // Substitui "Invocando..." pelo streaming real no primeiro chunk
             if (messages[messages.length - 1].content === "Invocando...") {
