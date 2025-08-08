@@ -484,13 +484,14 @@
 
             // Ritual: elimina Invocando... e loader JÁ!
             if (isInvocando && content !== "[DONE]") {
-              if (messages[messages.length - 1].content === "Invocando...") {
-                messages[messages.length - 1].content = "";
-                renderMessages();
-                // EXECUTA O RITUAL DE PARADA
-                stopLoaderBar();
-              }
-            }
+  if (messages[messages.length - 1].content === "Invocando...") {
+    messages[messages.length - 1].content = "";
+    renderMessages();   // atualiza o DOM: "Invocando..." removido
+    setTimeout(() => {  // espera o DOM re-renderizar
+      stopLoaderBar();  // AGORA pode parar (barra e "Invocando..." somem juntos)
+    }, 30); // espera 1 ciclo de pintura (ajuste 10-50ms para máxima garantia)
+  }
+}
             
             // Monta/responde o chunk real
             messages[messages.length - 1].content += content + " ";
