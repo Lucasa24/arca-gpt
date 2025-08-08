@@ -391,8 +391,7 @@
         if (progress >= 100) {
           progress = 100;
           loadingBar.style.width = "100%";
-          // Esconde instantâneo ao chegar no final
-          setTimeout(() => { loader.style.display = "none"; }, 120);
+          // NÃO esconde automaticamente - deixa o requestAnimationFrame controlar
           clearInterval(loaderInterval);
         } else {
           loadingBar.style.width = progress + "%";
@@ -476,7 +475,7 @@
             const content = part.replace("data: ", "").trim();
             
             if (content === "[DONE]") {
-              stopLoaderBar();
+              // Remove stopLoaderBar() daqui - deixa apenas o requestAnimationFrame controlar
               document.getElementById("userInput").value = "";
               saveToHistory(input, threadId);
               return;
