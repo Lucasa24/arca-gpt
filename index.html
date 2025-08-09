@@ -411,6 +411,15 @@
     let loaderInterval = null;
     let progress = 0;
     
+    // Função para garantir espaçamento correto no streaming
+    function safeAppend(idx, chunk) {
+      const prev = messages[idx].content || "";
+      if (prev && /[.!?]$/.test(prev) && chunk && !/^\s/.test(chunk)) {
+        chunk = " " + chunk; // injeta espaço se o token veio colado após pontuação
+      }
+      messages[idx].content += chunk;
+    }
+    
     // Barra linear progressiva, nunca para nem oscila, só finaliza em 100% quando "invocando..." some.
     function startLoaderBar() {
       const loader = document.getElementById("loader");
@@ -541,7 +550,7 @@ const content = part.replace(/^data:\s?/, "");
                 });
               } else {
                 // Acumula tokens com fluidez natural
-                messages[idx].content += content;
+                safeAppend(idx, content);
                 
                 // Renderização otimizada: debounce inteligente para performance
                 clearTimeout(window.renderTimeout);
@@ -551,7 +560,7 @@ const content = part.replace(/^data:\s?/, "");
               }
             } else {
               // Streaming normal fora do estado de invocação
-              messages[messages.length - 1].content += content;
+              safeAppend(messages.length - 1, content);
               
               clearTimeout(window.renderTimeout);
               window.renderTimeout = setTimeout(() => {
@@ -589,9 +598,11 @@ const content = part.replace(/^data:\s?/, "");
           
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // não mate espaços de borda
-          if (!content.includes('\n\n')) {
-            content = content.replace(/([.!?])\s+/g, '$1\n\n');
-          }
+          
+          // Garantir espaçamento e quebras corretas
+          content = content
+            .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
+            .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
           
           div.innerHTML = marked.parse(content);
         }
@@ -631,9 +642,11 @@ const content = part.replace(/^data:\s?/, "");
           
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // não mate espaços de borda
-          if (!content.includes('\n\n')) {
-            content = content.replace(/([.!?])\s+/g, '$1\n\n');
-          }
+          
+          // Garantir espaçamento e quebras corretas
+          content = content
+            .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
+            .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
           
           div.innerHTML = marked.parse(content);
         }
