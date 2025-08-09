@@ -612,10 +612,10 @@ const content = part.replace(/^data:\s?/, "");
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // não mate espaços de borda
           
-          // Garantir espaçamento e quebras corretas
-          content = content
-            .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
-            .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
+          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
+          if (!/\n\n/.test(content)) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+          }
           
           const html = marked.parse(content);
 div.innerHTML = DOMPurify.sanitize(html, {
