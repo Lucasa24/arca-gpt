@@ -1,6 +1,12 @@
 const { getThreadMessages, addMessageToThread } = require('./memory.js');
 const { fetch } = require('undici');
 
+// arca.js — fora do handler (executa no cold start da função)
+if (!global.__ARCA_PERSONA_LOGGED__) {
+  console.log('👤 ARCA_PERSONA:', process.env.ARCA_PERSONA || '(unset)');
+  global.__ARCA_PERSONA_LOGGED__ = true;
+}
+
 // 🔐 Verificação de segurança no boot
 console.log('🔑 OPENAI_API_KEY configurada:', !!process.env.OPENAI_API_KEY);
 if (!process.env.OPENAI_API_KEY) {
@@ -9,6 +15,8 @@ if (!process.env.OPENAI_API_KEY) {
 
 async function handler(req, res) {
   try {
+    console.log('[ARCA] threadId=%s persona=%s', req.body?.threadId, process.env.ARCA_PERSONA || '(unset)');
+    
     if (req.method !== "POST") {
       res.statusCode = 405;
       res.setHeader('Content-Type', 'application/json');
