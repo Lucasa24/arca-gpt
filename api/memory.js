@@ -88,9 +88,30 @@ function getThreadMessages(threadId) {
 }
 
 function addMessageToThread(threadId, role, content) {
-  const msgs = getThreadMessages(threadId);
-  msgs.push({ role, content });
-  if (msgs.length > 60) msgs.splice(1, msgs.length - 60);
+  if (!threadMemory.has(threadId)) {
+    threadMemory.set(threadId, getThreadMessages(threadId));
+  }
+  let curr = threadMemory.get(threadId);
+  
+  // garante que curr é um array
+  if (!Array.isArray(curr)) {
+    curr = getThreadMessages(threadId);
+    threadMemory.set(threadId, curr);
+  }
+  
+  // separa systems do resto
+  const systems = curr.filter(m => m.role === 'system');
+  const nonSystems = curr.filter(m => m.role !== 'system');
+  
+  // adiciona a nova
+  nonSystems.push({ role, content });
+  
+  // mantém só as últimas N não-system
+  const MAX_NON_SYSTEM = 56; // 56 + ~4 systems ≈ 60 total
+  const trimmed = nonSystems.slice(-MAX_NON_SYSTEM);
+  
+  // regrava fixando as systems no topo
+  threadMemory.set(threadId, [...systems, ...trimmed]);
 }
 
 function clearThread(id) { threadMemory.delete(id); }
