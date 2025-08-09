@@ -1,5 +1,5 @@
 const { getThreadMessages, addMessageToThread } = require('./memory.js');
-const fetch = require('node-fetch');
+const { fetch } = require('undici');
 
 // 🔐 Verificação de segurança no boot
 console.log('🔑 OPENAI_API_KEY configurada:', !!process.env.OPENAI_API_KEY);
