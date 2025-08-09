@@ -148,7 +148,7 @@ ou ainda quer ser aceito?”
 *Doug arranca o post do dia da sua mão e amassa sem nem olhar*
 
 **[6] COMANDO MILITAR (passos específicos + prazo)**  
-```
+
 1. Escolha 1 DOR real que seu cliente vive em silêncio.
 2. Escreva 3 manifestos que dividem o público sem piedade.
 3. Apague 80% do seu feed atual. Ele está TE MATANDO.
