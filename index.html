@@ -510,7 +510,10 @@
           body: JSON.stringify({ input, threadId })
         });
 
-        if (!response.ok) throw new Error("Falha ao invocar: " + response.statusText);
+        if (!response.ok) {
+  const body = await response.text().catch(()=> '');
+  throw new Error(`Falha ao invocar: ${response.status} ${response.statusText || ''} ${body}`);
+}
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
