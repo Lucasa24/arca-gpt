@@ -562,6 +562,12 @@ const content = part.replace(/^data:\s?/, "");
                   renderMessagesWithLiveMarkdown(true); // true = streaming ativo
                 }, 16); // 60fps para máxima suavidade
               }
+              
+              // 💾 AUTO-SAVE: Salvar progresso durante streaming
+              clearTimeout(window.autoSaveTimeout);
+              window.autoSaveTimeout = setTimeout(() => {
+                saveThreadMessages(threadId);
+              }, 1000); // Salva a cada 1 segundo durante streaming
             } else {
               // Streaming normal fora do estado de invocação
               safeAppend(messages.length - 1, content);
@@ -692,11 +698,55 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }));
       
       localStorage.setItem("chatHistory", JSON.stringify(sanitizedHistory));
+      
+      // 💾 SALVAR MENSAGENS DA SESSÃO ATUAL
+      saveThreadMessages(threadId);
+      
       loadSidebar();
+    }
+
+    // 💾 Salvar mensagens completas no localStorage
+    function saveThreadMessages(threadId) {
+      if (!threadId || messages.length === 0) return;
+      
+      // Filtrar apenas mensagens user/assistant (sem system)
+      const userMessages = messages.filter(msg => msg.role !== "system");
+      
+      // Sanitizar conteúdo antes de salvar
+      const sanitizedMessages = userMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content || ""
+      }));
+      
+      localStorage.setItem(`thread_${threadId}`, JSON.stringify(sanitizedMessages));
+    }
+
+    // 📖 Carregar mensagens do localStorage
+    function loadThreadMessagesFromStorage(threadId) {
+      if (!threadId) return [];
+      
+      try {
+        const stored = localStorage.getItem(`thread_${threadId}`);
+        return stored ? JSON.parse(stored) : [];
+      } catch (err) {
+        console.warn('Erro ao carregar mensagens do localStorage:', err);
+        return [];
+      }
     }
 
     async function loadThreadMessages(threadId) {
       try {
+        // 🔄 PRIORIDADE: Carregar do localStorage primeiro
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        
+        if (localMessages.length > 0) {
+          // Mensagens encontradas no localStorage
+          messages = localMessages;
+          renderMessages();
+          return;
+        }
+        
+        // 🌐 FALLBACK: Tentar carregar do servidor se localStorage vazio
         const res = await fetch("/api/getMessages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -705,10 +755,24 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
         const data = await res.json();
 
-        messages = data.messages;
+        if (data.messages && data.messages.length > 0) {
+          messages = data.messages;
+          // Salvar no localStorage para próximas vezes
+          saveThreadMessages(threadId);
+        } else {
+          messages = [];
+        }
+        
         renderMessages();
       } catch (err) {
-        document.getElementById("response").innerHTML = "⚠️ Falha ao carregar mensagens.";
+        // Se falhar, tentar carregar do localStorage como último recurso
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        if (localMessages.length > 0) {
+          messages = localMessages;
+          renderMessages();
+        } else {
+          document.getElementById("response").innerHTML = "⚠️ Falha ao carregar mensagens.";
+        }
       }
     }
 
@@ -786,6 +850,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
         const updatedHistory = history.filter(session => session.id !== currentThreadId);
         localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+        
+        // 🗑️ LIMPAR MENSAGENS DA SESSÃO RESETADA
+        localStorage.removeItem(`thread_${currentThreadId}`);
       }
       
       // Resetar thread atual
@@ -830,6 +897,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
     // Carregar sidebar ao inicializar
     window.onload = function () {
       loadSidebar();
+      
+      // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
+      const currentThreadId = localStorage.getItem("threadId");
+      if (currentThreadId) {
+        loadThreadMessages(currentThreadId);
+      }
 
       // Se for desktop, garante que o sidebar apareça
       if (window.innerWidth > 768) {
