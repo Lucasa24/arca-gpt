@@ -173,23 +173,22 @@
     #response p {
       margin-bottom: 1rem;
     }
-    
-    /* CORTE FINAL - Estilos para formatação markdown com !important */
-    #response strong, #response b {
+
+    /* Estilos para formatação markdown */
+    strong, b {
       font-weight: bold !important;
-      color: #fff !important;
+      color: #ffffff !important;
     }
-    
-    #response em, #response i {
+
+    em, i {
       font-style: italic !important;
-      color: #f0f0f0 !important;
+      color: #e0e0e0 !important;
     }
-    
-    #response strong em, #response em strong,
-    #response b i, #response i b {
+
+    strong em, b i, em strong, i b {
       font-weight: bold !important;
       font-style: italic !important;
-      color: #fff !important;
+      color: #ffffff !important;
     }
 
     .fixed-footer {
@@ -371,7 +370,6 @@
         <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         <button onclick="sendMessage()">Invocar</button>
         <button onclick="showResetModal()" style="background-color: #666; min-width: 60px; font-size: 0.65rem;">Reset</button>
-        <button onclick="testMarkdownRendering()" style="background-color: #ff6600; min-width: 60px; font-size: 0.65rem;">🔍 Debug</button>
       </div>
 
       <div id="loader" style="display:none;">
@@ -448,7 +446,7 @@
       // Adicionar mensagem do usuário e mensagem "Invocando..."
       messages.push({ role: "user", content: input });
       messages.push({ role: "assistant", content: "Invocando..." });
-      renderMessages(); // já mostra as duas
+      renderMessagesWithLiveMarkdown(); // já mostra as duas
       
       // INICIA O RITUAL DA BARRA
       startLoaderBar();
@@ -494,7 +492,6 @@
             if (!part.startsWith("data: ")) continue;
 
             const content = part.replace("data: ", "").trim();
-            if (!content) continue; // IMPEDIR SÓ ESPAÇOS SEREM ADICIONADOS
             
             if (content === "[DONE]") {
               // Remove stopLoaderBar() daqui - deixa apenas o requestAnimationFrame controlar
@@ -512,7 +509,7 @@
                 renderMessagesWithLiveMarkdown();
                 
                 // Adiciona o primeiro chunk real da resposta
-                messages[idx].content += content;
+                messages[idx].content += content + " ";
                 renderMessagesWithLiveMarkdown();
                 
                 // Espera UM ciclo real de pintura antes de remover a barra
@@ -521,12 +518,12 @@
                 });
               } else {
                 // Demais chunks da resposta
-                messages[idx].content += content;
+                messages[idx].content += content + " ";
                 renderMessagesWithLiveMarkdown();
               }
             } else {
               // Chunk normal quando não está invocando
-              messages[messages.length - 1].content += content;
+              messages[messages.length - 1].content += content + " ";
               renderMessagesWithLiveMarkdown();
             }
           }
@@ -558,11 +555,10 @@
           div.style.backgroundColor = "#1c1c1c";
           div.style.borderLeft = "4px solid #b30000";
           
-          // CORREÇÃO PARA HISTÓRICO: força parágrafos em dados legados sem \n\n
+          // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content.trim();
-          if (!/\n\n/.test(content)) {
-            // Para cada frase que termina em .!? aplica \n\n para virar parágrafo
-            content = content.replace(/([.!?])\s+/g, "$1\n\n");
+          if (!content.includes('\n\n')) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
           
           div.innerHTML = marked.parse(content);
@@ -574,51 +570,6 @@
       responseDiv.scrollTop = responseDiv.scrollHeight;
     }
 
-    // 🚨 TESTE DIAGNÓSTICO BRUTAL - Função para debugar formatação
-    function testMarkdownRendering() {
-      console.log("🔍 INICIANDO DIAGNÓSTICO BRUTAL DA FORMATAÇÃO");
-      
-      const responseDiv = document.getElementById("response");
-      
-      // TESTE 1: HTML direto
-      console.log("TESTE 1: HTML direto");
-      responseDiv.innerHTML = '<div style="padding: 1rem; background: #1c1c1c; border-left: 4px solid #b30000;"><strong>Negrito</strong> <em>Itálico</em> <strong><em>Ambos</em></strong> normal</div>';
-      
-      setTimeout(() => {
-        // TESTE 2: marked.parse()
-        console.log("TESTE 2: marked.parse()");
-        const testMarkdown = "**Negrito** *Itálico* ***Ambos*** normal";
-        const parsedHTML = marked.parse(testMarkdown);
-        console.log("Markdown original:", testMarkdown);
-        console.log("HTML parseado:", parsedHTML);
-        
-        responseDiv.innerHTML = '<div style="padding: 1rem; background: #1c1c1c; border-left: 4px solid #b30000;">' + parsedHTML + '</div>';
-        
-        // TESTE 3: Inspecionar DOM
-        setTimeout(() => {
-          console.log("TESTE 3: DOM final");
-          const finalHTML = responseDiv.innerHTML;
-          console.log("HTML final no DOM:", finalHTML);
-          
-          // Verificar se as tags existem
-          const hasStrong = finalHTML.includes('<strong>');
-          const hasEm = finalHTML.includes('<em>');
-          console.log("Contém <strong>:", hasStrong);
-          console.log("Contém <em>:", hasEm);
-          
-          if (!hasStrong || !hasEm) {
-            console.error("🚨 PROBLEMA IDENTIFICADO: Tags de formatação foram removidas!");
-          } else {
-            console.log("✅ Tags presentes - problema pode ser no CSS");
-          }
-        }, 1000);
-      }, 2000);
-    }
-    
-    // Expor função globalmente para teste manual
-    window.testMarkdownRendering = testMarkdownRendering;
-
-    // FUNÇÃO ESPECIAL: Renderiza mensagens com markdown em tempo real durante streaming
     function renderMessagesWithLiveMarkdown() {
       const responseDiv = document.getElementById("response");
       responseDiv.innerHTML = "";
@@ -640,23 +591,13 @@
           div.style.backgroundColor = "#1c1c1c";
           div.style.borderLeft = "4px solid #b30000";
           
-          // PROCESSA MARKDOWN EM TEMPO REAL - mesmo com texto incompleto
+          // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content.trim();
-          if (content) {
-            // CORREÇÃO PARA HISTÓRICO: força parágrafos em dados legados sem \n\n
-            if (!/\n\n/.test(content)) {
-              // Para cada frase que termina em .!? aplica \n\n para virar parágrafo
-              content = content.replace(/([.!?])\s+/g, "$1\n\n");
-            }
-            
-            try {
-              // Força quebras de linha e processa markdown parcial
-              div.innerHTML = marked.parse(content);
-            } catch (e) {
-              // Se markdown falhar (texto incompleto), usa texto simples com quebras
-              div.innerHTML = content.replace(/\n/g, '<br>');
-            }
+          if (!content.includes('\n\n')) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
+          
+          div.innerHTML = marked.parse(content);
         }
         
         responseDiv.appendChild(div);
