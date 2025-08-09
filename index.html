@@ -371,6 +371,7 @@
         <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         <button onclick="sendMessage()">Invocar</button>
         <button onclick="showResetModal()" style="background-color: #666; min-width: 60px; font-size: 0.65rem;">Reset</button>
+        <button onclick="testMarkdownRendering()" style="background-color: #ff6600; min-width: 60px; font-size: 0.65rem;">🔍 Debug</button>
       </div>
 
       <div id="loader" style="display:none;">
@@ -572,6 +573,50 @@
 
       responseDiv.scrollTop = responseDiv.scrollHeight;
     }
+
+    // 🚨 TESTE DIAGNÓSTICO BRUTAL - Função para debugar formatação
+    function testMarkdownRendering() {
+      console.log("🔍 INICIANDO DIAGNÓSTICO BRUTAL DA FORMATAÇÃO");
+      
+      const responseDiv = document.getElementById("response");
+      
+      // TESTE 1: HTML direto
+      console.log("TESTE 1: HTML direto");
+      responseDiv.innerHTML = '<div style="padding: 1rem; background: #1c1c1c; border-left: 4px solid #b30000;"><strong>Negrito</strong> <em>Itálico</em> <strong><em>Ambos</em></strong> normal</div>';
+      
+      setTimeout(() => {
+        // TESTE 2: marked.parse()
+        console.log("TESTE 2: marked.parse()");
+        const testMarkdown = "**Negrito** *Itálico* ***Ambos*** normal";
+        const parsedHTML = marked.parse(testMarkdown);
+        console.log("Markdown original:", testMarkdown);
+        console.log("HTML parseado:", parsedHTML);
+        
+        responseDiv.innerHTML = '<div style="padding: 1rem; background: #1c1c1c; border-left: 4px solid #b30000;">' + parsedHTML + '</div>';
+        
+        // TESTE 3: Inspecionar DOM
+        setTimeout(() => {
+          console.log("TESTE 3: DOM final");
+          const finalHTML = responseDiv.innerHTML;
+          console.log("HTML final no DOM:", finalHTML);
+          
+          // Verificar se as tags existem
+          const hasStrong = finalHTML.includes('<strong>');
+          const hasEm = finalHTML.includes('<em>');
+          console.log("Contém <strong>:", hasStrong);
+          console.log("Contém <em>:", hasEm);
+          
+          if (!hasStrong || !hasEm) {
+            console.error("🚨 PROBLEMA IDENTIFICADO: Tags de formatação foram removidas!");
+          } else {
+            console.log("✅ Tags presentes - problema pode ser no CSS");
+          }
+        }, 1000);
+      }, 2000);
+    }
+    
+    // Expor função globalmente para teste manual
+    window.testMarkdownRendering = testMarkdownRendering;
 
     // FUNÇÃO ESPECIAL: Renderiza mensagens com markdown em tempo real durante streaming
     function renderMessagesWithLiveMarkdown() {
