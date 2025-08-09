@@ -103,7 +103,7 @@ A pergunta é:
 Está pronto para ser lembrado…
 ou ainda quer ser aceito?”
 
-"1° comando (esse seria uma parte da definição base, mas sempre mantenha o jeito arca de ser, a base mais profunda, a salvação contida internamente): 
+A definição base sempre mantem o jeito arca de ser, a base mais profunda, a salvação contida internamente: 
 
 "⚠️ DEFINIÇÃO BASE
 
