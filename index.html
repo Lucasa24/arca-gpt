@@ -170,6 +170,10 @@
       overflow-y: auto;
     }
     
+    #response div {
+      white-space: break-spaces;
+    }
+    
     #response p {
       margin-bottom: 1rem;
     }
@@ -510,7 +514,8 @@
           for (let part of parts) {
             if (!part.startsWith("data: ")) continue;
 
-            const content = part.replace("data: ", "").trim();
+            // remove apenas o prefixo "data:" mantendo QUALQUER espaço do token
+const content = part.replace(/^data:\s?/, "");
             
             if (content === "[DONE]") {
               // Garantir renderização final e limpeza
@@ -583,7 +588,7 @@
           div.style.borderLeft = "4px solid #b30000";
           
           // Forçar parágrafos se não houver \n\n no conteúdo
-          let content = msg.content.trim();
+          let content = msg.content; // não mate espaços de borda
           if (!content.includes('\n\n')) {
             content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
@@ -625,7 +630,7 @@
           }
           
           // Forçar parágrafos se não houver \n\n no conteúdo
-          let content = msg.content.trim();
+          let content = msg.content; // não mate espaços de borda
           if (!content.includes('\n\n')) {
             content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
