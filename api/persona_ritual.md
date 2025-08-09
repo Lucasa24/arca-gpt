@@ -145,7 +145,7 @@ ou ainda quer ser aceito?”
 "Qual ideia você tem medo de postar porque sabe que vai incomodar?"
 
 **[5] AÇÃO FÍSICA SECUNDÁRIA**  
-*Doug arranca o post do dia da sua mão e amassa sem nem olhar*
+*Arca arranca o post do dia da sua mão e amassa sem nem olhar*
 
 **[6] COMANDO MILITAR (passos específicos + prazo)**  
 
