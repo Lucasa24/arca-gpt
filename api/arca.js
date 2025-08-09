@@ -67,11 +67,11 @@ async function handler(req, res) {
         model: "gpt-4o",
         messages,
         stream: true,
-        temperature: 1.10,
+        temperature: 0.5,
         max_tokens: 4000,
-        top_p: 1.0,
-        frequency_penalty: 0.1,
-        presence_penalty: 0.3,
+        top_p: 0.9,
+        frequency_penalty: 0.2,
+        presence_penalty: 0.0,
         stream_options: { include_usage: false }
       })
     });
