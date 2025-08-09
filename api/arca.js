@@ -53,6 +53,9 @@ async function handler(req, res) {
 
     addMessageToThread(threadId, "user", userInput);
     const messages = getThreadMessages(threadId);
+    
+    // Log das mensagens de sistema para verificação
+    console.log('[ARCA][systems]', messages.filter(m => m.role==='system').map(m => m.content.slice(0,60)));
 
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
