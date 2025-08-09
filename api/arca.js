@@ -70,8 +70,8 @@ async function handler(req, res) {
         temperature: 1.10,
         max_tokens: 4000,
         top_p: 1.0,
-        frequency_penalty: 0.4,
-        presence_penalty: 0.7,
+        frequency_penalty: 0.1,
+        presence_penalty: 0.3,
         stream_options: { include_usage: false }
       })
     });
