@@ -13,9 +13,9 @@ A Arca agora possui **streaming de máxima inteligência** seguindo as melhores 
 {
   model: "gpt-4o",
   stream: true,
-  temperature: 0.8,        // ↑ Mais criatividade ritual
+  temperature: 1.10,        // ↑ Mais criatividade ritual
   max_tokens: 4000,        // ↑ Respostas mais profundas
-  top_p: 0.95,            // ↑ Diversidade controlada
+  top_p: 1.0,            // ↑ Diversidade controlada
   frequency_penalty: 0.1,  // ↑ Evita repetições
   presence_penalty: 0.1,   // ↑ Explora novos temas
   stream_options: {
