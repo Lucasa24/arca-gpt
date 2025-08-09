@@ -1,38 +1,52 @@
 const { getThreadMessages, addMessageToThread } = require('./memory.js');
 const fetch = require('node-fetch');
 
+// 🔐 Verificação de segurança no boot
+console.log('🔑 OPENAI_API_KEY configurada:', !!process.env.OPENAI_API_KEY);
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('⚠️ OPENAI_API_KEY não encontrada! Configure no .env ou Vercel.');
+}
+
 async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
-  // Configurar cabeçalhos para streaming
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-
-  const userInput = req.body.input;
-  const threadId = req.body.threadId;
-
-  if (!userInput || userInput.trim() === "") {
-    return res.status(400).json({ error: "Nada foi invocado." });
-  }
-
-  if (!threadId) {
-    return res.status(400).json({ error: "threadId ausente" });
-  }
-
-  const api_key = process.env.OPENAI_API_KEY;
-
   try {
-    // Adicionar mensagem do usuário à memória da thread
+    if (req.method !== "POST") {
+      res.statusCode = 405;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: "Método não permitido" }));
+    }
+
+    const userInput = req.body?.input;
+    const threadId = req.body?.threadId;
+    const api_key = process.env.OPENAI_API_KEY;
+
+    if (!userInput || !userInput.trim()) {
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: "Nada foi invocado." }));
+    }
+    if (!threadId) {
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: "threadId ausente" }));
+    }
+    if (!api_key) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: "OPENAI_API_KEY ausente" }));
+    }
+
+    // >>> A PARTIR DAQUI é SSE <<<
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+
+    // (opcional) ping keepalive
+    const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
+
     addMessageToThread(threadId, "user", userInput);
-    
-    // Obter histórico completo da conversa
     const messages = getThreadMessages(threadId);
 
-    // Fazer chamada para chat/completions com streaming verdadeiro
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${api_key}`,
@@ -40,25 +54,26 @@ async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        messages: messages,
+        messages,
         stream: true,
         temperature: 0.8,
         max_tokens: 4000,
         top_p: 0.95,
         frequency_penalty: 0.1,
         presence_penalty: 0.1,
-        stream_options: {
-          include_usage: false
-        }
+        stream_options: { include_usage: false }
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+    if (!oaRes.ok) {
+      clearInterval(keepalive);
+      res.statusCode = oaRes.status;
+      res.write(`data: ⚠️ OpenAI: ${oaRes.status} ${oaRes.statusText}\n\n`);
+      res.write(`data: [DONE]\n\n`);
+      return res.end();
     }
 
-    // Processar streaming em tempo real
-    const reader = response.body.getReader();
+    const reader = oaRes.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
     let assistantResponse = "";
@@ -72,38 +87,39 @@ async function handler(req, res) {
       buffer = lines.pop() || "";
 
       for (const line of lines) {
-        if (line.trim().startsWith("data: ")) {
-          const json = line.replace("data: ", "").trim();
-          
-          if (json === "[DONE]") {
-            // Salvar resposta completa na memória
-            addMessageToThread(threadId, "assistant", assistantResponse);
-            
-            res.write(`data: [DONE]\n\n`);
-            res.end();
-            return;
-          }
-          
-          try {
-            const parsed = JSON.parse(json);
-            const token = parsed.choices?.[0]?.delta?.content || "";
-            
-            if (token) {
-              assistantResponse += token;
-              res.write(`data: ${token}\n\n`);
-            }
-          } catch {
-            // Ignorar linhas de keepalive ou malformadas
-          }
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (payload === "[DONE]") {
+          addMessageToThread(threadId, "assistant", assistantResponse);
+          res.write(`data: [DONE]\n\n`);
+          clearInterval(keepalive);
+          return res.end();
         }
+        try {
+          const parsed = JSON.parse(payload);
+          const chunk = parsed.choices?.[0]?.delta?.content || "";
+          if (chunk) {
+            assistantResponse += chunk;
+            res.write(`data: ${chunk}\n\n`);
+          }
+        } catch { /* ignora pings/linhas quebradas */ }
       }
     }
-    
-  } catch (err) {
-    console.error("ERRO:", err);
-    res.write(`data: ⚠️ A Arca silenciou: ${err.message}\n\n`);
+
+    clearInterval(keepalive);
     res.write(`data: [DONE]\n\n`);
     res.end();
+
+  } catch (err) {
+    try {
+      res.write(`data: ⚠️ A Arca silenciou: ${err.message}\n\n`);
+      res.write(`data: [DONE]\n\n`);
+      res.end();
+    } catch {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: `Falha ao invocar: ${err.message}` }));
+    }
   }
 }
 
