@@ -654,7 +654,14 @@
         });
       }
       
-      localStorage.setItem("chatHistory", JSON.stringify(history));
+      // 🔐 PATCH 3: Sanitização antes de salvar
+      const sanitizedHistory = history.map(session => ({
+        id: session.id,
+        title: session.title,
+        timestamp: session.timestamp
+      }));
+      
+      localStorage.setItem("chatHistory", JSON.stringify(sanitizedHistory));
       loadSidebar();
     }
 
