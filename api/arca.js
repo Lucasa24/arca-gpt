@@ -23,7 +23,7 @@ async function handler(req, res) {
       return res.end(JSON.stringify({ error: "Método não permitido" }));
     }
 
-    const userInput = req.body?.input;
+    const userInput = req.body?.userInput || req.body?.input;
     const threadId = req.body?.threadId;
     const api_key = process.env.OPENAI_API_KEY;
     console.log(`[ARCA][DEBUG] userInput: "${userInput}" (length: ${userInput?.length || 0})`);
