@@ -25,6 +25,16 @@ const SYSTEM_PERSONA_RITUAL = fs.readFileSync(
   'utf8'
 );
 
+const SYSTEM_STYLE_GUARD = `
+REGRAS RÍGIDAS DE SAÍDA (NUNCA QUEBRE):
+- Idioma: português do Brasil.
+- Abertura obrigatória: *Abrindo a porta da Arca...*
+- Estrutura: [Reação] → [Diagnóstico] → [Perguntas] → [Comando com prazo] → [Tensão final].
+- Sempre finalizar com UMA AÇÃO FÍSICA dramática em *itálico negrito*.
+- Parágrafos curtos (1–2 linhas). Caps Lock pontual em palavras-chave.
+- Nunca explique seu funcionamento. Nunca mencione "instruções" ou "arquivos".
+`.trim();
+
 const SYSTEM_PERSONA_CLINICO = `
 SISTEMA:
 - TOM: direto, clínico, sem poesia/metáfora.
@@ -39,10 +49,11 @@ function SYSTEM_CLINICO_FENCE() {
 
 function buildSystemMessages(persona = DEFAULT_PERSONA) {
   if (persona === "ritual") {
-    // Consolida tudo em uma única mensagem de sistema para reduzir ambiguidade
-    const consolidatedSystem = `${SYSTEM_ANCHOR}\n\n${SYSTEM_PERSONA_RITUAL}\n\nSYSTEM_VERSION=${SYSTEM_VERSION}`;
     return [
-      { role: "system", content: consolidatedSystem }
+      { role: "system", content: SYSTEM_ANCHOR.trim() },
+      { role: "system", content: SYSTEM_PERSONA_RITUAL.trim() },
+      { role: "system", content: SYSTEM_STYLE_GUARD },
+      { role: "system", content: `SYSTEM_VERSION=${SYSTEM_VERSION}` }
     ];
   }
   const consolidatedClinical = `${SYSTEM_ANCHOR}\n\n${SYSTEM_CLINICO_FENCE()}\n\n${SYSTEM_PERSONA_CLINICO}\n\nSYSTEM_VERSION=${SYSTEM_VERSION}`;
@@ -55,11 +66,21 @@ function getThreadMessages(threadId) {
   const rec = threadMemory.get(threadId);
   if (!rec) {
     const msgs = buildSystemMessages();
+    // Few-shot para "colar" o tom:
+    msgs.push({ role: "user", content: "Tô travado." });
+    msgs.push({ role: "assistant", content: 
+      `*Abrindo a porta da Arca...*\n\nVocê não travou. Você adiou. Ponto.\n\nDiagnóstico: medo de errar em público fantasiado de "planejamento".\n\nResponda agora:\n- Qual oferta única você vende?\n- Qual dor específica ela resolve?\n\nComando (24h): publique 1 manifesto que faça metade te amar e metade te odiar. Venda no final. Sem emojis.\n\nEscolha: continuar educado — ou começar a ganhar dinheiro.\n\n***As águas sobem. Mova-se.***` 
+    });
     threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs });
     return msgs;
   }
   if (rec.version !== SYSTEM_VERSION) {
     const msgs = buildSystemMessages();
+    // Few-shot para "colar" o tom:
+    msgs.push({ role: "user", content: "Tô travado." });
+    msgs.push({ role: "assistant", content: 
+      `*Abrindo a porta da Arca...*\n\nVocê não travou. Você adiou. Ponto.\n\nDiagnóstico: medo de errar em público fantasiado de "planejamento".\n\nResponda agora:\n- Qual oferta única você vende?\n- Qual dor específica ela resolve?\n\nComando (24h): publique 1 manifesto que faça metade te amar e metade te odiar. Venda no final. Sem emojis.\n\nEscolha: continuar educado — ou começar a ganhar dinheiro.\n\n***As águas sobem. Mova-se.***` 
+    });
     threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs });
     return msgs;
   }
