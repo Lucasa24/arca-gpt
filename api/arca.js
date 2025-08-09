@@ -26,6 +26,7 @@ async function handler(req, res) {
     const userInput = req.body?.input;
     const threadId = req.body?.threadId;
     const api_key = process.env.OPENAI_API_KEY;
+    console.log(`[ARCA][DEBUG] userInput: "${userInput}" (length: ${userInput?.length || 0})`);
 
     if (!userInput || !userInput.trim()) {
       res.statusCode = 400;
@@ -55,7 +56,11 @@ async function handler(req, res) {
     const messages = getThreadMessages(threadId);
     
     // Log das mensagens de sistema para verificação
-    console.log('[ARCA][systems]', messages.filter(m => m.role==='system').map(m => m.content.slice(0,60)));
+    const systemMessages = messages.filter(m => m.role==='system');
+    console.log('[ARCA][systems] Total:', systemMessages.length);
+    systemMessages.forEach((msg, i) => {
+      console.log(`[ARCA][system-${i+1}]`, msg.content.slice(0,80) + '...');
+    });
 
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
