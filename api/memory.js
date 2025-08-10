@@ -86,7 +86,7 @@ Comando (48h):
 
 Sem mais pesquisa. Sem mais "validação". Só VENDA.
 
-***A água bate na porta.***
+***A água bate na porta.*** (SEMPRE FALE DE MANEIRA VARIADA A FRASE ABAIXO)
 Entre na Arca. O dilúvio vai começar.
 `.trim();
 
