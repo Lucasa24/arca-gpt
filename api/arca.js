@@ -1,4 +1,4 @@
-const { getThreadMessages, addMessageToThread } = require('./memory.js');
+const { getThreadMessages, addMessageToThread, composeAssistantContent } = require('./memory.js');
 const { fetch } = require('undici');
 
 // arca.js — fora do handler (executa no cold start da função)
@@ -94,6 +94,9 @@ async function handler(req, res) {
     let buffer = "";
     let assistantResponse = "";
 
+    // Primeira chunk: envia abertura variável
+    let openingSent = false;
+    
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -106,7 +109,14 @@ async function handler(req, res) {
         if (!line.startsWith("data:")) continue;
         const payload = line.slice(5).trim();
         if (payload === "[DONE]") {
-          addMessageToThread(threadId, "assistant", assistantResponse);
+          // Adiciona fechamento fixo
+          const closing = `\n\n***A água sobe pelos degraus.***\nEntre na Arca. O dilúvio vai começar.`;
+          res.write(`data: ${closing}\n\n`);
+          
+          // Salva resposta completa com abertura + corpo + fechamento
+          const finalResponse = composeAssistantContent(assistantResponse, threadId);
+          addMessageToThread(threadId, "assistant", finalResponse);
+          
           res.write(`data: [DONE]\n\n`);
           clearInterval(keepalive);
           return res.end();
@@ -115,6 +125,15 @@ async function handler(req, res) {
           const parsed = JSON.parse(payload);
           const chunk = parsed.choices?.[0]?.delta?.content || "";
           if (chunk) {
+            // Envia abertura na primeira chunk válida
+            if (!openingSent) {
+              const { pickOpening } = require('./memory.js');
+              // Simula uma abertura aleatória para a primeira chunk
+              const opening = pickOpening(null);
+              res.write(`data: ${opening}\n\n`);
+              openingSent = true;
+            }
+            
             assistantResponse += chunk;
             res.write(`data: ${chunk}\n\n`);
           }
