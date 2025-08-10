@@ -109,9 +109,9 @@ const ABERTURAS_VARIAVEIS = [
   "*O som de madeira quebrando ecoa na sala.*",
   "*A Arca joga seu plano antigo no fogo.*",
   "*A sala treme quando a Arca pisa forte no chão.*",
-  "*A água lambe o batente. A Arca olha sem piscar.*",
+  "*A água lambe o batente, A Arca olha sem piscar.*",
   "*A Arca varre os relatórios para o chão com um só gesto.*",
-  "*O silêncio pesa. A Arca inclina a cabeça, desapontada.*"
+  "*O silêncio pesa, A Arca inclina a cabeça, desapontada.*"
 ];
 
 function pickOpening(lastOpening) {
