@@ -1,4 +1,4 @@
-const { getThreadMessages, addMessageToThread, composeAssistantContent } = require('./memory.js');
+const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('./memory.js');
 const { fetch } = require('undici');
 
 // arca.js — fora do handler (executa no cold start da função)
@@ -109,8 +109,8 @@ async function handler(req, res) {
         if (!line.startsWith("data:")) continue;
         const payload = line.slice(5).trim();
         if (payload === "[DONE]") {
-          // Adiciona fechamento fixo
-          const closing = `\n\n***A água sobe pelos degraus.***\nEntre na Arca. O dilúvio vai começar.`;
+          // Adiciona fechamento variável
+          const closing = `\n\n${generateClosing()}`;
           res.write(`data: ${closing}\n\n`);
           
           // Salva resposta completa com abertura + corpo + fechamento
