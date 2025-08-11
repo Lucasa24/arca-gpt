@@ -23,12 +23,18 @@
     }
 
     #mainContent {
+      display: grid;
       transition: margin-left 0.3s ease;
       margin-left: 0;
       padding: 40px 1rem 300px;
       max-width: 700px;
       width: 100%;
       position: relative;
+    }
+
+    #mainContent .invoc {
+      justify-self: end;
+      margin: 0;
     }
 
     #chatSidebar {
@@ -385,7 +391,7 @@
 
   <main id="mainContent">
     <h1>A Arca - Ritual de Travessia 🛥️🌊</h1>
-    <p>Digite sua invocação abaixo e sinta a resposta da Arca:</p>
+    <p class="invoc">Digite sua invocação abaixo e sinta a resposta da Arca:</p>
     <div id="response"></div>
 
     <div class="fixed-footer">
