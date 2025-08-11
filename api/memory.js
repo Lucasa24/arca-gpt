@@ -176,46 +176,24 @@ function addMessageToThread(threadId, role, content) {
   threadMemory.set(threadId, record);
 }
 
-// === FECHAMENTOS VARIÁVEIS ===
-const VOCATIVOS = ["Navegante", "Navegador", "Marujo", "Viajante"];
+// ===== FECHAMENTOS COM VARIEDADE ILIMITADA =====
+const { createConsClosing } = require('./consClosingFactory');
 
-const CLOSING_VARIANTS = [
-  "***A água sobe pelos degraus.***\nEntre na Arca. O dilúvio vai começar.",
-  "***A madeira geme sob o peso do céu.***\nÚltimo chamado, {vocativo}: embarque ou vire memória.",
-  "***O vento fecha as janelas.***\nDecida: ser salvo ou ser aceito.",
-  "***Relâmpagos partem o silêncio.***\nO mapa acabou. Só existe travessia.",
-  "***O casco treme.***\nDe joelhos ou de pé — escolha agora.",
-  "***Sinos soam sob água escura.***\nSuba. Sem plateia, sem perdão.",
-  "***As correntes estalam.***\nVem, {vocativo}. O portão não espera.",
-  "***Os degraus pingam pressa.***\nVocê entra ou vira mar.",
-  "***A chuva risca o convés.***\nQuem hesita, afunda bonito.",
-  "***O mar já está na altura dos olhos.***\nDiga: Estou na Arca, construa o ritual.",
-  "***Silêncio de catedral afogada.***\nQuem chega, vive. Quem explica, some.",
-  "***O apito corta o nevoeiro.***\nPortas fechando em 3… 2… 1.",
-  "***Madeira sagrada pede o seu peso.***\nSuba, {vocativo}. O julgamento já começou.",
-  "***Os pregos cantam.***\nSem garantias. Só travessia.",
-  "***As tábuas rangem seu nome.***\nSe é seu, sobe. Se é máscara, fica."
-];
+// Instância global do gerador de fechamentos
+const closingGenerator = createConsClosing({
+  historySize: 32,
+  vocativos: ["Navegante", "Navegador", "Marujo", "Viajante"]
+});
 
-// Util de preenchimento de template
-const fill = (tpl, vars) => 
-  tpl.replace(/\{(\w+)\}/g, (_, k) => (vars && vars[k]) ?? "");
+// Função para gerar fechamento
+function generateClosing(vocativo = null) {
+  return closingGenerator.generate({ vocativo });
+}
 
-// Gerador de fechamento com anti-repetição
-const createClosingGenerator = () => {
-  let lastIndex = -1;
-  return ({ vocativo } = {}) => {
-    const name = vocativo || VOCATIVOS[Math.floor(Math.random() * VOCATIVOS.length)];
-    let i;
-    do { 
-      i = Math.floor(Math.random() * CLOSING_VARIANTS.length); 
-    } while (i === lastIndex && CLOSING_VARIANTS.length > 1);
-    lastIndex = i;
-    return fill(CLOSING_VARIANTS[i], { vocativo: name });
-  };
-};
-
-const generateClosing = createClosingGenerator();
+// API para expandir vocabulário dinamicamente
+function expandClosingVocabulary(patch) {
+  closingGenerator.register(patch);
+}
 
 // === COMPOSIÇÃO DE RESPOSTA COM ABERTURA E FECHAMENTO VARIÁVEIS ===
 function composeAssistantContent(coreBody, threadId) {
@@ -241,5 +219,6 @@ module.exports = {
   getAllThreads,
   composeAssistantContent,
   pickOpening,
-  generateClosing 
+  generateClosing,
+  expandClosingVocabulary 
 };
