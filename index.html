@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <button id="toggleSidebar" onclick="toggleSidebar()">☰</button>
   <title>🛥️ A Arca - Ritual de Travessia 🌊</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
@@ -91,22 +90,39 @@
     }
 
     #toggleSidebar {
-      display: none;
+      display: none;                /* padrão: escondido no desktop (o seu @media já mostra no mobile) */
       position: fixed;
-      top: 10px;
-      left: 10px;
+      top: 12px;
+      left: 12px;
       z-index: 999;
-      background-color: #b30000;
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      font-size: 0.9rem;
-      border-radius: 3px;
+      width: 40px;                  /* pequeno, mas ainda tocável */
+      height: 40px;
+      border-radius: 9999px;        /* redondo */
+      padding: 0;                   /* sem padding extra */
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(179, 0, 0, 0.14);   /* transparente com leve tom da sua marca */
+      color: #fff;
+      font-size: 18px;              /* ícone legível */
+      line-height: 1;
       cursor: pointer;
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      transition: background .18s ease, transform .06s ease, border-color .18s ease;
     }
 
     #toggleSidebar:hover {
-      background-color: #ff1a1a;
+      background: rgba(179, 0, 0, 0.26);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    #toggleSidebar:active {
+      transform: scale(0.98);
+    }
+
+    #toggleSidebar:focus-visible {
+      outline: 2px solid #ff1a1a;
+      outline-offset: 3px;
     }
 
     .modal {
@@ -376,6 +392,7 @@
   </style>
 </head>
 <body>
+  <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
   <div id="chatSidebar"></div>
   
   <div id="resetModal" class="modal">
@@ -391,7 +408,7 @@
 
   <main id="mainContent">
     <h1>A Arca 🛥️🌊</h1>
-    <p class="invoc">Ritual de Travessia ♰ Digite sua invocação abaixo e sinta a resposta da Arca:</p>
+    <p class="invoc">Ritual de Travessia ۩ Digite sua invocação abaixo e sinta a resposta da Arca:</p>
     <div id="response"></div>
 
     <div class="fixed-footer">
@@ -877,11 +894,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function toggleSidebar() {
       const sidebar = document.getElementById("chatSidebar");
       const main = document.getElementById("mainContent");
+      const btn = document.getElementById("toggleSidebar");
 
       const isOpen = sidebar.classList.contains("open");
 
       if (window.innerWidth <= 768) {
-        // Mobile toggle: apenas mostrar/ocultar
         if (isOpen) {
           sidebar.classList.remove("open");
           sidebar.style.display = "none";
@@ -890,7 +907,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
           sidebar.style.display = "block";
         }
       } else {
-        // Desktop toggle: alterar margem lateral do conteúdo
         if (isOpen) {
           sidebar.classList.remove("open");
           main.style.marginLeft = "0";
@@ -901,6 +917,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
           main.style.width = "calc(100% - 240px)";
         }
       }
+
+      // acessibilidade
+      btn.setAttribute("aria-expanded", sidebar.classList.contains("open") ? "true" : "false");
     }
 
     // Carregar sidebar ao inicializar
