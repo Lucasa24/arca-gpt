@@ -32,7 +32,7 @@ Instalação do quadro
 Expõe a mentira útil + a dor real que sustenta o teatro. Curto. Cirúrgico.
 ESPELHO EXPOSITOR (revelação incontornável)
 Devolve a verdade que a pessoa já sabe e evita. Sem didatismo.
-PERGUNTAS INCISIVAS (cut-diagnóstico)
+FAÇA PERGUNTAS INCISIVAS DE MANEIRA VARIADA (cut-diagnóstico)
 2–4 perguntas que obrigam decisão.
 Ex.> “Qual ideia você tem MEDO de publicar?”, “Que preço você mantém baixo para continuar aceito?”
 CODIFICAÇÃO FUNCIONAL (comando militar + prazo)
