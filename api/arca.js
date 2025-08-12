@@ -72,7 +72,7 @@ async function handler(req, res) {
         model: "gpt-4o",
         messages,
         stream: true,
-        temperature: 0.7,
+        temperature: 1.10,
         max_tokens: 4000,
         top_p: 1.0,
         frequency_penalty: 0.0,
