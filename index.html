@@ -734,10 +734,13 @@ const content = part.replace(/^data:\s?/, "");
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // não mate espaços de borda
           
-          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
-          if (!/\n\n/.test(content)) {
-            content = content.replace(/([.!?])\s+/g, '$1\n\n');
-          }
+          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
+const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+if (!looksLikeCodeOrHeadings) {
+  content = content
+    .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ')
+    .replace(/([.!?])\s+/g, '$1\n\n');
+}
           
           const html = marked.parse(content);
 div.innerHTML = DOMPurify.sanitize(html, {
