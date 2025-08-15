@@ -337,29 +337,28 @@
       margin: 1.25rem 0;
     }
 
-    /* Cada mensagem agora reserva espaço p/ a toolbar */
+    /* --- Toolbar ABAIXO da mensagem --- */
     #response .msg {
       position: relative;
-      padding-right: 64px;            /* evita sobrepor o texto */
+      padding-right: 0 !important;              /* não reserva espaço lateral */
     }
 
-    /* Toolbar no topo-direito */
     #response .msg .msg-toolbar {
-      position: absolute;
-      top: 6px;
-      right: 6px;
+      position: static !important;              /* deixa de ser absoluta */
+      top: auto;                                /* por garantia */
+      right: auto;                              /* por garantia */
       display: flex;
-      gap: 6px;
-      opacity: 0;
-      transition: opacity .15s ease;
-      z-index: 2;
+      justify-content: flex-end;                /* alinha à direita */
+      gap: 8px;
+      margin-top: 8px;                          /* separa do texto */
+      opacity: 1 !important;                    /* sempre visível (bom para mobile) */
+      z-index: auto;
     }
-    #response .msg:hover .msg-toolbar { opacity: 1; }
 
-    /* Botões em formato de ícone, menores */
+    /* Ícones pequenos e clicáveis */
     #response .msg .msg-btn.icon {
-      width: 24px;                    /* menor */
-      height: 24px;
+      width: 22px;
+      height: 22px;
       padding: 0;
       display: grid;
       place-items: center;
@@ -369,9 +368,9 @@
       border: 1px solid rgba(255,255,255,0.12);
     }
     #response .msg .msg-btn.icon:hover { background: rgba(255,255,255,0.12); }
-    #response .msg .msg-btn.icon svg { width: 14px; height: 14px; fill: currentColor; }
+    #response .msg .msg-btn.icon svg { width: 13px; height: 13px; fill: currentColor; }
 
-    /* feedback visual (ok / erro) */
+    /* feedback ok/erro (mantém o teu visual) */
     #response .msg .msg-btn.icon.ok {
       color: #4ecdc4; border-color: rgba(78,205,196,0.5); background: rgba(78,205,196,0.12);
     }
@@ -382,12 +381,11 @@
     /* Acessibilidade */
     #response .msg .msg-btn:focus-visible { outline: 2px solid #4ecdc4; outline-offset: 2px; }
 
-    /* Mobile: ainda menor e menos espaço reservado */
+    /* Mobile – um pouco mais compacto */
     @media (max-width: 600px) {
-      #response .msg { padding-right: 52px; }   /* reduz espaço no mobile */
-      #response .msg .msg-toolbar { top: 4px; right: 4px; gap: 4px; }
-      #response .msg .msg-btn.icon { width: 22px; height: 22px; }
-      #response .msg .msg-btn.icon svg { width: 13px; height: 13px; }
+      #response .msg .msg-toolbar { gap: 6px; margin-top: 6px; }
+      #response .msg .msg-btn.icon { width: 20px; height: 20px; }
+      #response .msg .msg-btn.icon svg { width: 12px; height: 12px; }
     }
 
     /* Badge da linguagem e botão copiar nos blocos de código */
