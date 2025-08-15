@@ -319,6 +319,63 @@
       color: inherit !important;
     }
 
+    /* Links dentro da resposta */
+    #response a {
+      color: #4ecdc4 !important;
+      text-decoration: none !important;
+      border-bottom: 1px dashed rgba(78,205,196,0.6);
+    }
+    #response a:hover {
+      color: #ffffff !important;
+      border-bottom-color: #ffffff !important;
+    }
+
+    /* Linha horizontal */
+    #response hr {
+      border: 0;
+      border-top: 1px solid #333;
+      margin: 1.25rem 0;
+    }
+
+    /* Badge da linguagem e botão copiar nos blocos de código */
+    #response pre {
+      position: relative;
+      padding-top: 2.2rem !important;
+    }
+
+    #response pre .code-badge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 90px;
+      background: rgba(179, 0, 0, 0.18);
+      border-bottom: 1px solid rgba(179, 0, 0, 0.35);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.6rem;
+      color: #ff6b6b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+    }
+
+    #response pre .copy-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 0;
+      border-left: 1px solid rgba(179, 0, 0, 0.35);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+    }
+    #response pre .copy-btn:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
     /* Animação sutil para indicar streaming ativo */
     .streaming-active {
       position: relative;
@@ -528,7 +585,13 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
   <script>
-    marked.setOptions({ mangle: false, headerIds: false, breaks: true });
+    marked.setOptions({
+      gfm: true,
+      breaks: true,
+      mangle: false,
+      headerIds: false,
+      langPrefix: 'language-' // preserva a classe de linguagem em <code>
+    });
   </script>
 
   <script>
@@ -734,19 +797,23 @@ const content = part.replace(/^data:\s?/, "");
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // não mate espaços de borda
           
-          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
-const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
-if (!looksLikeCodeOrHeadings) {
-  content = content
-    .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ')
-    .replace(/([.!?])\s+/g, '$1\n\n');
-}
+          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+          }
           
           const html = marked.parse(content);
 div.innerHTML = DOMPurify.sanitize(html, {
-  ALLOWED_TAGS: ['p','strong','em','ul','ol','li','h1','h2','h3','h4','br','code','pre','blockquote'],
-  ALLOWED_ATTR: [] // sem id/class/style pra ninguém injetar porcaria
+  ALLOWED_TAGS: [
+    'p','strong','em','ul','ol','li',
+    'h1','h2','h3','h4','h5','h6',
+    'br','code','pre','blockquote','hr','a'
+  ],
+  ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
 });
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
         }
         
         responseDiv.appendChild(div);
@@ -791,10 +858,16 @@ div.innerHTML = DOMPurify.sanitize(html, {
             .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
           
           const html = marked.parse(content);
-div.innerHTML = DOMPurify.sanitize(html, {
-  ALLOWED_TAGS: ['p','strong','em','ul','ol','li','h1','h2','h3','h4','br','code','pre','blockquote'],
-  ALLOWED_ATTR: [] // sem id/class/style pra ninguém injetar porcaria
-});
+          div.innerHTML = DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [
+              'p','strong','em','ul','ol','li',
+              'h1','h2','h3','h4','h5','h6',
+              'br','code','pre','blockquote','hr','a'
+            ],
+            ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
+          });
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
         }
         
         responseDiv.appendChild(div);
@@ -1048,6 +1121,55 @@ div.innerHTML = DOMPurify.sanitize(html, {
       if (event.target === modal) {
         closeModal();
       }
+    }
+
+    function enhanceCodeBlocks(container) {
+      const pres = container.querySelectorAll('pre');
+      pres.forEach(pre => {
+        if (pre.dataset.enhanced === '1') return;
+
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        // Linguagem via class="language-xxx"
+        const cls = (code.getAttribute('class') || '').split(/\s+/);
+        let lang = cls.find(c => c.startsWith('language-'));
+        lang = lang ? lang.replace('language-', '').toUpperCase() : 'TXT';
+
+        // Badge de linguagem
+        const badge = document.createElement('div');
+        badge.className = 'code-badge';
+        badge.textContent = lang;
+
+        // Botão copiar
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.type = 'button';
+        btn.textContent = 'Copiar';
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const raw = code.innerText;
+          try {
+            await navigator.clipboard.writeText(raw);
+            btn.textContent = 'Copiado!';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          } catch {
+            btn.textContent = 'Falhou';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          }
+        });
+
+        pre.appendChild(badge);
+        pre.appendChild(btn);
+        pre.dataset.enhanced = '1';
+      });
+    }
+
+    function hardenLinks(container) {
+      container.querySelectorAll('a[href]').forEach(a => {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      });
     }
 
     window.sendMessage = sendMessage;
