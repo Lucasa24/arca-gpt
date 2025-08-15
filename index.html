@@ -337,6 +337,35 @@
       margin: 1.25rem 0;
     }
 
+    /* Toolbar por mensagem */
+    #response .msg {
+      position: relative;
+    }
+    #response .msg .msg-toolbar {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity .15s ease;
+    }
+    #response .msg:hover .msg-toolbar {
+      opacity: 1;
+    }
+    #response .msg .msg-btn {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 0.25rem 0.45rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    #response .msg .msg-btn:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
     /* Badge da linguagem e botão copiar nos blocos de código */
     #response pre {
       position: relative;
@@ -782,17 +811,22 @@ const content = part.replace(/^data:\s?/, "");
         div.style.marginBottom = "1rem";
         div.style.padding = "0.5rem";
         div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
         
         if (msg.role === "user") {
           div.style.fontStyle = "italic";
           div.style.color = "#ccc";
           div.style.backgroundColor = "#1a1a1a";
           div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
           div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          attachMessageToolbar(div, raw);
         } else {
           div.style.color = "#f5f5f5";
           div.style.backgroundColor = "#1c1c1c";
           div.style.borderLeft = "4px solid #b30000";
+          
+          const raw = msg.content; // markdown cru (antes de ajustes)
           
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // não mate espaços de borda
@@ -814,6 +848,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 });
           enhanceCodeBlocks(div);
           hardenLinks(div);
+          attachMessageToolbar(div, raw);
         }
         
         responseDiv.appendChild(div);
@@ -831,13 +866,16 @@ div.innerHTML = DOMPurify.sanitize(html, {
         div.style.marginBottom = "1rem";
         div.style.padding = "0.5rem";
         div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
         
         if (msg.role === "user") {
           div.style.fontStyle = "italic";
           div.style.color = "#ccc";
           div.style.backgroundColor = "#1a1a1a";
           div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
           div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          attachMessageToolbar(div, raw);
         } else {
           div.style.color = "#f5f5f5";
           div.style.backgroundColor = "#1c1c1c";
@@ -849,13 +887,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
             div.classList.add("streaming-active");
           }
           
-          // Forçar parágrafos se não houver \n\n no conteúdo
-          let content = msg.content; // não mate espaços de borda
+          const raw = msg.content; // markdown cru (antes de ajustes)
           
-          // Garantir espaçamento e quebras corretas
-          content = content
-            .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
-            .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
+          // Forçar parágrafos se não houver \n\n no conteúdo
+          let content = msg.content; // preserve o MD cru para copiar depois
+          
+          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!looksLikeCodeOrHeadings) {
+            content = content
+              .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
+              .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
+          }
           
           const html = marked.parse(content);
           div.innerHTML = DOMPurify.sanitize(html, {
@@ -868,6 +911,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           });
           enhanceCodeBlocks(div);
           hardenLinks(div);
+          attachMessageToolbar(div, raw);
         }
         
         responseDiv.appendChild(div);
@@ -1170,6 +1214,55 @@ div.innerHTML = DOMPurify.sanitize(html, {
         a.setAttribute('target', '_blank');
         a.setAttribute('rel', 'noopener noreferrer');
       });
+    }
+
+    async function copyText(text, btn) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Copiado!';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      } catch {
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Falhou';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      }
+    }
+
+    function attachMessageToolbar(div, rawMarkdown) {
+      // Evita duplicar
+      if (div.querySelector('.msg-toolbar')) return;
+
+      // Cria toolbar
+      const bar = document.createElement('div');
+      bar.className = 'msg-toolbar';
+
+      // Botão: copiar TEXTO (renderizado)
+      const btnTxt = document.createElement('button');
+      btnTxt.className = 'msg-btn';
+      btnTxt.type = 'button';
+      btnTxt.textContent = 'Copiar texto';
+      btnTxt.addEventListener('click', () => {
+        const plain = div.innerText.replace(/^Você:\s*/,'').trim();
+        copyText(plain, btnTxt);
+      });
+
+      // Botão: copiar MARKDOWN (cru)
+      const btnMd = document.createElement('button');
+      btnMd.className = 'msg-btn';
+      btnMd.type = 'button';
+      btnMd.textContent = 'Copiar MD';
+      btnMd.addEventListener('click', () => {
+        copyText(rawMarkdown || '', btnMd);
+      });
+
+      bar.appendChild(btnTxt);
+      bar.appendChild(btnMd);
+      div.appendChild(bar);
     }
 
     window.sendMessage = sendMessage;
