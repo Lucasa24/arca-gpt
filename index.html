@@ -337,10 +337,13 @@
       margin: 1.25rem 0;
     }
 
-    /* Toolbar por mensagem */
+    /* Cada mensagem agora reserva espaço p/ a toolbar */
     #response .msg {
       position: relative;
+      padding-right: 64px;            /* evita sobrepor o texto */
     }
+
+    /* Toolbar no topo-direito */
     #response .msg .msg-toolbar {
       position: absolute;
       top: 6px;
@@ -351,26 +354,12 @@
       transition: opacity .15s ease;
       z-index: 2;
     }
-    #response .msg:hover .msg-toolbar {
-      opacity: 1;
-    }
-    #response .msg .msg-btn {
-      background: rgba(255,255,255,0.06);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 0.25rem 0.45rem;
-      font-size: 0.7rem;
-      cursor: pointer;
-      border-radius: 3px;
-    }
-    #response .msg .msg-btn:hover {
-      background: rgba(255,255,255,0.12);
-    }
+    #response .msg:hover .msg-toolbar { opacity: 1; }
 
-    /* Botões da toolbar - versão ícone */
+    /* Botões em formato de ícone, menores */
     #response .msg .msg-btn.icon {
-      width: 28px;
-      height: 28px;
+      width: 24px;                    /* menor */
+      height: 24px;
       padding: 0;
       display: grid;
       place-items: center;
@@ -379,46 +368,26 @@
       color: #fff;
       border: 1px solid rgba(255,255,255,0.12);
     }
-
-    #response .msg .msg-btn.icon:hover {
-      background: rgba(255,255,255,0.12);
-    }
-
-    #response .msg .msg-btn.icon svg {
-      width: 16px;
-      height: 16px;
-      fill: currentColor;
-    }
+    #response .msg .msg-btn.icon:hover { background: rgba(255,255,255,0.12); }
+    #response .msg .msg-btn.icon svg { width: 14px; height: 14px; fill: currentColor; }
 
     /* feedback visual (ok / erro) */
     #response .msg .msg-btn.icon.ok {
-      color: #4ecdc4;
-      border-color: rgba(78,205,196,0.5);
-      background: rgba(78,205,196,0.12);
+      color: #4ecdc4; border-color: rgba(78,205,196,0.5); background: rgba(78,205,196,0.12);
     }
     #response .msg .msg-btn.icon.err {
-      color: #ff6b6b;
-      border-color: rgba(255,107,107,0.5);
-      background: rgba(255,107,107,0.12);
+      color: #ff6b6b; border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.12);
     }
 
-    /* acessibilidade focus */
-    #response .msg .msg-btn:focus-visible {
-      outline: 2px solid #4ecdc4;
-      outline-offset: 2px;
-    }
+    /* Acessibilidade */
+    #response .msg .msg-btn:focus-visible { outline: 2px solid #4ecdc4; outline-offset: 2px; }
 
-    /* melhorar clique em telas pequenas */
+    /* Mobile: ainda menor e menos espaço reservado */
     @media (max-width: 600px) {
-      #response .msg .msg-btn.icon {
-        width: 26px;
-        height: 26px;
-      }
-      #response .msg .msg-toolbar {
-        top: 4px;
-        right: 4px;
-        gap: 4px;
-      }
+      #response .msg { padding-right: 52px; }   /* reduz espaço no mobile */
+      #response .msg .msg-toolbar { top: 4px; right: 4px; gap: 4px; }
+      #response .msg .msg-btn.icon { width: 22px; height: 22px; }
+      #response .msg .msg-btn.icon svg { width: 13px; height: 13px; }
     }
 
     /* Badge da linguagem e botão copiar nos blocos de código */
