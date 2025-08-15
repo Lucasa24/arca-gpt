@@ -349,6 +349,7 @@
       gap: 6px;
       opacity: 0;
       transition: opacity .15s ease;
+      z-index: 2;
     }
     #response .msg:hover .msg-toolbar {
       opacity: 1;
@@ -364,6 +365,60 @@
     }
     #response .msg .msg-btn:hover {
       background: rgba(255,255,255,0.12);
+    }
+
+    /* Botões da toolbar - versão ícone */
+    #response .msg .msg-btn.icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    #response .msg .msg-btn.icon:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    #response .msg .msg-btn.icon svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* feedback visual (ok / erro) */
+    #response .msg .msg-btn.icon.ok {
+      color: #4ecdc4;
+      border-color: rgba(78,205,196,0.5);
+      background: rgba(78,205,196,0.12);
+    }
+    #response .msg .msg-btn.icon.err {
+      color: #ff6b6b;
+      border-color: rgba(255,107,107,0.5);
+      background: rgba(255,107,107,0.12);
+    }
+
+    /* acessibilidade focus */
+    #response .msg .msg-btn:focus-visible {
+      outline: 2px solid #4ecdc4;
+      outline-offset: 2px;
+    }
+
+    /* melhorar clique em telas pequenas */
+    @media (max-width: 600px) {
+      #response .msg .msg-btn.icon {
+        width: 26px;
+        height: 26px;
+      }
+      #response .msg .msg-toolbar {
+        top: 4px;
+        right: 4px;
+        gap: 4px;
+      }
     }
 
     /* Badge da linguagem e botão copiar nos blocos de código */
@@ -1233,6 +1288,37 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
 
+    function iconSVG(kind) {
+      switch (kind) {
+        case 'text': // documento com linhas
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm8 1.5V9h4.5L14 4.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2zm0-8h4v2H8V8z"/></svg>';
+        case 'md':   // chaves {}
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.7 7.3 5 11l3.7 3.7 1.4-1.4L7.8 11l2.3-2.3-1.4-1.4zm6.6 0-1.4 1.4L16.2 11l-2.3 2.3 1.4 1.4L19 11l-3.7-3.7zM10 18l2-12 2 .3-2 12-2-.3z"/></svg>';
+        case 'ok':   // check
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+        case 'err':  // X
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>';
+        default:
+          return '';
+      }
+    }
+
+    function setIcon(btn, state) {
+      btn.classList.remove('ok', 'err');
+      if (state === 'ok') btn.classList.add('ok');
+      if (state === 'err') btn.classList.add('err');
+      btn.innerHTML = iconSVG(state);
+    }
+
+    async function clipboardWrite(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     function attachMessageToolbar(div, rawMarkdown) {
       // Evita duplicar
       if (div.querySelector('.msg-toolbar')) return;
@@ -1243,21 +1329,29 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       // Botão: copiar TEXTO (renderizado)
       const btnTxt = document.createElement('button');
-      btnTxt.className = 'msg-btn';
+      btnTxt.className = 'msg-btn icon';
       btnTxt.type = 'button';
-      btnTxt.textContent = 'Copiar texto';
-      btnTxt.addEventListener('click', () => {
+      btnTxt.setAttribute('aria-label', 'Copiar texto');
+      btnTxt.title = 'Copiar texto';
+      btnTxt.innerHTML = iconSVG('text');
+      btnTxt.addEventListener('click', async () => {
         const plain = div.innerText.replace(/^Você:\s*/,'').trim();
-        copyText(plain, btnTxt);
+        const ok = await clipboardWrite(plain);
+        setIcon(btnTxt, ok ? 'ok' : 'err');
+        setTimeout(() => { btnTxt.classList.remove('ok','err'); btnTxt.innerHTML = iconSVG('text'); }, 1200);
       });
 
       // Botão: copiar MARKDOWN (cru)
       const btnMd = document.createElement('button');
-      btnMd.className = 'msg-btn';
+      btnMd.className = 'msg-btn icon';
       btnMd.type = 'button';
-      btnMd.textContent = 'Copiar MD';
-      btnMd.addEventListener('click', () => {
-        copyText(rawMarkdown || '', btnMd);
+      btnMd.setAttribute('aria-label', 'Copiar Markdown');
+      btnMd.title = 'Copiar Markdown';
+      btnMd.innerHTML = iconSVG('md');
+      btnMd.addEventListener('click', async () => {
+        const ok = await clipboardWrite(rawMarkdown || '');
+        setIcon(btnMd, ok ? 'ok' : 'err');
+        setTimeout(() => { btnMd.classList.remove('ok','err'); btnMd.innerHTML = iconSVG('md'); }, 1200);
       });
 
       bar.appendChild(btnTxt);
