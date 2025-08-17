@@ -854,7 +854,7 @@ const content = part.replace(/^data:\s?/, "");
           let content = msg.content; // não mate espaços de borda
           
           // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
-          const looksLikeCodeOrHeadings = /```|^#{1,6}\s|\*\w|\w\*/m.test(content);
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
           if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
             content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
@@ -914,8 +914,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // preserve o MD cru para copiar depois
           
-          // Evita quebrar markdown quando existir cabeçalhos (#), fences (```) ou formatação inline (*)
-          const looksLikeCodeOrHeadings = /```|^#{1,6}\s|\*\w|\w\*/m.test(content);
+          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
           if (!looksLikeCodeOrHeadings) {
             content = content
               .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
