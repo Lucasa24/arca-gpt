@@ -559,14 +559,12 @@
     }
     
     @media (max-width: 600px) {
-      #mainContent {
-        padding: 20px 0.75rem 250px;
-      }
-      
       .main-title {
+      padding: 20px 0.75rem 250px;
         font-size: clamp(1.2rem, 4vw, 1.8rem);
-        margin-bottom: 1rem;
-      }
+    margin-bottom: 1rem;
+  }
+}
       
       #response {
         padding: 0.75rem;
@@ -919,6 +917,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // preserve o MD cru para copiar depois
+          
+          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+          }
           
           const html = marked.parse(content);
           div.innerHTML = DOMPurify.sanitize(html, {
