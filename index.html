@@ -859,7 +859,8 @@ const content = part.replace(/^data:\s?/, "");
           
           // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
-          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
+          const hasInlineFormatting = /\*\w|\w\*|_\w|\w_/.test(content);
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings && !hasInlineFormatting) {
             content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
           
