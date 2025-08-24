@@ -194,12 +194,6 @@
     }
     
     #response div {
-      white-space: normal;
-    }
-    
-    /* Preservar quebras apenas em contextos específicos */
-    #response pre,
-    #response code {
       white-space: break-spaces;
     }
     
@@ -226,8 +220,8 @@
       color: #ffffff !important;
     }
 
-    /* Estilos para cabeçalhos dentro das respostas - Blindagem total */
-    #response .msg h1 {
+    /* Estilos para cabeçalhos dentro das respostas */
+    #response h1 {
       font-size: 1.8rem !important;
       font-weight: bold !important;
       color: #ff6b6b !important;
@@ -238,7 +232,7 @@
       padding-bottom: 0.5rem !important;
     }
 
-    #response .msg h2 {
+    #response h2 {
       font-size: 1.5rem !important;
       font-weight: bold !important;
       color: #4ecdc4 !important;
@@ -246,21 +240,21 @@
       letter-spacing: 0.5px !important;
     }
 
-    #response .msg h3 {
+    #response h3 {
       font-size: 1.3rem !important;
       font-weight: bold !important;
       color: #ffffff !important;
       margin: 1rem 0 0.5rem 0 !important;
     }
 
-    #response .msg h4 {
+    #response h4 {
       font-size: 1.1rem !important;
       font-weight: bold !important;
       color: #cccccc !important;
       margin: 0.75rem 0 0.5rem 0 !important;
     }
 
-    #response .msg h5, #response .msg h6 {
+    #response h5, #response h6 {
       font-size: 1rem !important;
       font-weight: bold !important;
       color: #999999 !important;
@@ -559,12 +553,14 @@
     }
     
     @media (max-width: 600px) {
+      #mainContent {
+        padding: 20px 0.75rem 250px;
+      }
+      
       .main-title {
-      padding: 20px 0.75rem 250px;
         font-size: clamp(1.2rem, 4vw, 1.8rem);
-    margin-bottom: 1rem;
-  }
-}
+        margin-bottom: 1rem;
+      }
       
       #response {
         padding: 0.75rem;
@@ -859,8 +855,7 @@ const content = part.replace(/^data:\s?/, "");
           
           // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
-          const hasInlineFormatting = /\*\w|\w\*|_\w|\w_/.test(content);
-          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings && !hasInlineFormatting) {
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
             content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
           
@@ -919,10 +914,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // preserve o MD cru para copiar depois
           
-          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
+          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
-          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
-            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+          if (!looksLikeCodeOrHeadings) {
+            content = content
+              .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
+              .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
           }
           
           const html = marked.parse(content);
