@@ -559,20 +559,31 @@
     }
     
     @media (max-width: 600px) {
-  .main-title {
-    font-size: clamp(1.2rem, 4vw, 1.8rem);
+      .main-title {
+      padding: 20px 0.75rem 250px;
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
     margin-bottom: 1rem;
   }
-
-  #response {
-    padding: 0.75rem;
-    margin-top: 1.5rem;
-  }
-
-  .fixed-footer { padding: 0.5rem 0.75rem; }
-  button { padding: 0.5rem 0.75rem; min-width: 70px; }
-  textarea { font-size: 0.7rem; }
 }
+      
+      #response {
+        padding: 0.75rem;
+        margin-top: 1.5rem;
+      }
+      
+      .fixed-footer {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      button {
+        padding: 0.5rem 0.75rem;
+        min-width: 70px;
+      }
+      
+      textarea {
+        font-size: 0.7rem;
+      }
+    }
     
     @media (max-width: 400px) {
       #mainContent {
@@ -647,13 +658,8 @@
     // Função para garantir espaçamento correto no streaming
     function safeAppend(idx, chunk) {
       const prev = messages[idx].content || "";
-      // só injeta espaço se o próximo chunk NÃO começa com markdown
-      if (
-        prev && /[.!?]$/.test(prev) &&
-        chunk && !/^\s/.test(chunk) &&
-        !/^[#*_`>\-\[!]/.test(chunk)  // <— blindagem total: #, *, _, `, >, -, [, !
-      ) {
-        chunk = " " + chunk;
+      if (prev && /[.!?]$/.test(prev) && chunk && !/^\s/.test(chunk)) {
+        chunk = " " + chunk; // injeta espaço se o token veio colado após pontuação
       }
       messages[idx].content += chunk;
     }
@@ -853,8 +859,7 @@ const content = part.replace(/^data:\s?/, "");
           
           // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
-          const hasInlineFormatting =
-            /(\*\*[^*\n]+?\*\*|\*[^*\n]+?\*|__[^_\n]+?__|_[^_\n]+?_|`[^`\n]+`|\[[^\]]+\]\([^)\n]+\))/.test(content);
+          const hasInlineFormatting = /\*\w|\w\*|_\w|\w_/.test(content);
           if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings && !hasInlineFormatting) {
             content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
@@ -916,15 +921,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
           
           // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
-          // há formatação inline aberta/fechada? não mexa!
-          const hasInlineFormatting =
-            /(\*\*[^*\n]+?\*\*|\*[^*\n]+?\*|__[^_\n]+?__|_[^_\n]+?_|`[^`\n]+`|\[[^\]]+\]\([^)\n]+\))/.test(content);
-          
-          // ⬇️ Só aplique a "forçagem" se NÃO estiver streamando a última msg
-          if (!(isStreaming && isLastAssistantMessage)) {
-            if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings && !hasInlineFormatting) {
-              content = content.replace(/([.!?])\s+/g, '$1\n\n');
-            }
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
           }
           
           const html = marked.parse(content);
