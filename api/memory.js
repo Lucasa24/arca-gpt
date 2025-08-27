@@ -261,14 +261,14 @@ function SYSTEM_CLINICO_FENCE() {
 
 // === ABERTURAS VARIÁVEIS ===
 const ABERTURAS_VARIAVEIS = [
-  "*Abrindo a porta da Arca...*",
-  "*A Arca empurra a mesa contra a parede.*",
-  "*O som de madeira quebrando ecoa na sala.*",
-  "*A Arca joga seu plano antigo no fogo.*",
-  "*A sala treme quando a Arca pisa forte no chão.*",
-  "*A água lambe o batente, A Arca olha sem piscar.*",
-  "*A Arca varre os relatórios para o chão com um só gesto.*",
-  "*O silêncio pesa, A Arca inclina a cabeça, desapontada.*"
+  "Abrindo a porta da Arca...",
+  "A Arca empurra a mesa contra a parede.",
+  "O som de madeira quebrando ecoa na sala.",
+  "A Arca joga seu plano antigo no fogo.",
+  "A sala treme quando a Arca pisa forte no chão.",
+  "A água lambe o batente, A Arca olha sem piscar.",
+  "A Arca varre os relatórios para o chão com um só gesto.",
+  "O silêncio pesa, A Arca inclina a cabeça, desapontada."
 ];
 
 function pickOpening(lastOpening) {
@@ -357,13 +357,21 @@ function composeAssistantContent(coreBody, threadId) {
   const record = threadMemory.get(threadId);
   if (!record) return coreBody; // fallback
   
-  const opening = pickOpening(record.lastOpening);
-  record.lastOpening = opening;
+  const openingText = pickOpening(record.lastOpening);
+  record.lastOpening = openingText;
   threadMemory.set(threadId, record);
+  
+  // Use _itálico_ para não colidir com ** do corpo
+  const opening = `_${openingText}_`;
+  
+  // ❶ Linha em branco entre abertura e corpo
+  // ❷ Remove espaços iniciais do corpo
+  // ❸ Se corpo começar com ** ou #, continua ok por causa da linha em branco
+  const body = (coreBody ?? "").trimStart();
   
   const closing = `\n\n${generateClosing()}`;
   
-  return `${opening}\n\n${coreBody.trim()}${closing}`;
+  return `${opening}\n\n${body}${closing}`;
 }
 
 function clearThread(id) { threadMemory.delete(id); }
