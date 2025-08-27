@@ -29,11 +29,16 @@
       flex-direction: column;
       align-items: center;
       transition: margin-left 0.3s ease;
-      margin-left: 0;
+      margin-left: 220px;
       padding: 40px 1rem 300px;
       max-width: 700px;
-      width: 100%;
+      width: calc(100% - 220px);
       position: relative;
+    }
+
+    #mainContent.sidebar-hidden {
+      margin-left: 0;
+      width: 100%;
     }
 
     #mainContent .invoc {
@@ -54,6 +59,12 @@
       overflow-y: auto;
       font-size: 0.8rem;
       z-index: 200;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+    }
+
+    #chatSidebar.hidden {
+      transform: translateX(-100%);
     }
 
     #chatSidebar h3 {
@@ -96,7 +107,7 @@
     }
 
     #toggleSidebar {
-      display: none;                /* padrão: escondido no desktop (o seu @media já mostra no mobile) */
+      display: block;               /* sempre visível agora */
       position: fixed;
       top: 12px;
       left: 12px;
@@ -533,10 +544,14 @@
     /* Media Queries para responsividade */
     @media (min-width: 769px) {
       body {
-        padding: 0 2rem;
+        padding: 0;
       }
       
       #mainContent {
+        padding: 60px 2rem 300px;
+      }
+      
+      #mainContent.sidebar-hidden {
         margin: 0 auto;
         padding: 60px 2rem 300px;
       }
@@ -549,32 +564,21 @@
       }
       
       #mainContent {
-        margin-left: 0;
-        width: 100%;
+        margin-left: 0 !important;
+        width: 100% !important;
         padding: 20px 0.75rem 250px;
         align-items: stretch;
       }
       
-      #toggleSidebar {
-        display: block;
-      }
-      
       #chatSidebar {
-        display: none;
-        position: fixed;
+        transform: translateX(-100%) !important;
         width: 80%;
         max-width: 260px;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        background: #111;
         z-index: 998;
-        overflow-y: auto;
-        padding: 1rem;
       }
       
       #chatSidebar.open {
-        display: block;
+        transform: translateX(0) !important;
       }
     }
     
@@ -1163,30 +1167,29 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const main = document.getElementById("mainContent");
       const btn = document.getElementById("toggleSidebar");
 
-      const isOpen = sidebar.classList.contains("open");
-
       if (window.innerWidth <= 768) {
+        // Mobile: usa classe 'open'
+        const isOpen = sidebar.classList.contains("open");
         if (isOpen) {
           sidebar.classList.remove("open");
-          sidebar.style.display = "none";
         } else {
           sidebar.classList.add("open");
-          sidebar.style.display = "block";
         }
+        btn.setAttribute("aria-expanded", sidebar.classList.contains("open") ? "true" : "false");
       } else {
-        if (isOpen) {
-          sidebar.classList.remove("open");
-          main.style.marginLeft = "0";
-          main.style.width = "100%";
+        // Desktop: usa classe 'hidden' para sidebar e 'sidebar-hidden' para main
+        const isHidden = sidebar.classList.contains("hidden");
+        if (isHidden) {
+          // Mostrar sidebar
+          sidebar.classList.remove("hidden");
+          main.classList.remove("sidebar-hidden");
         } else {
-          sidebar.classList.add("open");
-          main.style.marginLeft = "355px";
-          main.style.width = "calc(100% - 240px)";
+          // Esconder sidebar
+          sidebar.classList.add("hidden");
+          main.classList.add("sidebar-hidden");
         }
+        btn.setAttribute("aria-expanded", !sidebar.classList.contains("hidden") ? "true" : "false");
       }
-
-      // acessibilidade
-      btn.setAttribute("aria-expanded", sidebar.classList.contains("open") ? "true" : "false");
     }
 
     // Carregar sidebar ao inicializar
@@ -1199,11 +1202,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
         loadThreadMessages(currentThreadId);
       }
 
-      // Se for desktop, garante que o sidebar apareça
+      // Se for desktop, garante que o sidebar apareça (remove classe hidden se existir)
       if (window.innerWidth > 768) {
-        document.getElementById("chatSidebar").classList.add("open");
-        document.getElementById("mainContent").style.marginLeft = "240px";
-        document.getElementById("mainContent").style.width = "calc(100% - 240px)";
+        const sidebar = document.getElementById("chatSidebar");
+        const main = document.getElementById("mainContent");
+        sidebar.classList.remove("hidden");
+        main.classList.remove("sidebar-hidden");
+        document.getElementById("toggleSidebar").setAttribute("aria-expanded", "true");
       }
     };
 
