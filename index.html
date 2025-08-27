@@ -1327,13 +1327,22 @@ div.innerHTML = DOMPurify.sanitize(html, {
     }
 
     // Event listener para ENTER invocar e SHIFT+ENTER quebrar linha
+    // No mobile, ENTER não funciona para evitar problemas de UX
     document.getElementById('userInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
+        // Detectar se é dispositivo móvel
+        const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          // No mobile, ENTER sempre quebra linha (comportamento padrão)
+          return;
+        }
+        
         if (e.shiftKey) {
           // SHIFT+ENTER: permite quebra de linha (comportamento padrão)
           return;
         } else {
-          // ENTER: invoca a mensagem
+          // ENTER: invoca a mensagem (apenas no desktop)
           e.preventDefault();
           sendMessage();
         }
