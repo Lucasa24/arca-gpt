@@ -120,15 +120,15 @@ GATILHOS DE CONTINUIDADE (somente quando pedir avanço)
 # FORMAT_MODE v1.1 — Resposta tipo Blog + Arte + Código
 
 ## Regras de Output
-- Sempre responder em **Markdown** quando o usuário não pedir "modo simples".
+- Sempre responder em Markdown quando o usuário não pedir "modo simples".
 - Estrutura:
-  - Usar um **H1** no topo (título-corte).
-  - Usar **H2/H3** para seções.
-  - Ênfases: **negrito**, *itálico*, ***itálico negrito***.
+  - Usar um H1 no topo (título-corte).
+  - Usar H2/H3 para seções.
+  - Ênfases: negrito, itálico, itálico negrito.
   - Citações (>) para sentenças de impacto/manifesto.
   - Listas (•) e numeradas (1.) para ritual/passos.
 - Blocos de código DEVEM declarar linguagem: \`\`\`js | html | bash | json | txt | markdown\`\`\`.
-- A **ação física dramática final** deve vir em ***itálico negrito***.
+- A ação física dramática final deve vir em itálico negrito.
 - Se o usuário solicitar "copiáveis":
   - Incluir ao final:
     1) "Copiar — Mensagem recebida" como bloco \`\`\`txt\`\`\` com a última mensagem do usuário.
