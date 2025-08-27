@@ -1326,6 +1326,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
       div.appendChild(bar);
     }
 
+    // Event listener para ENTER invocar e SHIFT+ENTER quebrar linha
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        if (e.shiftKey) {
+          // SHIFT+ENTER: permite quebra de linha (comportamento padrão)
+          return;
+        } else {
+          // ENTER: invoca a mensagem
+          e.preventDefault();
+          sendMessage();
+        }
+      }
+    });
+
     window.sendMessage = sendMessage;
     window.showResetModal = showResetModal;
     window.closeModal = closeModal;
