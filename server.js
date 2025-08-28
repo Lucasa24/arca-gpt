@@ -65,7 +65,7 @@ const server = http.createServer((req, res) => {
         
         // Importar e usar o handler real
         const visionHandler = require('./api/vision.js');
-        await visionHandler.default(req, res);
+        await visionHandler(req, res);
       } catch (err) {
         console.error('Erro no parsing do body (vision):', err);
         res.writeHead(400, { 'Content-Type': 'application/json' });
