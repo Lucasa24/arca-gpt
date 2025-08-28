@@ -1,3 +1,6 @@
+// Carregar variáveis de ambiente
+require('dotenv').config();
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -30,36 +33,44 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ threadId: 'thread_' + Date.now() }));
   } else if (req.method === 'POST' && req.url === '/api/arca') {
-    // Mock da API da Arca
+    // Usar handler real da API da Arca
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
     });
-    req.on('end', () => {
-      const { input } = JSON.parse(body);
-      
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      });
-      
-      // Simular resposta streaming
-      const response = `🌊 **Resposta da Arca para:** "${input}"\n\nA Arca ecoa suas palavras através das águas místicas. Esta é uma resposta de teste para demonstrar as funcionalidades implementadas:\n\n- ✅ **Confirmação no Reset**: Agora você precisa confirmar antes de perder a conversa\n- ✅ **Sidebar de Sessões**: Lista lateral com histórico de conversas\n- ✅ **Nova Travessia**: Botão para iniciar nova sessão\n- ✅ **Navegação entre Threads**: Clique nas sessões para alternar\n\n*As águas da memória agora fluem de forma organizada...*`;
-      
-      const words = response.split(' ');
-      let index = 0;
-      
-      const interval = setInterval(() => {
-        if (index < words.length) {
-          res.write(`data: ${words[index]} `);
-          index++;
-        } else {
-          res.write('data: [DONE]');
-          res.end();
-          clearInterval(interval);
-        }
-      }, 100);
+    req.on('end', async () => {
+      try {
+        // Parse do JSON body
+        req.body = JSON.parse(body);
+        
+        // Importar e usar o handler real
+        const arcaHandler = require('./api/arca.js');
+        await arcaHandler(req, res);
+      } catch (err) {
+        console.error('Erro no parsing do body:', err);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/vision') {
+    // Usar handler real da API de Vision
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', async () => {
+      try {
+        // Parse do JSON body
+        req.body = JSON.parse(body);
+        
+        // Importar e usar o handler real
+        const visionHandler = require('./api/vision.js');
+        await visionHandler.default(req, res);
+      } catch (err) {
+        console.error('Erro no parsing do body (vision):', err);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
     });
   } else {
     res.writeHead(404);
