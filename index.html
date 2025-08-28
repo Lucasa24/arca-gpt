@@ -1,84 +1,1542 @@
-// Carregar variáveis de ambiente
-require('dotenv').config();
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>🌊🛥️ A Arca - Ritual de Travessia</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: #0e0e0e;
+      color: #f5f5f5;
+      font-family: 'Georgia', serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+    #mainContent {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: margin-left 0.3s ease;
+      margin-left: 220px;
+      padding: 40px 1rem 300px;
+      max-width: 700px;
+      width: calc(100% - 220px);
+      position: relative;
+    }
 
-const server = http.createServer((req, res) => {
-  if (req.method === 'GET' && req.url === '/') {
-    // Servir o index.html
-    fs.readFile(path.join(__dirname, 'index.html'), (err, data) => {
-      if (err) {
-        res.writeHead(500);
-        res.end('Erro interno do servidor');
+    #mainContent.sidebar-hidden {
+      margin-left: 0;
+      width: 100%;
+    }
+
+    #mainContent .invoc {
+      align-self: flex-end;
+      margin: 0;
+      text-align: right;
+    }
+
+    #chatSidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 220px;
+      background: #111;
+      border-right: 1px solid #333;
+      padding: 1rem;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      z-index: 200;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+    }
+
+    #chatSidebar.hidden {
+      transform: translateX(-100%);
+    }
+
+    #chatSidebar h3 {
+      color: #f5f5f5;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      text-align: center;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.5rem;
+      position: relative;
+    }
+
+    #closeSidebar {
+      position: absolute;
+      top: -5px;
+      right: 0;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    #closeSidebar:hover {
+      background-color: rgba(179, 0, 0, 0.2);
+      color: #ff6b6b;
+    }
+
+    #chatSidebar button {
+      display: block;
+      width: 100%;
+      background: none;
+      color: #f5f5f5;
+      text-align: left;
+      border: none;
+      padding: 0.5rem;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background-color 0.2s;
+    }
+
+    #chatSidebar button:hover {
+      background-color: #222;
+    }
+
+    #chatSidebar .new-session {
+      background-color: #b30000 !important;
+      color: white;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #chatSidebar .new-session:hover {
+      background-color: #ff1a1a !important;
+    }
+
+    #toggleSidebar {
+      display: block;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 999;
+      width: 40px;
+      height: 33px;
+      border-radius: 9999px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(179, 0, 0, 0.14);
+      color: #fff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
+    }
+
+    /* Esconder o botão de menu quando sidebar estiver aberta no desktop */
+    @media (min-width: 769px) {
+      #toggleSidebar.sidebar-open {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    #toggleSidebar:hover {
+      background: rgba(179, 0, 0, 0.26);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    #toggleSidebar:active {
+      transform: scale(0.98);
+    }
+
+    #toggleSidebar:focus-visible {
+      outline: 2px solid #ff1a1a;
+      outline-offset: 3px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+    }
+
+    .modal-content {
+      background-color: #1c1c1c;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #333;
+      width: 300px;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    .modal-buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .modal-buttons button {
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .confirm-btn {
+      background-color: #b30000;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #666;
+      color: white;
+    }
+    .main-title {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      text-align: center;
+      margin: 0 0 1.5rem 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 100%;
+    }
+
+    #response {
+      margin-top: 2rem;
+      white-space: normal;
+      background: #1c1c1c;
+      padding: 1rem;
+      border-left: 4px solid #b30000;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+      text-align: justify;
+      line-height: 1.8;
+      letter-spacing: 0.5px;
+      max-height: 70vh;
+      overflow-y: auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
+    #response div {
+      white-space: break-spaces;
+    }
+    
+    #response p {
+      margin-bottom: 1rem;
+    }
+
+    /* Estilos para formatação markdown */
+    strong, b {
+      font-weight: bold !important;
+      font-style: normal !important;
+      color: #ff6b6b !important;
+    }
+
+    em, i {
+      font-weight: normal !important;
+      font-style: italic !important;
+      color: #4ecdc4 !important;
+    }
+
+    strong em, b i, em strong, i b {
+      font-weight: bold !important;
+      font-style: italic !important;
+      color: #ffffff !important;
+    }
+
+    /* Estilos para cabeçalhos dentro das respostas */
+    #response h1 {
+      font-size: 1.8rem !important;
+      font-weight: bold !important;
+      color: #ff6b6b !important;
+      margin: 1.5rem 0 1rem 0 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+      border-bottom: 2px solid #b30000 !important;
+      padding-bottom: 0.5rem !important;
+    }
+
+    #response h2 {
+      font-size: 1.5rem !important;
+      font-weight: bold !important;
+      color: #4ecdc4 !important;
+      margin: 1.25rem 0 0.75rem 0 !important;
+      letter-spacing: 0.5px !important;
+    }
+
+    #response h3 {
+      font-size: 1.3rem !important;
+      font-weight: bold !important;
+      color: #ffffff !important;
+      margin: 1rem 0 0.5rem 0 !important;
+    }
+
+    #response h4 {
+      font-size: 1.1rem !important;
+      font-weight: bold !important;
+      color: #cccccc !important;
+      margin: 0.75rem 0 0.5rem 0 !important;
+    }
+
+    #response h5, #response h6 {
+      font-size: 1rem !important;
+      font-weight: bold !important;
+      color: #999999 !important;
+      margin: 0.5rem 0 0.25rem 0 !important;
+    }
+
+    /* Estilos para listas dentro das respostas */
+    #response ul, #response ol {
+      margin: 1rem 0 !important;
+      padding-left: 1.5rem !important;
+      color: #f5f5f5 !important;
+    }
+
+    #response li {
+      margin: 0.5rem 0 !important;
+      line-height: 1.6 !important;
+    }
+
+    #response ul li {
+      list-style-type: disc !important;
+    }
+
+    #response ol li {
+      list-style-type: decimal !important;
+    }
+
+    /* Estilos para citações dentro das respostas */
+    #response blockquote {
+      margin: 1.5rem 0 !important;
+      padding: 1rem 1.5rem !important;
+      border-left: 4px solid #4ecdc4 !important;
+      background: rgba(78, 205, 196, 0.1) !important;
+      font-style: italic !important;
+      color: #e0e0e0 !important;
+    }
+
+    /* Estilos para código dentro das respostas */
+    #response code {
+      background: #2a2a2a !important;
+      color: #4ecdc4 !important;
+      padding: 0.2rem 0.4rem !important;
+      border-radius: 3px !important;
+      font-family: 'Courier New', monospace !important;
+      font-size: 0.9rem !important;
+    }
+
+    #response pre {
+      background: #1a1a1a !important;
+      color: #f5f5f5 !important;
+      padding: 1rem !important;
+      border-radius: 5px !important;
+      border-left: 4px solid #ff6b6b !important;
+      overflow-x: auto !important;
+      margin: 1rem 0 !important;
+      font-family: 'Courier New', monospace !important;
+      line-height: 1.4 !important;
+    }
+
+    #response pre code {
+      background: transparent !important;
+      padding: 0 !important;
+      color: inherit !important;
+    }
+
+    /* Links dentro da resposta */
+    #response a {
+      color: #4ecdc4 !important;
+      text-decoration: none !important;
+      border-bottom: 1px dashed rgba(78,205,196,0.6);
+    }
+    #response a:hover {
+      color: #ffffff !important;
+      border-bottom-color: #ffffff !important;
+    }
+
+    /* Linha horizontal */
+    #response hr {
+      border: 0;
+      border-top: 1px solid #333;
+      margin: 1.25rem 0;
+    }
+
+    /* --- Toolbar ABAIXO da mensagem --- */
+    #response .msg {
+      position: relative;
+      padding-right: 0 !important;              /* não reserva espaço lateral */
+    }
+
+    #response .msg .msg-toolbar {
+      position: static !important;              /* deixa de ser absoluta */
+      top: auto;                                /* por garantia */
+      right: auto;                              /* por garantia */
+      display: flex;
+      justify-content: flex-end;                /* alinha à direita */
+      gap: 8px;
+      margin-top: 8px;                          /* separa do texto */
+      opacity: 1 !important;                    /* sempre visível (bom para mobile) */
+      z-index: auto;
+    }
+
+    /* Ícones pequenos e clicáveis */
+    #response .msg .msg-btn.icon {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    #response .msg .msg-btn.icon:hover { background: rgba(255,255,255,0.12); }
+    #response .msg .msg-btn.icon svg { width: 13px; height: 13px; fill: currentColor; }
+
+    /* feedback ok/erro (mantém o teu visual) */
+    #response .msg .msg-btn.icon.ok {
+      color: #4ecdc4; border-color: rgba(78,205,196,0.5); background: rgba(78,205,196,0.12);
+    }
+    #response .msg .msg-btn.icon.err {
+      color: #ff6b6b; border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.12);
+    }
+
+    /* Acessibilidade */
+    #response .msg .msg-btn:focus-visible { outline: 2px solid #4ecdc4; outline-offset: 2px; }
+
+    /* Mobile – um pouco mais compacto */
+    @media (max-width: 600px) {
+      #response .msg .msg-toolbar { gap: 6px; margin-top: 6px; }
+      #response .msg .msg-btn.icon { width: 20px; height: 20px; }
+      #response .msg .msg-btn.icon svg { width: 12px; height: 12px; }
+    }
+
+    /* Badge da linguagem e botão copiar nos blocos de código */
+    #response pre {
+      position: relative;
+      padding-top: 2.2rem !important;
+    }
+
+    #response pre .code-badge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 90px;
+      background: rgba(179, 0, 0, 0.18);
+      border-bottom: 1px solid rgba(179, 0, 0, 0.35);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.6rem;
+      color: #ff6b6b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+    }
+
+    #response pre .copy-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 0;
+      border-left: 1px solid rgba(179, 0, 0, 0.35);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+    }
+    #response pre .copy-btn:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* Animação sutil para indicar streaming ativo */
+    .streaming-active {
+      position: relative;
+    }
+
+    .streaming-active::after {
+      content: '▋';
+      color: #b30000;
+      animation: blink 1s infinite;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .fixed-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #0e0e0e;
+      padding: 0.5rem 1rem 0.75rem;
+      border-top: 1px solid #333;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+      font-size: 0.85rem;
+      width: 100%;
+      z-index: 100;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      max-width: 700px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    textarea {
+      flex: 1;
+      background: #1a1a1a;
+      color: #f5f5f5;
+      border: 1px solid #333;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      resize: none;
+      height: 55px;
+      font-family: 'Georgia', serif;
+      width: 100%;
+    }
+
+    button {
+      background-color: #b30000;
+      color: #fff;
+      border: none;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 1px;
+      padding: 0.5rem 1rem;
+      height: 55px;
+      min-width: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background-color: #ff1a1a;
+    }
+
+    #loader {
+      height: 4px;
+      margin-top: 0.25rem;
+    }
+
+    #loadingBar {
+      height: 100%;
+      background-color: #b30000;
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+    }
+
+    .footer-note {
+      font-size: 0.55rem;
+      color: #555;
+      margin-top: 0.25rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+    /* Media Queries para responsividade */
+    @media (min-width: 769px) {
+      body {
+        padding: 0;
+      }
+      
+      #mainContent {
+        padding: 60px 2rem 300px;
+      }
+      
+      #mainContent.sidebar-hidden {
+        margin: 0 auto;
+        padding: 60px 2rem 300px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        display: block;
+        padding: 0;
+      }
+      
+      #mainContent {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 20px 0.75rem 250px;
+        align-items: stretch;
+      }
+      
+      #chatSidebar {
+        transform: translateX(-100%) !important;
+        width: 80%;
+        max-width: 260px;
+        z-index: 998;
+      }
+      
+      #chatSidebar.open {
+        transform: translateX(0) !important;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      #mainContent {
+        padding: 20px 0.75rem 250px;
+      }
+      
+      .main-title {
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
+        margin-bottom: 1rem;
+      }
+      
+      #response {
+        padding: 0.75rem;
+        margin-top: 1.5rem;
+      }
+      
+      .fixed-footer {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      button {
+        padding: 0.5rem 0.75rem;
+        min-width: 70px;
+      }
+      
+      textarea {
+        font-size: 0.7rem;
+      }
+    }
+    
+    @media (max-width: 400px) {
+      #mainContent {
+        padding: 15px 0.5rem 220px;
+      }
+      
+      .input-group {
+        gap: 0.3rem;
+      }
+      
+      button {
+        padding: 0.4rem 0.6rem;
+        min-width: 60px;
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
+  <div id="chatSidebar"></div>
+  
+  <div id="resetModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Confirmação de Reset</h3>
+      <p>Tem certeza que deseja resetar e perder toda a conversa atual?</p>
+      <div class="modal-buttons">
+        <button class="confirm-btn" onclick="confirmReset()">Sim, Resetar</button>
+        <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <main id="mainContent">
+    <h1 class="main-title">A Arca 🌊🛥️</h1>
+    <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Digite sua invocação abaixo e sinta a resposta da Arca:</p>
+    <div id="response"></div>
+
+    <div class="fixed-footer">
+      <div class="input-group">
+        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 60px; font-size: 0.65rem;" title="Anexar imagem para análise visual">📷 Anexar</button>
+        <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
+        <button onclick="sendMessage()">Invocar</button>
+        <button onclick="showResetModal()" style="background-color: #666; min-width: 60px; font-size: 0.65rem;">Reset</button>
+      </div>
+      <div id="imagePreview" style="display: none; margin-top: 10px; text-align: center;">
+        <img id="previewImg" style="max-width: 200px; max-height: 150px; border: 1px solid #333; border-radius: 5px;">
+        <button onclick="removeImage()" style="background-color: #b30000; margin-left: 10px; padding: 5px 10px; font-size: 0.6rem;">✕ Remover</button>
+      </div>
+
+      <div id="loader" style="display:none;">
+        <div id="loadingBar"></div>
+      </div>
+
+      <p class="footer-note">Os dados fornecidos são privados e protegidos! • Memória persistente ativa</p>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+  <script>
+    marked.setOptions({
+      gfm: true,
+      breaks: true,
+      mangle: false,
+      headerIds: false,
+      langPrefix: 'language-' // preserva a classe de linguagem em <code>
+    });
+  </script>
+
+  <script>
+    let messages = [];
+    let isInvocando = false;
+    let loaderInterval = null;
+    let progress = 0;
+    
+    // Função para garantir espaçamento correto no streaming
+    function safeAppend(idx, chunk) {
+      const prev = messages[idx].content || "";
+      if (prev && /[.!?]$/.test(prev) && chunk && !/^\s/.test(chunk)) {
+        chunk = " " + chunk; // injeta espaço se o token veio colado após pontuação
+      }
+      messages[idx].content += chunk;
+    }
+    
+    // Barra linear progressiva, nunca para nem oscila, só finaliza em 100% quando "invocando..." some.
+    function startLoaderBar() {
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+      loader.style.display = "block";
+      loadingBar.style.width = "0%";
+      progress = 0;
+      isInvocando = true;
+    
+      const DURATION = 18000; // tempo até 99% em milissegundos (18s)
+      const intervalDuration = 18; // ms
+      const MAX = 99;
+      const step = (MAX / (DURATION / intervalDuration));
+    
+      if (loaderInterval) clearInterval(loaderInterval);
+    
+      loaderInterval = setInterval(() => {
+        if (!isInvocando) return; // NÃO mexer se já pediu pra parar
+    
+        if (progress < MAX) {
+          progress += step;
+        } else {
+          // Ficou em 99%, não passa disso até "invocando..." sumir de fato
+          progress = MAX;
+        }
+        loadingBar.style.width = progress + "%";
+      }, intervalDuration);
+    }
+    
+    // Chame APENAS quando "invocando..." despachar:
+    function stopLoaderBar() {
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+      isInvocando = false;
+    
+      // ANIMA rápido até 100, encerra, some
+      loadingBar.style.width = "100%";
+      setTimeout(() => { loader.style.display = "none"; }, 220);
+      if (loaderInterval) clearInterval(loaderInterval);
+    }
+    
+    // Variável global para armazenar a imagem anexada
+    let attachedImage = null;
+    
+    // Função para manipular upload de imagem
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Verificar se é uma imagem
+      if (!file.type.startsWith('image/')) {
+        alert('⚠️ Por favor, selecione apenas arquivos de imagem.');
         return;
       }
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.end(data);
-    });
-  } else if (req.method === 'GET' && req.url === '/favicon.ico') {
-    // Servir o favicon
-    fs.readFile(path.join(__dirname, 'favicon.ico'), (err, data) => {
-      if (err) {
-        res.writeHead(404);
-        res.end('Not found');
+      
+      // Verificar tamanho (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('⚠️ Imagem muito grande. Máximo 10MB.');
         return;
       }
-      res.writeHead(200, { 'Content-Type': 'image/x-icon' });
-      res.end(data);
-    });
-  } else if (req.method === 'POST' && req.url === '/api/thread') {
-    // Mock da API de thread
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ threadId: 'thread_' + Date.now() }));
-  } else if (req.method === 'POST' && req.url === '/api/arca') {
-    // Usar handler real da API da Arca
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', async () => {
+      
+      // Armazenar arquivo para envio posterior
+      attachedImage = file;
+      
+      // Mostrar preview
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const previewDiv = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        previewImg.src = e.target.result;
+        previewDiv.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    // Função para remover imagem anexada
+    function removeImage() {
+      attachedImage = null;
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('imageInput').value = '';
+    }
+    
+    // Função para enviar imagem para análise
+    async function enviarImagem(file, prompt) {
       try {
-        // Parse do JSON body
-        req.body = JSON.parse(body);
+        const buf = await file.arrayBuffer();
+        const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        const resp = await fetch("/api/vision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, imageB64: b64, mime: file.type })
+        });
         
-        // Importar e usar o handler real
-        const arcaHandler = require('./api/arca.js');
-        await arcaHandler(req, res);
-      } catch (err) {
-        console.error('Erro no parsing do body:', err);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
-      }
-    });
-  } else if (req.method === 'POST' && req.url === '/api/vision') {
-    // Usar handler real da API de Vision
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', async () => {
-      try {
-        // Parse do JSON body
-        req.body = JSON.parse(body);
+        if (!resp.ok) {
+          throw new Error(`Erro na análise: ${resp.status}`);
+        }
         
-        // Importar e usar o handler real
-        const visionHandler = require('./api/vision.js');
-        await visionHandler.default(req, res);
-      } catch (err) {
-        console.error('Erro no parsing do body (vision):', err);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+        const { text } = await resp.json();
+        return text;
+      } catch (error) {
+        console.error('Erro ao enviar imagem:', error);
+        throw error;
       }
-    });
-  } else {
-    res.writeHead(404);
-    res.end('Not found');
-  }
-});
+    }
+    
+    async function sendMessage() {
+      const input = document.getElementById("userInput").value.trim();
+      const responseDiv = document.getElementById("response");
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
 
-const PORT = 3000;
-server.listen(PORT, () => {
-  console.log(`🛥️ Servidor da Arca rodando em http://localhost:${PORT}`);
+      if (!input && !attachedImage) {
+        responseDiv.innerHTML = "⚠️ Nada foi invocado.";
+        return;
+      }
+
+      // Reset do status INVOCANDO
+      isInvocando = true;
+
+      let finalInput = input;
+      
+      // Se há imagem anexada, usar API de vision
+      if (attachedImage) {
+        try {
+          const visionPrompt = input || "Analise a imagem e dê um diagnóstico executável.";
+          const prefixedPrompt = `**ESPELHO VISUAL**: ${visionPrompt}`;
+          
+          // Adicionar mensagem do usuário com indicação de imagem
+          messages.push({ role: "user", content: `${input}\n\n📷 *Imagem anexada para análise*` });
+          messages.push({ role: "assistant", content: "Invocando..." });
+          renderMessagesWithLiveMarkdown();
+          
+          // INICIA O RITUAL DA BARRA
+          startLoaderBar();
+          
+          // Analisar imagem
+          const visionResult = await enviarImagem(attachedImage, prefixedPrompt);
+          
+          // Limpar imagem após uso
+          removeImage();
+          
+          // Atualizar última mensagem com resultado
+          messages[messages.length - 1].content = visionResult;
+          renderMessagesWithLiveMarkdown();
+          
+          // Salvar no histórico
+          saveCurrentSession();
+          
+          // Finalizar barra
+          stopLoaderBar();
+          
+          // Limpar input
+          document.getElementById("userInput").value = "";
+          return;
+          
+        } catch (error) {
+          console.error('Erro na análise de imagem:', error);
+          messages[messages.length - 1].content = `⚠️ Erro na análise da imagem: ${error.message}`;
+          renderMessagesWithLiveMarkdown();
+          stopLoaderBar();
+          return;
+        }
+      }
+
+      // Fluxo normal sem imagem
+      // Adicionar mensagem do usuário e mensagem "Invocando..."
+      messages.push({ role: "user", content: input });
+      messages.push({ role: "assistant", content: "Invocando..." });
+      renderMessagesWithLiveMarkdown(); // já mostra as duas
+      
+      // INICIA O RITUAL DA BARRA
+      startLoaderBar();
+
+      try {
+        // Verificar se já existe threadId salvo
+        let threadId = localStorage.getItem("threadId");
+        
+        if (!threadId) {
+          // Criar nova thread e limpar mensagens
+          messages = [{ role: "user", content: input }, { role: "assistant", content: "" }];
+          const threadRes = await fetch("/api/thread", {
+            method: "POST"
+          });
+          const threadData = await threadRes.json();
+          threadId = threadData.threadId;
+          
+          // Salvar no navegador
+          localStorage.setItem("threadId", threadId);
+        }
+
+        const response = await fetch("/api/arca", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input, threadId })
+        });
+
+        if (!response.ok) {
+  const body = await response.text().catch(()=> '');
+  throw new Error(`Falha ao invocar: ${response.status} ${response.statusText || ''} ${body}`);
+}
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop();
+
+          for (let part of parts) {
+            if (!part.startsWith("data: ")) continue;
+
+            // remove apenas o prefixo "data:" mantendo QUALQUER espaço do token
+const content = part.replace(/^data:\s?/, "");
+            
+            if (content === "[DONE]") {
+              // Garantir renderização final e limpeza
+              clearTimeout(window.renderTimeout);
+              renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
+              
+              document.getElementById("userInput").value = "";
+              saveToHistory(input, threadId);
+              return;
+            }
+
+            // STREAMING RITUAL OTIMIZADO: máxima fluidez e presença
+            if (isInvocando && content !== "[DONE]") {
+              const idx = messages.length - 1;
+              if (messages[idx].content === "Invocando...") {
+                // Remove "Invocando..." e inicia resposta real
+                messages[idx].content = content;
+                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+                
+                // Remove barra de loading no primeiro token real
+                window.requestAnimationFrame(() => {
+                  stopLoaderBar();
+                });
+              } else {
+                // Acumula tokens com fluidez natural
+                safeAppend(idx, content);
+                
+                // Renderização otimizada: debounce inteligente para performance
+                clearTimeout(window.renderTimeout);
+                window.renderTimeout = setTimeout(() => {
+                  renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+                }, 16); // 60fps para máxima suavidade
+              }
+              
+              // 💾 AUTO-SAVE: Salvar progresso durante streaming
+              clearTimeout(window.autoSaveTimeout);
+              window.autoSaveTimeout = setTimeout(() => {
+                saveThreadMessages(threadId);
+              }, 1000); // Salva a cada 1 segundo durante streaming
+            } else {
+              // Streaming normal fora do estado de invocação
+              safeAppend(messages.length - 1, content);
+              
+              clearTimeout(window.renderTimeout);
+              window.renderTimeout = setTimeout(() => {
+                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+              }, 16);
+            }
+          }
+        }
+      } catch (err) {
+        stopLoaderBar();
+        responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
+      }
+    }
+
+    function renderMessages() {
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerHTML = "";
+
+      messages.forEach(msg => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
+        
+        if (msg.role === "user") {
+          div.style.fontStyle = "italic";
+          div.style.color = "#ccc";
+          div.style.backgroundColor = "#1a1a1a";
+          div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          attachMessageToolbar(div, raw);
+        } else {
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
+          
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          
+          // Forçar parágrafos se não houver \n\n no conteúdo
+          let content = msg.content; // não mate espaços de borda
+          
+          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+          }
+          
+          const html = marked.parse(content);
+div.innerHTML = DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: [
+    'p','strong','em','ul','ol','li',
+    'h1','h2','h3','h4','h5','h6',
+    'br','code','pre','blockquote','hr','a'
+  ],
+  ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
 });
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
+          attachMessageToolbar(div, raw);
+        }
+        
+        responseDiv.appendChild(div);
+      });
+
+      responseDiv.scrollTop = responseDiv.scrollHeight;
+    }
+
+    function renderMessagesWithLiveMarkdown(isStreaming = false) {
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerHTML = "";
+
+      messages.forEach((msg, index) => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
+        
+        if (msg.role === "user") {
+          div.style.fontStyle = "italic";
+          div.style.color = "#ccc";
+          div.style.backgroundColor = "#1a1a1a";
+          div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          attachMessageToolbar(div, raw);
+        } else {
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
+          
+          // Aplicar animação de streaming na última mensagem do assistente
+          const isLastAssistantMessage = index === messages.length - 1 && msg.role === "assistant";
+          if (isStreaming && isLastAssistantMessage) {
+            div.classList.add("streaming-active");
+          }
+          
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          
+          // Forçar parágrafos se não houver \n\n no conteúdo
+          let content = msg.content; // preserve o MD cru para copiar depois
+          
+          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!looksLikeCodeOrHeadings) {
+            content = content
+              .replace(/([.!?])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
+              .replace(/([.!?])\s+/g, '$1\n\n');            // quebra em parágrafos após pontuação
+          }
+          
+          const html = marked.parse(content);
+          div.innerHTML = DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [
+              'p','strong','em','ul','ol','li',
+              'h1','h2','h3','h4','h5','h6',
+              'br','code','pre','blockquote','hr','a'
+            ],
+            ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
+          });
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
+          attachMessageToolbar(div, raw);
+        }
+        
+        responseDiv.appendChild(div);
+      });
+
+      responseDiv.scrollTop = responseDiv.scrollHeight;
+    }
+
+    function saveToHistory(userInput, threadId) {
+      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      
+      // Verificar se já existe essa sessão no histórico
+      const existingIndex = history.findIndex(session => session.id === threadId);
+      
+      if (existingIndex === -1) {
+        // Nova sessão
+        history.push({
+          id: threadId,
+          title: userInput.slice(0, 60) + (userInput.length > 60 ? "..." : ""),
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // 🔐 PATCH 3: Sanitização antes de salvar
+      const sanitizedHistory = history.map(session => ({
+        id: session.id,
+        title: session.title,
+        timestamp: session.timestamp
+      }));
+      
+      localStorage.setItem("chatHistory", JSON.stringify(sanitizedHistory));
+      
+      // 💾 SALVAR MENSAGENS DA SESSÃO ATUAL
+      saveThreadMessages(threadId);
+      
+      loadSidebar();
+    }
+
+    // 💾 Salvar mensagens completas no localStorage
+    function saveThreadMessages(threadId) {
+      if (!threadId || messages.length === 0) return;
+      
+      // Filtrar apenas mensagens user/assistant (sem system)
+      const userMessages = messages.filter(msg => msg.role !== "system");
+      
+      // Sanitizar conteúdo antes de salvar
+      const sanitizedMessages = userMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content || ""
+      }));
+      
+      localStorage.setItem(`thread_${threadId}`, JSON.stringify(sanitizedMessages));
+    }
+
+    // 📖 Carregar mensagens do localStorage
+    function loadThreadMessagesFromStorage(threadId) {
+      if (!threadId) return [];
+      
+      try {
+        const stored = localStorage.getItem(`thread_${threadId}`);
+        return stored ? JSON.parse(stored) : [];
+      } catch (err) {
+        console.warn('Erro ao carregar mensagens do localStorage:', err);
+        return [];
+      }
+    }
+
+    async function loadThreadMessages(threadId) {
+      try {
+        // 🔄 PRIORIDADE: Carregar do localStorage primeiro
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        
+        if (localMessages.length > 0) {
+          // Mensagens encontradas no localStorage
+          messages = localMessages;
+          renderMessages();
+          return;
+        }
+        
+        // 🌐 FALLBACK: Tentar carregar do servidor se localStorage vazio
+        const res = await fetch("/api/getMessages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ threadId })
+        });
+
+        const data = await res.json();
+
+        if (data.messages && data.messages.length > 0) {
+          messages = data.messages;
+          // Salvar no localStorage para próximas vezes
+          saveThreadMessages(threadId);
+        } else {
+          messages = [];
+        }
+        
+        renderMessages();
+      } catch (err) {
+        // Se falhar, tentar carregar do localStorage como último recurso
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        if (localMessages.length > 0) {
+          messages = localMessages;
+          renderMessages();
+        } else {
+          document.getElementById("response").innerHTML = "⚠️ Falha ao carregar mensagens.";
+        }
+      }
+    }
+
+    function loadSidebar() {
+      const sidebar = document.getElementById("chatSidebar");
+      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      const currentThreadId = localStorage.getItem("threadId");
+
+      sidebar.innerHTML = "<h3>⛵ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar sessões'>×</button></h3>";
+
+      // Botão Nova Travessia
+      const newBtn = document.createElement("button");
+      newBtn.textContent = "🌊 Nova Travessia";
+      newBtn.className = "new-session";
+      newBtn.onclick = () => {
+        localStorage.removeItem("threadId");
+        messages = []; // Limpar mensagens
+        document.getElementById("response").innerHTML = "";
+        document.getElementById("userInput").value = "";
+        loadSidebar();
+      };
+      sidebar.appendChild(newBtn);
+
+      // Histórico de sessões (mais recentes primeiro)
+      history.reverse().forEach(session => {
+        const btn = document.createElement("button");
+        btn.textContent = session.title;
+        btn.style.opacity = session.id === currentThreadId ? "1" : "0.7";
+        btn.style.fontWeight = session.id === currentThreadId ? "bold" : "normal";
+        btn.onclick = () => {
+          localStorage.setItem("threadId", session.id);
+          loadThreadMessages(session.id);
+          document.getElementById("userInput").value = "";
+          loadSidebar();
+          
+          // Auto-close sidebar no mobile após clicar em sessão
+          if (window.innerWidth <= 768) {
+            document.getElementById("chatSidebar").style.display = "none";
+            document.getElementById("chatSidebar").classList.remove("open");
+          }
+        };
+        
+        // Duplo clique para renomear
+        btn.ondblclick = () => {
+          const newTitle = prompt("Renomear sessão:", session.title);
+          if (newTitle && newTitle.trim()) {
+            session.title = newTitle.trim();
+            const fullHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+            const idx = fullHistory.findIndex(s => s.id === session.id);
+            if (idx !== -1) {
+              fullHistory[idx].title = newTitle.trim();
+              localStorage.setItem("chatHistory", JSON.stringify(fullHistory));
+              loadSidebar();
+            }
+          }
+        };
+        
+        sidebar.appendChild(btn);
+      });
+    }
+
+    function showResetModal() {
+      document.getElementById("resetModal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("resetModal").style.display = "none";
+    }
+
+    function confirmReset() {
+      const currentThreadId = localStorage.getItem("threadId");
+      
+      // Remover sessão atual do histórico
+      if (currentThreadId) {
+        const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+        const updatedHistory = history.filter(session => session.id !== currentThreadId);
+        localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+        
+        // 🗑️ LIMPAR MENSAGENS DA SESSÃO RESETADA
+        localStorage.removeItem(`thread_${currentThreadId}`);
+      }
+      
+      // Resetar thread atual
+      localStorage.removeItem("threadId");
+      messages = []; // Limpar mensagens
+      document.getElementById("response").innerHTML = "🔄 Memória resetada. Nova travessia iniciada.";
+      document.getElementById("userInput").value = "";
+      
+      closeModal();
+      loadSidebar();
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("chatSidebar");
+      const main = document.getElementById("mainContent");
+      const btn = document.getElementById("toggleSidebar");
+
+      if (window.innerWidth <= 768) {
+        // Mobile: usa classe 'open'
+        const isOpen = sidebar.classList.contains("open");
+        if (isOpen) {
+          sidebar.classList.remove("open");
+        } else {
+          sidebar.classList.add("open");
+        }
+        btn.setAttribute("aria-expanded", sidebar.classList.contains("open") ? "true" : "false");
+      } else {
+        // Desktop: usa classe 'hidden' para sidebar e 'sidebar-hidden' para main
+        const isHidden = sidebar.classList.contains("hidden");
+        if (isHidden) {
+          // Mostrar sidebar
+          sidebar.classList.remove("hidden");
+          main.classList.remove("sidebar-hidden");
+          btn.classList.add("sidebar-open");
+        } else {
+          // Esconder sidebar
+          sidebar.classList.add("hidden");
+          main.classList.add("sidebar-hidden");
+          btn.classList.remove("sidebar-open");
+        }
+        btn.setAttribute("aria-expanded", !sidebar.classList.contains("hidden") ? "true" : "false");
+      }
+    }
+
+    // Carregar sidebar ao inicializar
+    window.onload = function () {
+      loadSidebar();
+      
+      // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
+      const currentThreadId = localStorage.getItem("threadId");
+      if (currentThreadId) {
+        loadThreadMessages(currentThreadId);
+      }
+
+      // Se for desktop, garante que o sidebar apareça (remove classe hidden se existir)
+      if (window.innerWidth > 768) {
+        const sidebar = document.getElementById("chatSidebar");
+        const main = document.getElementById("mainContent");
+        const btn = document.getElementById("toggleSidebar");
+        sidebar.classList.remove("hidden");
+        main.classList.remove("sidebar-hidden");
+        btn.classList.add("sidebar-open");
+        btn.setAttribute("aria-expanded", "true");
+      }
+    };
+
+    // Fechar modal clicando fora dele
+    window.onclick = function(event) {
+      const modal = document.getElementById("resetModal");
+      if (event.target === modal) {
+        closeModal();
+      }
+    }
+
+    function enhanceCodeBlocks(container) {
+      const pres = container.querySelectorAll('pre');
+      pres.forEach(pre => {
+        if (pre.dataset.enhanced === '1') return;
+
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        // Linguagem via class="language-xxx"
+        const cls = (code.getAttribute('class') || '').split(/\s+/);
+        let lang = cls.find(c => c.startsWith('language-'));
+        lang = lang ? lang.replace('language-', '').toUpperCase() : 'TXT';
+
+        // Badge de linguagem
+        const badge = document.createElement('div');
+        badge.className = 'code-badge';
+        badge.textContent = lang;
+
+        // Botão copiar
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.type = 'button';
+        btn.textContent = 'Copiar';
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const raw = code.innerText;
+          try {
+            await navigator.clipboard.writeText(raw);
+            btn.textContent = 'Copiado!';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          } catch {
+            btn.textContent = 'Falhou';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          }
+        });
+
+        pre.appendChild(badge);
+        pre.appendChild(btn);
+        pre.dataset.enhanced = '1';
+      });
+    }
+
+    function hardenLinks(container) {
+      container.querySelectorAll('a[href]').forEach(a => {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      });
+    }
+
+    async function copyText(text, btn) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Copiado!';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      } catch {
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Falhou';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      }
+    }
+
+    function iconSVG(kind) {
+      switch (kind) {
+        case 'text': // documento com linhas
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm8 1.5V9h4.5L14 4.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2zm0-8h4v2H8V8z"/></svg>';
+        case 'md':   // chaves {}
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.7 7.3 5 11l3.7 3.7 1.4-1.4L7.8 11l2.3-2.3-1.4-1.4zm6.6 0-1.4 1.4L16.2 11l-2.3 2.3 1.4 1.4L19 11l-3.7-3.7zM10 18l2-12 2 .3-2 12-2-.3z"/></svg>';
+        case 'ok':   // check
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+        case 'err':  // X
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>';
+        default:
+          return '';
+      }
+    }
+
+    function setIcon(btn, state) {
+      btn.classList.remove('ok', 'err');
+      if (state === 'ok') btn.classList.add('ok');
+      if (state === 'err') btn.classList.add('err');
+      btn.innerHTML = iconSVG(state);
+    }
+
+    async function clipboardWrite(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function attachMessageToolbar(div, rawMarkdown) {
+      // Evita duplicar
+      if (div.querySelector('.msg-toolbar')) return;
+
+      // Cria toolbar
+      const bar = document.createElement('div');
+      bar.className = 'msg-toolbar';
+
+      // Botão: copiar TEXTO (renderizado)
+      const btnTxt = document.createElement('button');
+      btnTxt.className = 'msg-btn icon';
+      btnTxt.type = 'button';
+      btnTxt.setAttribute('aria-label', 'Copiar texto');
+      btnTxt.title = 'Copiar texto';
+      btnTxt.innerHTML = iconSVG('text');
+      btnTxt.addEventListener('click', async () => {
+        const plain = div.innerText.replace(/^Você:\s*/,'').trim();
+        const ok = await clipboardWrite(plain);
+        setIcon(btnTxt, ok ? 'ok' : 'err');
+        setTimeout(() => { btnTxt.classList.remove('ok','err'); btnTxt.innerHTML = iconSVG('text'); }, 1200);
+      });
+
+      // Botão: copiar MARKDOWN (cru)
+      const btnMd = document.createElement('button');
+      btnMd.className = 'msg-btn icon';
+      btnMd.type = 'button';
+      btnMd.setAttribute('aria-label', 'Copiar Markdown');
+      btnMd.title = 'Copiar Markdown';
+      btnMd.innerHTML = iconSVG('md');
+      btnMd.addEventListener('click', async () => {
+        const ok = await clipboardWrite(rawMarkdown || '');
+        setIcon(btnMd, ok ? 'ok' : 'err');
+        setTimeout(() => { btnMd.classList.remove('ok','err'); btnMd.innerHTML = iconSVG('md'); }, 1200);
+      });
+
+      bar.appendChild(btnTxt);
+      bar.appendChild(btnMd);
+      div.appendChild(bar);
+    }
+
+    // Event listener para ENTER invocar e SHIFT+ENTER quebrar linha
+    // No mobile, ENTER não funciona para evitar problemas de UX
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        // Detectar se é dispositivo móvel
+        const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          // No mobile, ENTER sempre quebra linha (comportamento padrão)
+          return;
+        }
+        
+        if (e.shiftKey) {
+          // SHIFT+ENTER: permite quebra de linha (comportamento padrão)
+          return;
+        } else {
+          // ENTER: invoca a mensagem (apenas no desktop)
+          e.preventDefault();
+          sendMessage();
+        }
+      }
+    });
+
+    window.sendMessage = sendMessage;
+    window.showResetModal = showResetModal;
+    window.closeModal = closeModal;
+    window.confirmReset = confirmReset;
+    window.toggleSidebar = toggleSidebar;
+  </script>
+</body>
+</html>
