@@ -719,6 +719,11 @@
     let loaderInterval = null;
     let progress = 0;
     
+    // Função para gerar ID único de thread
+    function generateThreadId() {
+      return 'thread_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
     // Função para garantir espaçamento correto no streaming
     function safeAppend(idx, chunk) {
       const prev = messages[idx].content || "";
@@ -874,7 +879,11 @@
           renderMessagesWithLiveMarkdown();
           
           // Salvar no histórico
-          saveCurrentSession();
+          const threadId = localStorage.getItem("threadId") || generateThreadId();
+          if (!localStorage.getItem("threadId")) {
+            localStorage.setItem("threadId", threadId);
+          }
+          saveToHistory(input || "Análise de imagem", threadId);
           
           // Finalizar barra
           stopLoaderBar();
