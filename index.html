@@ -893,15 +893,100 @@
       document.getElementById('imageInput').value = '';
     }
     
+    // Função para redimensionar imagem antes de enviar
+    function redimensionarImagem(file) {
+      return new Promise((resolve, reject) => {
+        // Tamanho máximo para qualquer dimensão da imagem
+        const MAX_DIMENSION = 1200;
+        
+        const img = new Image();
+        img.onload = function() {
+          // Verificar se a imagem precisa ser redimensionada
+          let width = img.width;
+          let height = img.height;
+          
+          // Se a imagem for menor que o limite, não redimensionar
+          if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
+            URL.revokeObjectURL(img.src); // Liberar memória
+            resolve(file); // Retornar o arquivo original
+            return;
+          }
+          
+          // Calcular novas dimensões mantendo proporção
+          if (width > height) {
+            height = Math.round(height * (MAX_DIMENSION / width));
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round(width * (MAX_DIMENSION / height));
+            height = MAX_DIMENSION;
+          }
+          
+          // Criar canvas para redimensionar
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Desenhar imagem redimensionada
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Converter para blob com qualidade reduzida para JPEG
+          canvas.toBlob((blob) => {
+            if (blob) {
+              // Criar novo arquivo com o mesmo nome
+              const newFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: file.lastModified
+              });
+              resolve(newFile);
+            } else {
+              resolve(file); // Fallback para o arquivo original
+            }
+            URL.revokeObjectURL(img.src); // Liberar memória
+          }, 'image/jpeg', 0.85); // 85% de qualidade
+        };
+        
+        img.onerror = function() {
+          URL.revokeObjectURL(img.src);
+          reject(new Error('Erro ao carregar imagem para redimensionamento'));
+        };
+        
+        img.src = URL.createObjectURL(file);
+      });
+    }
+    
     // Função para enviar imagem para análise
     async function enviarImagem(file, prompt) {
       try {
-        const buf = await file.arrayBuffer();
-        const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        // Redimensionar imagem antes de processar
+        const otimizedFile = await redimensionarImagem(file);
+        
+        // Função auxiliar para converter ArrayBuffer para base64 sem estouro de pilha
+        function arrayBufferToBase64(buffer) {
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          const chunkSize = 1024; // Tamanho do chunk para processamento seguro
+          
+          // Processar bytes em pequenos chunks para evitar estouro de pilha
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            const slice = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+            let binaryChunk = '';
+            for (let j = 0; j < slice.length; j++) {
+              binaryChunk += String.fromCharCode(slice[j]);
+            }
+            binary += binaryChunk;
+          }
+          
+          return btoa(binary);
+        }
+        
+        const buf = await otimizedFile.arrayBuffer();
+        const b64 = arrayBufferToBase64(buf);
+        
         const resp = await fetch("/api/vision", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, imageB64: b64, mime: file.type })
+          body: JSON.stringify({ prompt, imageB64: b64, mime: otimizedFile.type })
         });
         
         if (!resp.ok) {
