@@ -683,16 +683,16 @@
 
     <div class="fixed-footer">
       <div class="input-group">
-        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+        <input type="file" id="imageInput" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
         <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         <button onclick="sendMessage()">Invocar</button>
         <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">📷</button>
         <button onclick="showResetModal()" style="background-color: #666; min-width: 20px; width: 20px; font-size: 0.32rem; padding: 0 5px;">Reset</button>
       </div>
-      <div id="imagePreview" style="display: none; margin-top: 10px; text-align: center;">
-        <img id="previewImg" style="max-width: 200px; max-height: 150px; border: 1px solid #333; border-radius: 5px;">
-        <button onclick="removeImage()" style="background-color: #b30000; padding: 5px 10px; font-size: 0.6rem; display: block; margin: 5px auto 0;">✕ Remover</button>
-      </div>
+      <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
+          <!-- Imagens serão adicionadas dinamicamente aqui -->
+          <button onclick="removeImage()" style="background-color: #b30000; padding: 5px 10px; font-size: 0.6rem; display: block; margin: 10px auto 0;">Remover Todas</button>
+        </div>
 
       <div id="loader" style="display:none;">
         <div id="loadingBar"></div>
@@ -775,44 +775,121 @@
       if (loaderInterval) clearInterval(loaderInterval);
     }
     
-    // Variável global para armazenar a imagem anexada
-    let attachedImage = null;
+    // Variável global para armazenar as imagens anexadas
+    let attachedImages = [];
     
-    // Função para manipular upload de imagem
+    // Função para manipular upload de múltiplas imagens
     function handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
       
-      // Verificar se é uma imagem
-      if (!file.type.startsWith('image/')) {
-        alert('⚠️ Por favor, selecione apenas arquivos de imagem.');
+      // Limitar a 5 imagens por mensagem
+      if (attachedImages.length + files.length > 5) {
+        alert('⚠️ Máximo de 5 imagens por mensagem.');
         return;
       }
       
-      // Verificar tamanho (máximo 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('⚠️ Imagem muito grande. Máximo 10MB.');
-        return;
+      // Processar cada arquivo
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Verificar se é uma imagem
+        if (!file.type.startsWith('image/')) {
+          alert(`⚠️ Arquivo ${file.name} não é uma imagem válida.`);
+          continue;
+        }
+        
+        // Verificar tamanho (máximo 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`⚠️ Imagem ${file.name} muito grande. Máximo 10MB.`);
+          continue;
+        }
+        
+        // Gerar ID único para esta imagem
+        const imageId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // Armazenar arquivo para envio posterior
+        attachedImages.push({
+          id: imageId,
+          file: file
+        });
+        
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          // Criar container para preview se não existir
+          const previewDiv = document.getElementById('imagePreview');
+          previewDiv.style.display = 'block';
+          
+          // Criar container para esta imagem específica
+          const imageContainer = document.createElement('div');
+          imageContainer.id = 'container_' + imageId;
+          imageContainer.className = 'image-container';
+          imageContainer.style.display = 'inline-block';
+          imageContainer.style.margin = '5px';
+          imageContainer.style.position = 'relative';
+          
+          // Criar elemento de imagem
+          const imgElement = document.createElement('img');
+          imgElement.src = e.target.result;
+          imgElement.style.maxWidth = '150px';
+          imgElement.style.maxHeight = '100px';
+          imgElement.style.border = '1px solid #333';
+          imgElement.style.borderRadius = '5px';
+          
+          // Criar botão de remoção para esta imagem específica
+          const removeBtn = document.createElement('button');
+          removeBtn.innerHTML = '✕';
+          removeBtn.style.backgroundColor = '#b30000';
+          removeBtn.style.color = 'white';
+          removeBtn.style.border = 'none';
+          removeBtn.style.borderRadius = '50%';
+          removeBtn.style.width = '22px';
+          removeBtn.style.height = '22px';
+          removeBtn.style.fontSize = '0.6rem';
+          removeBtn.style.position = 'absolute';
+          removeBtn.style.top = '-8px';
+          removeBtn.style.right = '-8px';
+          removeBtn.style.cursor = 'pointer';
+          removeBtn.style.display = 'flex';
+          removeBtn.style.alignItems = 'center';
+          removeBtn.style.justifyContent = 'center';
+          removeBtn.onclick = function() { removeSpecificImage(imageId); };
+          
+          // Adicionar elementos ao container
+          imageContainer.appendChild(imgElement);
+          imageContainer.appendChild(removeBtn);
+          
+          // Adicionar container ao preview
+          previewDiv.appendChild(imageContainer);
+        };
+        reader.readAsDataURL(file);
       }
-      
-      // Armazenar arquivo para envio posterior
-      attachedImage = file;
-      
-      // Mostrar preview
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const previewDiv = document.getElementById('imagePreview');
-        const previewImg = document.getElementById('previewImg');
-        previewImg.src = e.target.result;
-        previewDiv.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
     }
     
-    // Função para remover imagem anexada
+    // Função para remover imagem específica
+    function removeSpecificImage(imageId) {
+      // Remover do array de imagens
+      attachedImages = attachedImages.filter(img => img.id !== imageId);
+      
+      // Remover elemento visual
+      const container = document.getElementById('container_' + imageId);
+      if (container) {
+        container.remove();
+      }
+      
+      // Esconder o preview se não houver mais imagens
+      if (attachedImages.length === 0) {
+        document.getElementById('imagePreview').style.display = 'none';
+      }
+    }
+    
+    // Função para remover todas as imagens anexadas
     function removeImage() {
-      attachedImage = null;
-      document.getElementById('imagePreview').style.display = 'none';
+      attachedImages = [];
+      const previewDiv = document.getElementById('imagePreview');
+      previewDiv.innerHTML = '';
+      previewDiv.style.display = 'none';
       document.getElementById('imageInput').value = '';
     }
     
@@ -839,13 +916,47 @@
       }
     }
     
+    // Função para processar múltiplas imagens sequencialmente
+    async function processarMultiplasImagens(imagens, prompt) {
+      let resultadoCompleto = "";
+      let contadorImagens = 0;
+      
+      for (const img of imagens) {
+        contadorImagens++;
+        try {
+          // Adicionar contador à prompt para diferenciar as imagens
+          const promptComContador = imagens.length > 1 
+            ? `${prompt} [Imagem ${contadorImagens}/${imagens.length}]` 
+            : prompt;
+            
+          const resultado = await enviarImagem(img.file, promptComContador);
+          
+          // Adicionar separador entre resultados de imagens diferentes
+          if (resultadoCompleto) {
+            resultadoCompleto += "\n\n---\n\n";
+          }
+          
+          // Adicionar cabeçalho para cada imagem se houver múltiplas
+          if (imagens.length > 1) {
+            resultadoCompleto += `**Análise da Imagem ${contadorImagens}/${imagens.length}:**\n\n`;
+          }
+          
+          resultadoCompleto += resultado;
+        } catch (error) {
+          resultadoCompleto += `\n\nErro ao processar imagem ${contadorImagens}: ${error.message}`;
+        }
+      }
+      
+      return resultadoCompleto;
+    }
+    
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
       const responseDiv = document.getElementById("response");
       const loader = document.getElementById("loader");
       const loadingBar = document.getElementById("loadingBar");
 
-      if (!input && !attachedImage) {
+      if (!input && attachedImages.length === 0) {
         responseDiv.innerHTML = "⚠️ Nada foi invocado.";
         return;
       }
@@ -855,22 +966,26 @@
 
       let finalInput = input;
       
-      // Se há imagem anexada, usar API de vision
-      if (attachedImage) {
+      // Se há imagens anexadas, usar API de vision
+      if (attachedImages.length > 0) {
         try {
           const visionPrompt = input || "Analise a imagem e dê um diagnóstico executável.";
           const prefixedPrompt = `**ESPELHO VISUAL**: ${visionPrompt}`;
           
-          // Adicionar mensagem do usuário com indicação de imagem
-          messages.push({ role: "user", content: `${input}\n\n📷 *Imagem anexada para análise*` });
+          // Adicionar mensagem do usuário com indicação de imagem(ns)
+          const imagemTexto = attachedImages.length === 1 
+            ? "📷 *Imagem anexada para análise*" 
+            : `📷 *${attachedImages.length} imagens anexadas para análise*`;
+          
+          messages.push({ role: "user", content: `${input}\n\n${imagemTexto}` });
           messages.push({ role: "assistant", content: "Invocando..." });
           renderMessagesWithLiveMarkdown();
           
           // INICIA O RITUAL DA BARRA
           startLoaderBar();
           
-          // Analisar imagem
-          const visionResult = await enviarImagem(attachedImage, prefixedPrompt);
+          // Analisar imagens
+          const visionResult = await processarMultiplasImagens(attachedImages, prefixedPrompt);
           
           // Limpar imagem após uso
           removeImage();
