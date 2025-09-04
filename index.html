@@ -685,8 +685,8 @@
         <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
         <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         <button onclick="sendMessage()">Invocar</button>
-        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; width: 10px; height: 20px; font-size: 0.65rem; padding: 0;" title="Anexar imagem para análise visual">📷</button>
-        <button onclick="showResetModal()" style="background-color: #666; min-width: 20px; font-size: 0.65rem;">Reset</button>
+        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 20px; width: 20px; height: 55px; font-size: 0.50rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Anexar imagem para análise visual">📷</button>
+        <button onclick="showResetModal()" style="background-color: #666; min-width: 25px; font-size: 0.65rem;">Reset</button>
       </div>
       <div id="imagePreview" style="display: none; margin-top: 10px; text-align: center;">
         <img id="previewImg" style="max-width: 200px; max-height: 150px; border: 1px solid #333; border-radius: 5px;">
