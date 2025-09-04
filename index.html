@@ -686,12 +686,12 @@
         <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
         <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         <button onclick="sendMessage()">Invocar</button>
-        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 20px; width: 20px; height: 11px; font-size: 0.50rem; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Anexar imagem para análise visual">📷</button>
-        <button onclick="showResetModal()" style="background-color: #666; min-width: 25px; font-size: 0.65rem;">Reset</button>
+        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">📷</button>
+        <button onclick="showResetModal()" style="background-color: #666; min-width: 20px; width: 20px; font-size: 0.55rem; padding: 0 5px;">Reset</button>
       </div>
       <div id="imagePreview" style="display: none; margin-top: 10px; text-align: center;">
         <img id="previewImg" style="max-width: 200px; max-height: 150px; border: 1px solid #333; border-radius: 5px;">
-        <button onclick="removeImage()" style="background-color: #b30000; margin-left: 10px; padding: 5px 10px; font-size: 0.6rem;">✕ Remover</button>
+        <button onclick="removeImage()" style="background-color: #b30000; padding: 5px 10px; font-size: 0.6rem; display: block; margin: 5px auto 0;">✕ Remover</button>
       </div>
 
       <div id="loader" style="display:none;">
