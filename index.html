@@ -683,9 +683,9 @@
     <div class="fixed-footer">
       <div class="input-group">
         <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 60px; font-size: 0.65rem;" title="Anexar imagem para análise visual">📷 Anexar</button>
         <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         <button onclick="sendMessage()">Invocar</button>
+        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 40px; height: 40px; font-size: 0.6rem; padding: 0.2rem; margin-left: 0.2rem;" title="Anexar imagem para análise visual">📷</button>
         <button onclick="showResetModal()" style="background-color: #666; min-width: 60px; font-size: 0.65rem;">Reset</button>
       </div>
       <div id="imagePreview" style="display: none; margin-top: 10px; text-align: center;">
