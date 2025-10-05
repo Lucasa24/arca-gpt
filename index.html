@@ -194,6 +194,57 @@
       width: 300px;
       text-align: center;
       border-radius: 5px;
+      box-shadow: 0 0 20px rgba(179, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #b30000, #ff6b6b, #b30000);
+    }
+    
+    .modal-content h3 {
+      color: #ff6b6b;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+    
+    /* Estilos para o formulário de login */
+    #loginForm input[type="email"],
+    #loginForm input[type="tel"] {
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    
+    #loginForm input[type="email"]:focus,
+    #loginForm input[type="tel"]:focus {
+      border-color: #b30000;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(179, 0, 0, 0.2);
+    }
+    
+    #loginForm input[type="checkbox"] {
+      accent-color: #b30000;
+    }
+    
+    /* Animação para o campo de WhatsApp */
+    #whatsappField {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      opacity: 0;
+    }
+    
+    #whatsappField.visible {
+      max-height: 100px;
+      opacity: 1;
+      margin-bottom: 20px;
     }
 
     .modal-buttons {
@@ -665,6 +716,39 @@
   <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
   <div id="chatSidebar"></div>
   
+  <!-- Modal de Login -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content" style="width: 350px;">
+      <h3>🌊 Portal de Travessia</h3>
+      <p style="margin-bottom: 20px; font-size: 0.85rem;">Identifique-se para iniciar sua jornada na Arca</p>
+      
+      <form id="loginForm" onsubmit="return handleLogin(event)">
+        <div style="margin-bottom: 15px;">
+          <label for="userEmail" style="display: block; margin-bottom: 5px; text-align: left; font-size: 0.8rem;">Email do Viajante</label>
+          <input type="email" id="userEmail" required placeholder="seu@email.com" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: flex; align-items: center; font-size: 0.8rem; cursor: pointer;">
+            <input type="checkbox" id="whatsappConsent" style="margin-right: 8px;">
+            <span>Receber novidades no WhatsApp</span>
+          </label>
+        </div>
+        
+        <div id="whatsappField" style="margin-bottom: 20px; display: none;">
+          <label for="userWhatsapp" style="display: block; margin-bottom: 5px; text-align: left; font-size: 0.8rem;">WhatsApp (com DDD)</label>
+          <input type="tel" id="userWhatsapp" placeholder="(00) 00000-0000" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
+        </div>
+        
+        <div class="modal-buttons">
+          <button type="submit" class="confirm-btn" style="width: 100%;">Iniciar Travessia</button>
+        </div>
+      </form>
+      
+      <p style="margin-top: 15px; font-size: 0.7rem; color: #777;">Seus dados são protegidos e utilizados apenas para sua jornada na Arca</p>
+    </div>
+  </div>
+  
   <div id="resetModal" class="modal">
     <div class="modal-content">
       <h3>⚠️ Confirmação de Reset</h3>
@@ -687,7 +771,7 @@
         <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         <button onclick="sendMessage()">Invocar</button>
         <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">📷</button>
-        <button onclick="showResetModal()" style="background-color: #666; min-width: 20px; width: 20px; font-size: 0.32rem; padding: 0 5px;">Reset</button>
+        <button onclick="showResetModal()" style="background-color: #666; min-width: 20px; width: 20px; font-size: 0.32rem; padding: 0 5px;">•</button>
       </div>
       <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
           <!-- Imagens serão adicionadas dinamicamente aqui -->
@@ -698,7 +782,7 @@
         <div id="loadingBar"></div>
       </div>
 
-      <p class="footer-note">Os dados fornecidos são privados e protegidos! • Memória persistente ativa</p>
+      <p class="footer-note"><a href="#" onclick="showLoginModal(); return false;">Fazer login</a> • Memória persistente ativa</p>
     </div>
   </main>
 
@@ -719,6 +803,8 @@
     let isInvocando = false;
     let loaderInterval = null;
     let progress = 0;
+    let userLoggedIn = false;
+    let userData = null;
     
     // Função para gerar ID único de thread
     function generateThreadId() {
@@ -1495,6 +1581,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
     function closeModal() {
       document.getElementById("resetModal").style.display = "none";
+      document.getElementById("loginModal").style.display = "none";
     }
 
     function confirmReset() {
@@ -1572,12 +1659,17 @@ div.innerHTML = DOMPurify.sanitize(html, {
         btn.classList.add("sidebar-open");
         btn.setAttribute("aria-expanded", "true");
       }
+      
+      // Verificar status de login
+      checkLoginStatus();
     };
 
     // Fechar modal clicando fora dele
     window.onclick = function(event) {
-      const modal = document.getElementById("resetModal");
-      if (event.target === modal) {
+      const resetModal = document.getElementById("resetModal");
+      const loginModal = document.getElementById("loginModal");
+      
+      if (event.target === resetModal || event.target === loginModal) {
         closeModal();
       }
     }
@@ -1742,11 +1834,132 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     });
 
+    // Função para mostrar o modal de login
+    function showLoginModal() {
+      document.getElementById('loginModal').style.display = 'block';
+    }
+    
+    // Função para validar email
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+    
+    // Função para validar número de WhatsApp
+    function validateWhatsApp(number) {
+      // Remove caracteres não numéricos
+      const cleanNumber = number.replace(/\D/g, '');
+      // Verifica se tem entre 10 e 11 dígitos (com ou sem o 9)
+      return cleanNumber.length >= 10 && cleanNumber.length <= 11;
+    }
+    
+    // Função para formatar número de WhatsApp
+    function formatWhatsApp(number) {
+      const cleanNumber = number.replace(/\D/g, '');
+      if (cleanNumber.length === 11) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 7)}-${cleanNumber.substring(7)}`;
+      } else if (cleanNumber.length === 10) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 6)}-${cleanNumber.substring(6)}`;
+      }
+      return number;
+    }
+    
+    // Função para lidar com o login
+    function handleLogin(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('userEmail').value.trim();
+      const whatsappConsent = document.getElementById('whatsappConsent').checked;
+      let whatsapp = '';
+      
+      if (!validateEmail(email)) {
+        alert('Por favor, insira um email válido.');
+        return false;
+      }
+      
+      if (whatsappConsent) {
+        whatsapp = document.getElementById('userWhatsapp').value.trim();
+        if (!validateWhatsApp(whatsapp)) {
+          alert('Por favor, insira um número de WhatsApp válido com DDD.');
+          return false;
+        }
+      }
+      
+      // Armazena os dados do usuário
+      userData = {
+        email: email,
+        whatsapp: whatsappConsent ? formatWhatsApp(whatsapp) : '',
+        consentWhatsapp: whatsappConsent,
+        loginDate: new Date().toISOString()
+      };
+      
+      // Salva no localStorage
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      // Atualiza o estado de login
+      userLoggedIn = true;
+      
+      // Fecha o modal
+      closeModal();
+      
+      // Atualiza a interface para mostrar que o usuário está logado
+      updateLoginStatus();
+      
+      return false;
+    }
+    
+    // Função para atualizar o status de login na interface
+    function updateLoginStatus() {
+      const footerNote = document.querySelector('.footer-note');
+      if (userLoggedIn && userData) {
+        footerNote.innerHTML = `<span style="color: #b30000;">⦿</span> ${userData.email.split('@')[0]} | <a href="#" onclick="showLoginModal(); return false;" style="color: #777; text-decoration: underline;">Alterar</a>`;
+      } else {
+        footerNote.innerHTML = `<a href="#" onclick="showLoginModal(); return false;">Fazer login</a>`;
+      }
+    }
+    
+    // Função para verificar o login ao carregar a página
+    function checkLoginStatus() {
+      const storedUserData = localStorage.getItem('userData');
+      if (storedUserData) {
+        userData = JSON.parse(storedUserData);
+        userLoggedIn = true;
+        updateLoginStatus();
+      } else {
+        // Se não estiver logado, mostra o modal de login
+        showLoginModal();
+      }
+    }
+    
+    // Mostrar/esconder campo de WhatsApp baseado no checkbox
+    document.addEventListener('DOMContentLoaded', function() {
+      const whatsappConsent = document.getElementById('whatsappConsent');
+      const whatsappField = document.getElementById('whatsappField');
+      
+      if (whatsappConsent && whatsappField) {
+        whatsappConsent.addEventListener('change', function() {
+          if (this.checked) {
+            whatsappField.style.display = 'block';
+            whatsappField.classList.add('visible');
+            document.getElementById('userWhatsapp').required = true;
+          } else {
+            whatsappField.classList.remove('visible');
+            setTimeout(() => {
+              whatsappField.style.display = 'none';
+            }, 300);
+            document.getElementById('userWhatsapp').required = false;
+          }
+        });
+      }
+    });
+    
     window.sendMessage = sendMessage;
     window.showResetModal = showResetModal;
+    window.showLoginModal = showLoginModal;
     window.closeModal = closeModal;
     window.confirmReset = confirmReset;
     window.toggleSidebar = toggleSidebar;
+    window.handleLogin = handleLogin;
   </script>
 </body>
 </html>
