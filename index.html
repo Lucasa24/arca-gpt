@@ -762,6 +762,21 @@
       </div>
     </div>
   </div>
+  
+  <!-- Modal de Nomeação de Travessia -->
+  <div id="newTravessiaModal" class="modal">
+    <div class="modal-content">
+      <h3>🌊 Nova Travessia</h3>
+      <p>Nomeie sua jornada para iniciar a travessia:</p>
+      <div style="margin: 20px 0;">
+        <input type="text" id="travessiaName" placeholder="Nome da Travessia" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
+      </div>
+      <div class="modal-buttons">
+        <button class="confirm-btn" onclick="confirmNewTravessia()">Iniciar Jornada</button>
+        <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
   <main id="mainContent">
     <h1 class="main-title">A Arca 🌊🛥️</h1>
@@ -1270,6 +1285,8 @@ const content = part.replace(/^data:\s?/, "");
               renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
               
               document.getElementById("userInput").value = "";
+              // Resetar o tamanho do textarea para o padrão
+              document.getElementById("userInput").style.height = "55px";
               saveToHistory(input, threadId);
               return;
             }
@@ -1554,12 +1571,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
       newBtn.textContent = "🌊 Nova Travessia";
       newBtn.className = "new-session";
       newBtn.onclick = () => {
-        localStorage.removeItem("threadId");
-        messages = []; // Limpar mensagens
-        document.getElementById("response").innerHTML = "";
-        document.getElementById("userInput").value = "";
-        autoResizeTextarea(); // Redimensionar textarea
-        loadSidebar();
+        // Abrir modal para nomear a travessia
+        document.getElementById("newTravessiaModal").style.display = "block";
+        document.getElementById("travessiaName").focus();
       };
       sidebar.appendChild(newBtn);
 
@@ -1608,6 +1622,30 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function closeModal() {
       document.getElementById("resetModal").style.display = "none";
       document.getElementById("loginModal").style.display = "none";
+      document.getElementById("newTravessiaModal").style.display = "none";
+    }
+    
+    function confirmNewTravessia() {
+      const travessiaName = document.getElementById("travessiaName").value.trim() || "Nova Travessia";
+      
+      // Limpar a travessia atual
+      localStorage.removeItem("threadId");
+      messages = []; // Limpar mensagens
+      document.getElementById("response").innerHTML = "";
+      document.getElementById("userInput").value = "";
+      // Resetar o tamanho do textarea para o padrão
+      document.getElementById("userInput").style.height = "55px";
+      
+      // Gerar novo threadId e salvar no histórico com o nome personalizado
+      const newThreadId = generateThreadId();
+      localStorage.setItem("threadId", newThreadId);
+      
+      // Salvar no histórico com o nome personalizado
+      saveToHistory(newThreadId, travessiaName);
+      
+      // Fechar o modal e atualizar a sidebar
+      closeModal();
+      loadSidebar();
     }
 
     function confirmReset() {
@@ -1628,7 +1666,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       messages = []; // Limpar mensagens
       document.getElementById("response").innerHTML = "🔄 Memória resetada. Nova travessia iniciada.";
       document.getElementById("userInput").value = "";
-      autoResizeTextarea(); // Redimensionar textarea
+      // Resetar o tamanho do textarea para o padrão
+      document.getElementById("userInput").style.height = "55px";
       
       closeModal();
       loadSidebar();
@@ -1695,8 +1734,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
     window.onclick = function(event) {
       const resetModal = document.getElementById("resetModal");
       const loginModal = document.getElementById("loginModal");
+      const newTravessiaModal = document.getElementById("newTravessiaModal");
       
-      if (event.target === resetModal || event.target === loginModal) {
+      if (event.target === resetModal || event.target === loginModal || event.target === newTravessiaModal) {
         closeModal();
       }
     }
@@ -1838,6 +1878,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
       div.appendChild(bar);
     }
 
+    // Event listener para ENTER no campo de nome da travessia
+    document.getElementById('travessiaName').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmNewTravessia();
+      }
+    });
+    
     // Event listener para ENTER invocar e SHIFT+ENTER quebrar linha
     // No mobile, ENTER não funciona para evitar problemas de UX
     document.getElementById('userInput').addEventListener('keydown', function(e) {
