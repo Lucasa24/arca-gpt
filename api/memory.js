@@ -310,9 +310,20 @@ function buildSystemMessages(persona = DEFAULT_PERSONA, threadId = null) {
       { role: "system", content: consolidatedClinical }
     ];
   } else if (persona === "tecnico") {
-    const consolidatedTecnico = `${SYSTEM_UNIFIED}\n\n${SYSTEM_TECNICO_FENCE()}\n\n${SYSTEM_PERSONA_TECNICO}\n\nSYSTEM_VERSION=${SYSTEM_VERSION}`;
+    // Carrega o conteúdo do persona_tecnico.md
+    let SYSTEM_TECNICO_PRIMER;
+    try {
+      SYSTEM_TECNICO_PRIMER = fs.readFileSync(path.join(__dirname, 'persona_tecnico.md'), 'utf8');
+    } catch (err) {
+      console.error('Erro ao carregar persona_tecnico.md:', err);
+      // Fallback para a versão hardcoded se o arquivo não puder ser lido
+      SYSTEM_TECNICO_PRIMER = SYSTEM_PERSONA_TECNICO;
+    }
+    
     return [
-      { role: "system", content: consolidatedTecnico }
+      { role: "system", content: SYSTEM_UNIFIED.trim() },
+      { role: "system", content: SYSTEM_TECNICO_PRIMER },
+      { role: "system", content: `SYSTEM_VERSION=${SYSTEM_VERSION}` }
     ];
   }
   
