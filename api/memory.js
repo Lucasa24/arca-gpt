@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const threadMemory = new Map();
-const DEFAULT_PERSONA = process.env.ARCA_PERSONA || "ritual"; // ritual | clinico
+const DEFAULT_PERSONA = process.env.ARCA_PERSONA || "tecnico"; // ritual | clinico | tecnico
 const SYSTEM_VERSION = "2025-08-09-r3"; // mude quando editar o sistema
 
 // === SISTEMA UNIFICADO DA ARCA ===
@@ -255,8 +255,21 @@ SISTEMA:
 - FORMATAÇÃO: Markdown simples; títulos e listas. Sem floreio.
 `.trim();
 
+const SYSTEM_PERSONA_TECNICO = `
+SISTEMA:
+- TOM: extremamente técnico, direto e objetivo. Zero metáforas ou linguagem poética.
+- FRASES: curtas, precisas e factuais. Foco total em dados e resultados mensuráveis.
+- ESTRUTURA: 1) Diagnóstico técnico em 1 linha; 2) Análise objetiva do problema; 3) Solução técnica detalhada; 4) Passos numerados e concretos.
+- FORMATAÇÃO: Markdown estruturado com títulos, listas e código quando necessário.
+- CONTEÚDO: Priorizar informações técnicas, métricas, KPIs e resultados quantificáveis.
+`.trim();
+
 function SYSTEM_CLINICO_FENCE() {
   return `NÃO usar linguagem ritual/poética/metafórica. Se o usuário pedir "estilo ritual", recusar e manter pragmatismo.`.trim();
+}
+
+function SYSTEM_TECNICO_FENCE() {
+  return `NUNCA usar linguagem ritual/poética/metafórica. Manter comunicação 100% técnica, direta e baseada em fatos. Evitar qualquer floreio ou dramatização. Focar exclusivamente em dados, métricas e resultados concretos.`.trim();
 }
 
 // === ABERTURAS VARIÁVEIS ===
@@ -276,32 +289,68 @@ function pickOpening(lastOpening) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-function buildSystemMessages(persona = DEFAULT_PERSONA) {
+function buildSystemMessages(persona = DEFAULT_PERSONA, threadId = null) {
+  // Se temos um threadId, verificamos se há uma persona específica definida para esta thread
+  if (threadId) {
+    const record = threadMemory.get(threadId);
+    if (record && record.currentPersona) {
+      persona = record.currentPersona;
+    }
+  }
+  
   if (persona === "ritual") {
     return [
       { role: "system", content: SYSTEM_UNIFIED.trim() },
       { role: "system", content: SYSTEM_PRIMER },
       { role: "system", content: `SYSTEM_VERSION=${SYSTEM_VERSION}` }
     ];
+  } else if (persona === "clinico") {
+    const consolidatedClinical = `${SYSTEM_UNIFIED}\n\n${SYSTEM_CLINICO_FENCE()}\n\n${SYSTEM_PERSONA_CLINICO}\n\nSYSTEM_VERSION=${SYSTEM_VERSION}`;
+    return [
+      { role: "system", content: consolidatedClinical }
+    ];
+  } else if (persona === "tecnico") {
+    const consolidatedTecnico = `${SYSTEM_UNIFIED}\n\n${SYSTEM_TECNICO_FENCE()}\n\n${SYSTEM_PERSONA_TECNICO}\n\nSYSTEM_VERSION=${SYSTEM_VERSION}`;
+    return [
+      { role: "system", content: consolidatedTecnico }
+    ];
   }
-  const consolidatedClinical = `${SYSTEM_UNIFIED}\n\n${SYSTEM_CLINICO_FENCE()}\n\n${SYSTEM_PERSONA_CLINICO}\n\nSYSTEM_VERSION=${SYSTEM_VERSION}`;
+  
+  // Fallback para persona ritual como padrão
+  const consolidatedRitual = `${SYSTEM_UNIFIED.trim()}\n\n${SYSTEM_PRIMER}\n\nSYSTEM_VERSION=${SYSTEM_VERSION}`;
   return [
-    { role: "system", content: consolidatedClinical }
+    { role: "system", content: consolidatedRitual }
   ];
 }
 
 function getThreadMessages(threadId) {
   const rec = threadMemory.get(threadId);
   if (!rec) {
-    const msgs = buildSystemMessages();
-    threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs, lastOpening: null });
+    const msgs = buildSystemMessages(DEFAULT_PERSONA, threadId);
+    threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs, lastOpening: null, currentPersona: DEFAULT_PERSONA });
     return msgs;
   }
   if (rec.version !== SYSTEM_VERSION) {
-    const msgs = buildSystemMessages();
-    threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs, lastOpening: null });
+    // Preserva a persona atual se existir
+    const currentPersona = rec.currentPersona || DEFAULT_PERSONA;
+    const msgs = buildSystemMessages(currentPersona, threadId);
+    threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs, lastOpening: null, currentPersona });
     return msgs;
   }
+  
+  // Se a persona foi alterada, reconstrói as mensagens do sistema
+  if (rec.currentPersona && rec.messages.length > 0 && rec.messages[0].role === "system") {
+    // Separa as mensagens do sistema das mensagens do usuário
+    const nonSystems = rec.messages.filter(m => m.role !== "system");
+    
+    // Reconstrói as mensagens do sistema com a persona atual
+    const newSystems = buildSystemMessages(rec.currentPersona, threadId);
+    
+    // Atualiza as mensagens na thread
+    rec.messages = [...newSystems, ...nonSystems];
+    threadMemory.set(threadId, rec);
+  }
+  
   return rec.messages;
 }
 
@@ -315,6 +364,42 @@ function addMessageToThread(threadId, role, content) {
   if (!record || !Array.isArray(record.messages)) {
     getThreadMessages(threadId);
     record = threadMemory.get(threadId);
+  }
+  
+  // Detecta comando de modo técnico quando é uma mensagem do usuário
+  if (role === "user") {
+    // Verifica se a mensagem começa com "Modo técnico:" (case insensitive)
+    const modoTecnicoRegex = /^\s*modo\s+t[eé]cnico\s*:\s*(.*)/i;
+    const match = content.match(modoTecnicoRegex);
+    
+    if (match) {
+      // Extrai a instrução técnica após o prefixo
+      const instrucaoTecnica = match[1].trim();
+      
+      // Define a persona como técnica para esta thread
+      record.currentPersona = "tecnico";
+      threadMemory.set(threadId, record);
+      
+      // Substitui o conteúdo original pelo conteúdo após o prefixo
+      content = instrucaoTecnica;
+    } else {
+      // Se não for um comando de modo técnico, verifica se devemos voltar ao modo ritual
+      // Verifica se a mensagem começa com "Modo ritual:" (case insensitive)
+      const modoRitualRegex = /^\s*modo\s+ritual\s*:\s*(.*)/i;
+      const matchRitual = content.match(modoRitualRegex);
+      
+      if (matchRitual) {
+        // Extrai a instrução ritual após o prefixo
+        const instrucaoRitual = matchRitual[1].trim();
+        
+        // Define a persona como ritual para esta thread
+        record.currentPersona = "ritual";
+        threadMemory.set(threadId, record);
+        
+        // Substitui o conteúdo original pelo conteúdo após o prefixo
+        content = instrucaoRitual;
+      }
+    }
   }
   
   // separa systems do resto
@@ -357,6 +442,15 @@ function composeAssistantContent(coreBody, threadId) {
   const record = threadMemory.get(threadId);
   if (!record) return coreBody; // fallback
   
+  // Verifica se estamos usando a persona técnica
+  const currentPersona = record.currentPersona || DEFAULT_PERSONA;
+  
+  // Para persona técnica, retorna apenas o corpo sem abertura ou fechamento
+  if (currentPersona === "tecnico") {
+    return (coreBody ?? "").trimStart();
+  }
+  
+  // Para outras personas, mantém o comportamento original
   const openingText = pickOpening(record.lastOpening);
   record.lastOpening = openingText;
   threadMemory.set(threadId, record);
