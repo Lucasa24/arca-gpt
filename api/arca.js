@@ -61,6 +61,10 @@ async function handler(req, res) {
     systemMessages.forEach((msg, i) => {
       console.log(`[ARCA][system-${i+1}]`, msg.content.slice(0,80) + '...');
     });
+    
+    // Log da persona atual para esta thread
+    const threadRecord = global.threadMemory?.get(threadId);
+    console.log('[ARCA][persona]', threadRecord?.currentPersona || 'default');
 
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -109,9 +113,15 @@ async function handler(req, res) {
         if (!line.startsWith("data:")) continue;
         const payload = line.slice(5).trim();
         if (payload === "[DONE]") {
-          // Adiciona fechamento variável
-          const closing = `\n\n${generateClosing()}`;
-          res.write(`data: ${closing}\n\n`);
+          // Verifica a persona atual para esta thread
+          const threadRecord = global.threadMemory?.get(threadId);
+          const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
+          
+          // Adiciona fechamento variável apenas para persona ritual
+          if (currentPersona !== "tecnico") {
+            const closing = `\n\n${generateClosing()}`;
+            res.write(`data: ${closing}\n\n`);
+          }
           
           // Salva resposta completa com abertura + corpo + fechamento
           const finalResponse = composeAssistantContent(assistantResponse, threadId);
@@ -125,12 +135,18 @@ async function handler(req, res) {
           const parsed = JSON.parse(payload);
           const chunk = parsed.choices?.[0]?.delta?.content || "";
           if (chunk) {
-            // Envia abertura na primeira chunk válida
+            // Envia abertura na primeira chunk válida (apenas para persona ritual)
             if (!openingSent) {
-              const { pickOpening } = require('./memory.js');
-              // Simula uma abertura aleatória para a primeira chunk
-              const opening = pickOpening(null);
-              res.write(`data: ${opening}\n\n`);
+              // Verifica a persona atual para esta thread
+              const threadRecord = global.threadMemory?.get(threadId);
+              const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
+              
+              if (currentPersona !== "tecnico") {
+                const { pickOpening } = require('./memory.js');
+                // Simula uma abertura aleatória para a primeira chunk
+                const opening = pickOpening(null);
+                res.write(`data: ${opening}\n\n`);
+              }
               openingSent = true;
             }
             
