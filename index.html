@@ -581,9 +581,12 @@
       padding: 0.5rem;
       font-size: 0.75rem;
       resize: none;
-      height: 55px;
+      min-height: 55px;
+      max-height: 200px; /* altura máxima para 10 linhas aproximadamente */
       font-family: 'Georgia', serif;
       width: 100%;
+      overflow-y: hidden; /* esconde a barra de rolagem vertical */
+      transition: height 0.2s ease; /* transição suave ao expandir */
     }
 
     button {
@@ -805,6 +808,18 @@
     let progress = 0;
     let userLoggedIn = false;
     let userData = null;
+    
+    // Função para auto-expandir o textarea conforme o conteúdo
+    function autoResizeTextarea() {
+      const textarea = document.getElementById('userInput');
+      
+      // Resetar a altura para calcular corretamente
+      textarea.style.height = 'auto';
+      
+      // Definir a nova altura baseada no conteúdo (scrollHeight)
+      // com limite máximo definido pelo CSS (max-height: 200px)
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    }
     
     // Função para gerar ID único de thread
     function generateThreadId() {
@@ -1175,8 +1190,9 @@
           // Finalizar barra
           stopLoaderBar();
           
-          // Limpar input
+          // Limpar input e redimensionar textarea
           document.getElementById("userInput").value = "";
+          autoResizeTextarea();
           return;
           
         } catch (error) {
@@ -1542,6 +1558,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         messages = []; // Limpar mensagens
         document.getElementById("response").innerHTML = "";
         document.getElementById("userInput").value = "";
+        autoResizeTextarea(); // Redimensionar textarea
         loadSidebar();
       };
       sidebar.appendChild(newBtn);
@@ -1611,6 +1628,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       messages = []; // Limpar mensagens
       document.getElementById("response").innerHTML = "🔄 Memória resetada. Nova travessia iniciada.";
       document.getElementById("userInput").value = "";
+      autoResizeTextarea(); // Redimensionar textarea
       
       closeModal();
       loadSidebar();
@@ -1958,6 +1976,22 @@ div.innerHTML = DOMPurify.sanitize(html, {
             }, 300);
             document.getElementById('userWhatsapp').required = false;
           }
+        });
+      }
+      
+      // Configurar auto-expansão do textarea
+      const userInput = document.getElementById('userInput');
+      if (userInput) {
+        // Aplicar ao carregar a página
+        autoResizeTextarea();
+        
+        // Aplicar quando o usuário digita
+        userInput.addEventListener('input', autoResizeTextarea);
+        
+        // Aplicar quando o usuário cola texto
+        userInput.addEventListener('paste', function() {
+          // Pequeno delay para garantir que o conteúdo colado seja processado
+          setTimeout(autoResizeTextarea, 10);
         });
       }
     });
