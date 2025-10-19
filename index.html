@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>﹏𓊝﹏𓂁﹏ A Arca - Ritual de Travessia</title>
+  <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
     * {
@@ -818,7 +818,7 @@
   </div>
 
   <main id="mainContent">
-    <h1 class="main-title">A Arca ﹏𓊝﹏𓂁﹏</h1>
+    <h1 class="main-title">A Arca ﹏𓊝﹏</h1>
     <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Entre na Arca:</p>
     <div id="response"></div>
 
@@ -1665,11 +1665,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
           }
         };
         
-        // Duplo clique para renomear
-        btn.ondblclick = () => {
+        // Função utilitária de renomear (desktop e mobile)
+        function promptRename() {
           const newTitle = prompt("Renomear sessão:", session.title);
           if (newTitle && newTitle.trim()) {
-            session.title = newTitle.trim();
             const fullHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
             const idx = fullHistory.findIndex(s => s.id === session.id);
             if (idx !== -1) {
@@ -1678,7 +1677,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
               loadSidebar();
             }
           }
-        };
+        }
+        
+        // Duplo clique para renomear
+        btn.ondblclick = promptRename;
+        
+        // Clique direito (context menu) para renomear
+        btn.addEventListener("contextmenu", (e) => { e.preventDefault(); promptRename(); });
+        
+        // Long-press no mobile para renomear
+        let pressTimer = null;
+        btn.addEventListener("touchstart", () => { pressTimer = setTimeout(promptRename, 600); }, { passive: true });
+        ["touchend","touchmove","touchcancel"].forEach(ev => {
+          btn.addEventListener(ev, () => { if (pressTimer) clearTimeout(pressTimer); }, { passive: true });
+        });
         
         sidebar.appendChild(btn);
       });
