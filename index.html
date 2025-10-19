@@ -1640,8 +1640,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
       history.reverse().forEach(session => {
         const btn = document.createElement("button");
         btn.textContent = session.title;
-        btn.style.opacity = session.id === currentThreadId ? "1" : "0.7";
-        btn.style.fontWeight = session.id === currentThreadId ? "bold" : "normal";
+        // Exibir como ativo (opacidade 1 e negrito) SOMENTE se for a sessão atual E já tiver mensagens
+        let hasMessages = false;
+        try {
+          const stored = localStorage.getItem(`thread_${session.id}`);
+          if (stored) {
+            const msgs = JSON.parse(stored);
+            hasMessages = Array.isArray(msgs) && msgs.length > 0;
+          }
+        } catch (e) {}
+        const isActive = (session.id === currentThreadId) && hasMessages;
+        btn.style.opacity = isActive ? "1" : "0.7";
+        btn.style.fontWeight = isActive ? "bold" : "normal";
         btn.onclick = () => {
           localStorage.setItem("threadId", session.id);
           loadThreadMessages(session.id);
@@ -1695,12 +1705,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       // Resetar o tamanho do textarea para o padrão
       document.getElementById("userInput").style.height = "55px";
       
-      // Gerar novo threadId e salvar no histórico com o nome personalizado
+      // Gerar novo threadId e registrar a nova travessia
       const newThreadId = generateThreadId();
       localStorage.setItem("threadId", newThreadId);
       
-      // Salvar no histórico com o nome personalizado
-      saveToHistory(newThreadId, travessiaName);
+      // Cria automaticamente uma conversa inicial nas sessões
+      // Título desejado: 'ola tudo bom?'
+      saveToHistory("ola tudo bom?", newThreadId);
       
       // Fechar o modal e atualizar a sidebar
       closeModal();
