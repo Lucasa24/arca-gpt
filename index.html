@@ -584,13 +584,16 @@
       font-size: 0.75rem;
       resize: none;
       min-height: 55px;
-      max-height: 200px; /* altura máxima para 10 linhas aproximadamente */
+      max-height: 200px; /* altura máxima para ~10 linhas */
       font-family: 'Georgia', serif;
       width: 100%;
       /* Mostra rolagem quando necessário para não bloquear o texto */
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch; /* rolagem suave em iOS */
+      /* Permite gesto de rolagem vertical no mobile e melhora a composição em iOS */
+      touch-action: pan-y;
+      transform: translateZ(0);
       transition: height 0.2s ease; /* transição suave ao expandir */
       position: relative; /* Garante que o z-index funcione corretamente */
       z-index: 1; /* Menor que o z-index dos botões */
@@ -720,6 +723,10 @@
         font-size: 0.7rem;
       }
     }
+
+    /* Evitar que a área transparente da caixa de modos capture toques no mobile */
+    .mode-buttons { pointer-events: none; }
+    .mode-buttons .mode-btn { pointer-events: auto; }
   </style>
 </head>
 <body>
