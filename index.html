@@ -587,7 +587,10 @@
       max-height: 200px; /* altura máxima para 10 linhas aproximadamente */
       font-family: 'Georgia', serif;
       width: 100%;
-      overflow-y: hidden; /* esconde a barra de rolagem vertical */
+      /* Mostra rolagem quando necessário para não bloquear o texto */
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch; /* rolagem suave em iOS */
       transition: height 0.2s ease; /* transição suave ao expandir */
       position: relative; /* Garante que o z-index funcione corretamente */
       z-index: 1; /* Menor que o z-index dos botões */
