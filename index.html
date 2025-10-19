@@ -1697,23 +1697,24 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function confirmNewTravessia() {
       const travessiaName = document.getElementById("travessiaName").value.trim() || "Nova Travessia";
       
-      // Limpar a travessia atual
+      // Limpa tudo
       localStorage.removeItem("threadId");
-      messages = []; // Limpar mensagens
+      messages = [];
       document.getElementById("response").innerHTML = "";
       document.getElementById("userInput").value = "";
-      // Resetar o tamanho do textarea para o padrão
       document.getElementById("userInput").style.height = "55px";
       
-      // Gerar novo threadId e registrar a nova travessia
+      // Cria nova thread
       const newThreadId = generateThreadId();
       localStorage.setItem("threadId", newThreadId);
       
-      // Cria automaticamente uma conversa inicial nas sessões
-      // Título desejado: 'ola tudo bom?'
-      saveToHistory("ola tudo bom?", newThreadId);
+      // Salva no histórico com o nome da travessia REAL
+      saveToHistory(travessiaName, newThreadId);
       
-      // Fechar o modal e atualizar a sidebar
+      // Inicia mensagens vazias pra essa thread
+      localStorage.setItem(`thread_${newThreadId}`, JSON.stringify([]));
+      
+      // Fecha modal e atualiza UI
       closeModal();
       loadSidebar();
     }
