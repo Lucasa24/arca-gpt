@@ -727,6 +727,31 @@
     /* Evitar que a área transparente da caixa de modos capture toques no mobile */
     .mode-buttons { pointer-events: none; }
     .mode-buttons .mode-btn { pointer-events: auto; }
+
+    /* Botão reset colado no canto inferior direito da página */
+    #cornerReset {
+      position: fixed;
+      right: 8px;
+      bottom: 8px;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      padding: 0;
+      border-radius: 4px;
+      background: #666;
+      color: #fff;
+      border: 1px solid #777;
+      font-size: 12px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      z-index: 150; /* acima do footer (100), abaixo do modal (1000) */
+    }
+    #cornerReset:hover { background: #777; }
+    @media (max-width: 600px) {
+      #cornerReset { right: 6px; bottom: 6px; width: 20px; height: 20px; min-width: 20px; font-size: 11px; }
+    }
   </style>
 </head>
 <body>
@@ -809,7 +834,7 @@
         </div>
         <button onclick="sendMessage()">Invocar</button>
         <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">📷</button>
-        <button onclick="showResetModal()" style="background-color: #666; min-width: 20px; width: 20px; font-size: 0.32rem; padding: 0 5px;">•</button>
+
       </div>
       <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
           <!-- Imagens serão adicionadas dinamicamente aqui -->
@@ -823,6 +848,9 @@
       <p class="footer-note"><a href="#" onclick="showLoginModal(); return false;">Fazer login</a> • Memória persistente ativa</p>
     </div>
   </main>
+
+  <!-- Botão reset colado no canto inferior direito -->
+  <button id="cornerReset" type="button" aria-label="Resetar conversa" onclick="showResetModal()">•</button>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
