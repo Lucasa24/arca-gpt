@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>🌊🛥️ A Arca - Ritual de Travessia</title>
+  <title>﹏𓊝﹏𓂁﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
     * {
@@ -761,7 +761,7 @@
   <!-- Modal de Login -->
   <div id="loginModal" class="modal">
     <div class="modal-content" style="width: 350px;">
-      <h3>🌊 Portal de Travessia</h3>
+      <h3>◊ Portal de Travessia</h3>
       <p style="margin-bottom: 20px; font-size: 0.85rem;">Identifique-se para iniciar sua jornada na Arca</p>
       
       <form id="loginForm" onsubmit="return handleLogin(event)">
@@ -805,7 +805,7 @@
   <!-- Modal de Nomeação de Travessia -->
   <div id="newTravessiaModal" class="modal">
     <div class="modal-content">
-      <h3>🌊 Nova Travessia</h3>
+      <h3>⎈ Nova Travessia</h3>
       <p>Nomeie sua jornada para iniciar a travessia:</p>
       <div style="margin: 20px 0;">
         <input type="text" id="travessiaName" placeholder="Nome da Travessia" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
@@ -818,7 +818,7 @@
   </div>
 
   <main id="mainContent">
-    <h1 class="main-title">A Arca 🌊🛥️</h1>
+    <h1 class="main-title">A Arca ﹏𓊝﹏𓂁﹏</h1>
     <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Entre na Arca:</p>
     <div id="response"></div>
 
@@ -833,7 +833,7 @@
           </div>
         </div>
         <button onclick="sendMessage()">Invocar</button>
-        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">✣</button>
+        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">✛</button>
 
       </div>
       <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
@@ -1234,8 +1234,8 @@
           
           // Adicionar mensagem do usuário com indicação de imagem(ns)
           const imagemTexto = attachedImages.length === 1 
-            ? "✣ *Imagem anexada para análise*" 
-            : `✣ *${attachedImages.length} imagens anexadas para análise*`;
+            ? "✛ *Imagem anexada para análise*" 
+            : `✛ *${attachedImages.length} imagens anexadas para análise*`;
           
           messages.push({ role: "user", content: `${input}\n\n${imagemTexto}` });
           messages.push({ role: "assistant", content: "Invocando..." });
@@ -1627,7 +1627,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
-      newBtn.textContent = "🌊 Nova Travessia";
+      newBtn.textContent = "⎈ Nova Travessia";
       newBtn.className = "new-session";
       newBtn.onclick = () => {
         // Abrir modal para nomear a travessia
