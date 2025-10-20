@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
+  <title>﹏𓊝﹏𓂁﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
     * {
@@ -818,7 +818,7 @@
   </div>
 
   <main id="mainContent">
-    <h1 class="main-title">A Arca ﹏𓊝﹏</h1>
+    <h1 class="main-title">A Arca ﹏𓊝﹏𓂁﹏</h1>
     <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Entre na Arca:</p>
     <div id="response"></div>
 
@@ -1665,36 +1665,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
           }
         };
         
-        // Ícone de renomear (círculo pequeno) no botão da sessão
-        btn.style.position = "relative";
-        const renameBtn = document.createElement("button");
-        renameBtn.setAttribute("aria-label", "Renomear sessão");
-        renameBtn.title = "Renomear";
-        renameBtn.className = "rename-circle";
-        renameBtn.innerHTML = "✎"; // ícone dentro do círculo
-        renameBtn.style.position = "absolute";
-        renameBtn.style.right = "6px";
-        renameBtn.style.top = "50%";
-        renameBtn.style.transform = "translateY(-50%)";
-        renameBtn.style.width = "18px";
-        renameBtn.style.height = "18px";
-        renameBtn.style.minWidth = "18px";
-        renameBtn.style.padding = "0";
-        renameBtn.style.borderRadius = "9999px";
-        renameBtn.style.background = "rgba(255,255,255,0.08)";
-        renameBtn.style.color = "#fff";
-        renameBtn.style.border = "1px solid rgba(255,255,255,0.2)";
-        renameBtn.style.display = "grid";
-        renameBtn.style.placeItems = "center";
-        renameBtn.style.fontSize = "11px";
-        renameBtn.style.lineHeight = "1";
-        
-        // Evitar selecionar a sessão ao clicar no ícone
-        renameBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        // Duplo clique para renomear
+        btn.ondblclick = () => {
           const newTitle = prompt("Renomear sessão:", session.title);
           if (newTitle && newTitle.trim()) {
+            session.title = newTitle.trim();
             const fullHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
             const idx = fullHistory.findIndex(s => s.id === session.id);
             if (idx !== -1) {
@@ -1703,8 +1678,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
               loadSidebar();
             }
           }
-        });
-        btn.appendChild(renameBtn);
+        };
         
         sidebar.appendChild(btn);
       });
@@ -1723,24 +1697,23 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function confirmNewTravessia() {
       const travessiaName = document.getElementById("travessiaName").value.trim() || "Nova Travessia";
       
-      // Limpa tudo
+      // Limpar a travessia atual
       localStorage.removeItem("threadId");
-      messages = [];
+      messages = []; // Limpar mensagens
       document.getElementById("response").innerHTML = "";
       document.getElementById("userInput").value = "";
+      // Resetar o tamanho do textarea para o padrão
       document.getElementById("userInput").style.height = "55px";
       
-      // Cria nova thread
+      // Gerar novo threadId e registrar a nova travessia
       const newThreadId = generateThreadId();
       localStorage.setItem("threadId", newThreadId);
       
-      // Salva no histórico com o nome da travessia REAL
-      saveToHistory(travessiaName, newThreadId);
+      // Cria automaticamente uma conversa inicial nas sessões
+      // Título desejado: 'ola tudo bom?'
+      saveToHistory("ola tudo bom?", newThreadId);
       
-      // Inicia mensagens vazias pra essa thread
-      localStorage.setItem(`thread_${newThreadId}`, JSON.stringify([]));
-      
-      // Fecha modal e atualiza UI
+      // Fechar o modal e atualizar a sidebar
       closeModal();
       loadSidebar();
     }
