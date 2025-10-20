@@ -705,6 +705,8 @@
       
       textarea {
         font-size: 0.7rem;
+        /* Reserva espaço extra no rodapé para os botões de modo ancorados no canto inferior direito */
+        padding-bottom: 2.2rem;
       }
     }
     
@@ -735,11 +737,12 @@
     @media (max-width: 600px) {
       .fixed-footer .input-group { align-items: center; }
       .textarea-container { position: relative; }
-      .mode-buttons { right: 8px; top: 50%; transform: translateY(-50%); }
+      /* No mobile, ancorar os botões no canto inferior direito (dentro da área de entrada) */
+      .mode-buttons { right: 8px !important; bottom: 8px !important; top: auto !important; transform: none !important; }
     }
     @media (max-width: 400px) {
       .fixed-footer .input-group { align-items: center; }
-      .mode-buttons { right: 6px; }
+      .mode-buttons { right: 6px !important; bottom: 6px !important; top: auto !important; transform: none !important; }
     }
 
     /* Botão reset colado no canto inferior direito da página */
@@ -902,16 +905,25 @@
       positionModeButtons();
     }
     
-    // Garante posicionamento correto dos botões de modo no mobile
+    // Garante posicionamento correto dos botões de modo
     function positionModeButtons() {
       const container = document.querySelector('.textarea-container');
       const box = container ? container.querySelector('.mode-buttons') : null;
       if (!container || !box) return;
-      // Centraliza verticalmente com base na altura atual do container
-      box.style.top = (container.offsetHeight / 2) + 'px';
-      box.style.transform = 'translateY(-50%)';
-      // Mantém ancorado à lateral direita
-      box.style.right = (window.innerWidth <= 400 ? 6 : window.innerWidth <= 600 ? 8 : 10) + 'px';
+      const isMobile = window.innerWidth <= 600;
+      if (isMobile) {
+        // No mobile: canto inferior direito da área de entrada
+        box.style.top = 'auto';
+        box.style.bottom = (window.innerWidth <= 400 ? 6 : 8) + 'px';
+        box.style.transform = 'none';
+        box.style.right = (window.innerWidth <= 400 ? 6 : 8) + 'px';
+      } else {
+        // Desktop: centralizado verticalmente na lateral direita
+        box.style.bottom = 'auto';
+        box.style.top = (container.offsetHeight / 2) + 'px';
+        box.style.transform = 'translateY(-50%)';
+        box.style.right = '10px';
+      }
     }
     
     // Função para gerar ID único de thread
