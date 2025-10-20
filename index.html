@@ -724,9 +724,23 @@
       }
     }
 
-    /* Evitar que a área transparente da caixa de modos capture toques no mobile */
-    .mode-buttons { pointer-events: none; }
+    /* Evitar que a área transparente da caixa de modos capture toques no mobile — e garantir posicionamento correto no celular */
+    .mode-buttons { pointer-events: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; opacity: 1; z-index: 12; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 4px; }
     .mode-buttons .mode-btn { pointer-events: auto; }
+
+    /* Ajustes de alinhamento no celular: botões à direita sempre centralizados verticalmente em relação ao textarea */
+    @media (max-width: 768px) {
+      .fixed-footer .input-group { align-items: center; }
+    }
+    @media (max-width: 600px) {
+      .fixed-footer .input-group { align-items: center; }
+      .textarea-container { position: relative; }
+      .mode-buttons { right: 8px; top: 50%; transform: translateY(-50%); }
+    }
+    @media (max-width: 400px) {
+      .fixed-footer .input-group { align-items: center; }
+      .mode-buttons { right: 6px; }
+    }
 
     /* Botão reset colado no canto inferior direito da página */
     #cornerReset {
@@ -875,6 +889,7 @@
     // Função para auto-expandir o textarea conforme o conteúdo
     function autoResizeTextarea() {
       const textarea = document.getElementById('userInput');
+      if (!textarea) return;
       
       // Resetar a altura para calcular corretamente
       textarea.style.height = 'auto';
@@ -882,6 +897,21 @@
       // Definir a nova altura baseada no conteúdo (scrollHeight)
       // com limite máximo definido pelo CSS (max-height: 200px)
       textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+      
+      // Reposiciona os botões de modo para permanecerem centralizados no mobile
+      positionModeButtons();
+    }
+    
+    // Garante posicionamento correto dos botões de modo no mobile
+    function positionModeButtons() {
+      const container = document.querySelector('.textarea-container');
+      const box = container ? container.querySelector('.mode-buttons') : null;
+      if (!container || !box) return;
+      // Centraliza verticalmente com base na altura atual do container
+      box.style.top = (container.offsetHeight / 2) + 'px';
+      box.style.transform = 'translateY(-50%)';
+      // Mantém ancorado à lateral direita
+      box.style.right = (window.innerWidth <= 400 ? 6 : window.innerWidth <= 600 ? 8 : 10) + 'px';
     }
     
     // Função para gerar ID único de thread
@@ -2230,6 +2260,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       if (userInput) {
         // Aplicar ao carregar a página
         autoResizeTextarea();
+        positionModeButtons();
         
         // Aplicar quando o usuário digita
         userInput.addEventListener('input', autoResizeTextarea);
@@ -2237,8 +2268,15 @@ div.innerHTML = DOMPurify.sanitize(html, {
         // Aplicar quando o usuário cola texto
         userInput.addEventListener('paste', function() {
           // Pequeno delay para garantir que o conteúdo colado seja processado
-          setTimeout(autoResizeTextarea, 10);
+          setTimeout(() => { autoResizeTextarea(); positionModeButtons(); }, 10);
         });
+      }
+      
+      // Atualizar posicionamento em mudanças de tamanho/rotação (mobile)
+      window.addEventListener('resize', positionModeButtons);
+      window.addEventListener('orientationchange', () => setTimeout(positionModeButtons, 60));
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', positionModeButtons);
       }
     });
     
