@@ -1665,8 +1665,34 @@ div.innerHTML = DOMPurify.sanitize(html, {
           }
         };
         
-        // Função utilitária de renomear (desktop e mobile)
-        function promptRename() {
+        // Ícone de renomear (círculo pequeno) no botão da sessão
+        btn.style.position = "relative";
+        const renameBtn = document.createElement("button");
+        renameBtn.setAttribute("aria-label", "Renomear sessão");
+        renameBtn.title = "Renomear";
+        renameBtn.className = "rename-circle";
+        renameBtn.innerHTML = "✎"; // ícone dentro do círculo
+        renameBtn.style.position = "absolute";
+        renameBtn.style.right = "6px";
+        renameBtn.style.top = "50%";
+        renameBtn.style.transform = "translateY(-50%)";
+        renameBtn.style.width = "18px";
+        renameBtn.style.height = "18px";
+        renameBtn.style.minWidth = "18px";
+        renameBtn.style.padding = "0";
+        renameBtn.style.borderRadius = "9999px";
+        renameBtn.style.background = "rgba(255,255,255,0.08)";
+        renameBtn.style.color = "#fff";
+        renameBtn.style.border = "1px solid rgba(255,255,255,0.2)";
+        renameBtn.style.display = "grid";
+        renameBtn.style.placeItems = "center";
+        renameBtn.style.fontSize = "11px";
+        renameBtn.style.lineHeight = "1";
+        
+        // Evitar selecionar a sessão ao clicar no ícone
+        renameBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           const newTitle = prompt("Renomear sessão:", session.title);
           if (newTitle && newTitle.trim()) {
             const fullHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
@@ -1677,20 +1703,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
               loadSidebar();
             }
           }
-        }
-        
-        // Duplo clique para renomear
-        btn.ondblclick = promptRename;
-        
-        // Clique direito (context menu) para renomear
-        btn.addEventListener("contextmenu", (e) => { e.preventDefault(); promptRename(); });
-        
-        // Long-press no mobile para renomear
-        let pressTimer = null;
-        btn.addEventListener("touchstart", () => { pressTimer = setTimeout(promptRename, 600); }, { passive: true });
-        ["touchend","touchmove","touchcancel"].forEach(ev => {
-          btn.addEventListener(ev, () => { if (pressTimer) clearTimeout(pressTimer); }, { passive: true });
         });
+        btn.appendChild(renameBtn);
         
         sidebar.appendChild(btn);
       });
