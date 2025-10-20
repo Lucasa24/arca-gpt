@@ -737,12 +737,15 @@
     @media (max-width: 600px) {
       .fixed-footer .input-group { align-items: center; }
       .textarea-container { position: relative; }
-      /* Mobile: centro lateral direito da área de entrada, levemente acima do centro */
-      .mode-buttons { right: 8px !important; top: 50% !important; transform: translateY(calc(-50% - 6px)) !important; bottom: auto !important; }
+      /* Mobile: ancorar os botões de modo no canto inferior direito da área de entrada */
+      .mode-buttons { right: 8px !important; bottom: 8px !important; top: auto !important; transform: none !important; }
+      /* Subir levemente os botões Invocar e ✛ */
+      .fixed-footer .input-group > button { align-self: center; transform: translateY(-8px); }
     }
     @media (max-width: 400px) {
       .fixed-footer .input-group { align-items: center; }
-      .mode-buttons { right: 6px !important; top: 50% !important; transform: translateY(calc(-50% - 6px)) !important; bottom: auto !important; }
+      .mode-buttons { right: 6px !important; bottom: 6px !important; top: auto !important; transform: none !important; }
+      .fixed-footer .input-group > button { transform: translateY(-6px); }
     }
 
     /* Botão reset colado no canto inferior direito da página */
@@ -912,11 +915,10 @@
       if (!container || !box) return;
       const isMobile = window.innerWidth <= 600;
       if (isMobile) {
-        // Mobile: centro lateral direito da área de entrada, levemente acima do centro
-        const offsetUp = 6; // subir um pouco
-        box.style.bottom = 'auto';
-        box.style.top = (container.offsetHeight / 2 - offsetUp) + 'px';
-        box.style.transform = 'translateY(-50%)';
+        // Mobile: ancorar no canto inferior direito
+        box.style.top = 'auto';
+        box.style.bottom = (window.innerWidth <= 400 ? 6 : 8) + 'px';
+        box.style.transform = 'none';
         box.style.right = (window.innerWidth <= 400 ? 6 : 8) + 'px';
       } else {
         // Desktop: centralizado verticalmente na lateral direita
