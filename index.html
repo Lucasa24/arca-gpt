@@ -1703,10 +1703,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           document.getElementById("userInput").value = "";
           loadSidebar();
           
-          // Auto-close sidebar no mobile após clicar em sessão
+          // Fechar sidebar no mobile após clicar em sessão (sem ocultar permanentemente)
           if (window.innerWidth <= 768) {
-            document.getElementById("chatSidebar").style.display = "none";
-            document.getElementById("chatSidebar").classList.remove("open");
+            const sb = document.getElementById("chatSidebar");
+            sb.classList.remove("open"); // fecha via classe
+            sb.style.display = ""; // remove qualquer display:none residual
+            document.getElementById("toggleSidebar").setAttribute("aria-expanded", "false");
           }
         };
         
