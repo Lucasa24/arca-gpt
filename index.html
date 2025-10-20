@@ -175,6 +175,72 @@
       outline-offset: 3px;
     }
 
+    /* Botão de ações ao lado do botão de sidebar */
+    #sidebarActions {
+      display: block;
+      position: fixed;
+      top: 12px;
+      left: 58px;
+      z-index: 999;
+      width: 36px;
+      height: 33px;
+      border-radius: 9999px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(179, 0, 0, 0.14);
+      color: #fff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
+    }
+    #sidebarActions:hover {
+      background: rgba(179, 0, 0, 0.26);
+      border-color: rgba(255,255,255,0.22);
+    }
+    #sidebarActions:active { transform: scale(0.98); }
+    #sidebarActions:focus-visible { outline: 2px solid #ff1a1a; outline-offset: 3px; }
+
+    .actions-menu {
+      position: fixed;
+      top: 52px;
+      left: 12px;
+      background: rgba(28,28,28,0.98);
+      border: 1px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      min-width: 200px;
+      z-index: 1001;
+      display: none;
+      overflow: hidden;
+    }
+    .actions-menu .action-item {
+      display: block;
+      width: 100%;
+      background: none;
+      color: #f5f5f5;
+      text-align: left;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background-color 0.2s;
+    }
+    .actions-menu .action-item:hover { background-color: #222; }
+    .actions-menu .action-item.danger { color: #ff6b6b; }
+
+    /* Esconder botão de ações no desktop quando a sidebar estiver aberta */
+    @media (min-width: 769px) {
+      #toggleSidebar.sidebar-open + #sidebarActions {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
     .modal {
       display: none;
       position: fixed;
@@ -753,8 +819,8 @@
       position: fixed;
       right: 8px;
       bottom: 8px;
-      width: 5px;
-      height: 5px;
+      width: 22px;
+      height: 22px;
       min-width: 22px;
       padding: 0;
       border-radius: 4px;
@@ -776,6 +842,11 @@
 </head>
 <body>
   <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
+  <button id="sidebarActions" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Ações do Sidebar" onclick="toggleSidebarMenu(event)">⋯</button>
+  <div id="sidebarMenu" class="actions-menu" role="menu" aria-label="Ações do Sidebar">
+    <button type="button" class="action-item" onclick="archiveSidebarButtons()">Arquivar sessões</button>
+    <button type="button" class="action-item danger" onclick="deleteSidebarButtons()">Excluir sessões</button>
+  </div>
   <div id="chatSidebar"></div>
   
   <!-- Modal de Login -->
@@ -1665,7 +1736,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
     function loadSidebar() {
       const sidebar = document.getElementById("chatSidebar");
-      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      const rawHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      const history = rawHistory.filter(s => !s.archived);
       const currentThreadId = localStorage.getItem("threadId");
 
       sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar sessões'>×</button></h3>";
@@ -1906,6 +1978,67 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
 
+    // Menu de ações ao lado do botão do sidebar
+    function toggleSidebarMenu(e) {
+      const menu = document.getElementById('sidebarMenu');
+      if (!menu) return;
+      if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+        const btn = document.getElementById('sidebarActions');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      } else {
+        const btn = document.getElementById('sidebarActions');
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          menu.style.top = (rect.bottom + 8) + 'px';
+          menu.style.left = rect.left + 'px';
+        }
+        menu.style.display = 'block';
+        const btn2 = document.getElementById('sidebarActions');
+        if (btn2) btn2.setAttribute('aria-expanded', 'true');
+      }
+      if (e && e.stopPropagation) e.stopPropagation();
+    }
+
+    function archiveSidebarButtons() {
+      try {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        if (history.length === 0) { alert('Não há sessões para arquivar.'); return; }
+        if (!confirm('Arquivar todas as sessões do sidebar? Elas continuarão preservadas e poderão ser restauradas futuramente.')) return;
+        const updated = history.map(s => ({ ...s, archived: true }));
+        localStorage.setItem('chatHistory', JSON.stringify(updated));
+        loadSidebar();
+        const menu = document.getElementById('sidebarMenu');
+        if (menu) menu.style.display = 'none';
+      } catch (e) {
+        alert('Falha ao arquivar sessões.');
+      }
+    }
+
+    function deleteSidebarButtons() {
+      try {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        if (history.length === 0) { alert('Não há sessões para excluir.'); return; }
+        if (!confirm('Tem certeza que deseja excluir TODAS as sessões do sidebar e respectivas memórias? Esta ação não pode ser desfeita.')) return;
+        history.forEach(sess => {
+          if (sess && sess.id) {
+            localStorage.removeItem(`thread_${sess.id}`);
+          }
+        });
+        localStorage.removeItem('chatHistory');
+        localStorage.removeItem('threadId');
+        loadSidebar();
+        const menu = document.getElementById('sidebarMenu');
+        if (menu) menu.style.display = 'none';
+        const input = document.getElementById('userInput');
+        if (input) input.value = '';
+        const resp = document.getElementById('response');
+        if (resp) resp.innerHTML = '🗑️ Todas as sessões foram excluídas.';
+      } catch (e) {
+        alert('Falha ao excluir sessões.');
+      }
+    }
+
     // Carregar sidebar ao inicializar
     window.onload = function () {
       loadSidebar();
@@ -1939,6 +2072,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
       
       if (event.target === resetModal || event.target === loginModal || event.target === newTravessiaModal) {
         closeModal();
+      }
+
+      // Fechar menu de ações se clicar fora
+      const actionsMenu = document.getElementById("sidebarMenu");
+      const actionsBtn = document.getElementById("sidebarActions");
+      if (actionsMenu && actionsMenu.style.display === "block") {
+        const clickInsideMenu = actionsMenu.contains(event.target);
+        const clickOnBtn = actionsBtn && actionsBtn.contains(event.target);
+        if (!clickInsideMenu && !clickOnBtn) {
+          actionsMenu.style.display = "none";
+          if (actionsBtn) actionsBtn.setAttribute("aria-expanded", "false");
+        }
       }
     }
 
@@ -2303,6 +2448,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
     window.closeModal = closeModal;
     window.confirmReset = confirmReset;
     window.toggleSidebar = toggleSidebar;
+    window.toggleSidebarMenu = toggleSidebarMenu;
+    window.archiveSidebarButtons = archiveSidebarButtons;
+    window.deleteSidebarButtons = deleteSidebarButtons;
     window.handleLogin = handleLogin;
   </script>
 </body>
