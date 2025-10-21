@@ -1,7 +1,7 @@
 const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('./memory.js');
 const { fetch } = require('undici');
 
-// 🔎 Integração de Pesquisa Web (Brave ou Serper.dev)
+// 🔎 Integração de Pesquisa Web (Brave ou Serper.dev) — backend preparado, sem UI
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
@@ -9,7 +9,7 @@ async function performWebSearch(query, maxResults = 5) {
   if (!query || (!BRAVE_API_KEY && !SERPER_API_KEY)) {
     return [];
   }
-  query = query.trim();
+  query = String(query || '').trim();
   try {
     if (BRAVE_API_KEY) {
       const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${maxResults}&country=br&locale=pt-BR`;
@@ -92,8 +92,8 @@ async function handler(req, res) {
     addMessageToThread(threadId, "user", userInput);
     const messages = getThreadMessages(threadId);
 
-    // 🔎 Se webSearch foi solicitado, anexar contexto de busca à conversa
-    const webSearchRequested = !!(req.body?.webSearch);
+    // Preparar pesquisa web somente no backend (sem UI): via flag em req.body.webSearch ou env ARCA_WEB_SEARCH_DEFAULT
+    const webSearchRequested = !!(req.body?.webSearch) || String(process.env.ARCA_WEB_SEARCH_DEFAULT || '').toLowerCase() === 'true';
     if (webSearchRequested) {
       const bareQuery = String(userInput || '').replace(/^\s*Modo\s+(?:t[eé]cnico|ritual)\s*:\s*/i, '').trim();
       const results = await performWebSearch(bareQuery, 5);
@@ -107,6 +107,7 @@ async function handler(req, res) {
         console.log('[ARCA][web] Nenhum resultado ou provedor não configurado.');
       }
     }
+
     
     // Log das mensagens de sistema para verificação
     const systemMessages = messages.filter(m => m.role==='system');
@@ -129,7 +130,7 @@ async function handler(req, res) {
         model: "gpt-4o",
         messages,
         stream: true,
-        temperature: (typeof webSearchRequested !== 'undefined' && webSearchRequested) ? 0.6 : 1.10,
+        temperature: webSearchRequested ? 0.6 : 1.10,
         max_tokens: 4000,
         top_p: 1.0,
         frequency_penalty: 0.0,
