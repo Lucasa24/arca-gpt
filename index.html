@@ -193,10 +193,29 @@
       font-size: 14px;
       line-height: 1;
       cursor: pointer;
+      /* Oculto por padrão no desktop */
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 150ms ease, visibility 150ms ease;
+    }
+    /* Mostrar o botão ⋯ somente quando o mouse estiver por cima do botão da sessão */
+    #chatSidebar button:hover .item-actions-btn {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
     #chatSidebar .item-actions-btn:hover {
       background: rgba(255,255,255,0.16);
       border-color: rgba(255,255,255,0.22);
+    }
+    /* Exceção para dispositivos móveis: manter visível sempre */
+    @media (hover: none), (pointer: coarse) {
+      #chatSidebar .item-actions-btn {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
     }
 
     #itemActionsMenu {
