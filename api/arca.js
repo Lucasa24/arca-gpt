@@ -1,6 +1,43 @@
 const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('./memory.js');
 const { fetch } = require('undici');
 
+// 🔎 Integração de Pesquisa Web (Brave ou Serper.dev)
+const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
+const SERPER_API_KEY = process.env.SERPER_API_KEY;
+
+async function performWebSearch(query, maxResults = 5) {
+  if (!query || (!BRAVE_API_KEY && !SERPER_API_KEY)) {
+    return [];
+  }
+  query = query.trim();
+  try {
+    if (BRAVE_API_KEY) {
+      const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${maxResults}&country=br&locale=pt-BR`;
+      const r = await fetch(url, { headers: { 'X-Subscription-Token': BRAVE_API_KEY } });
+      const j = await r.json().catch(()=> ({}));
+      const results = (j?.web?.results || []).map(x => ({
+        title: x.title, snippet: x.description || x.snippet || '', url: x.url
+      }));
+      return results.slice(0, maxResults);
+    } else if (SERPER_API_KEY) {
+      const r = await fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-KEY': SERPER_API_KEY },
+        body: JSON.stringify({ q: query, num: maxResults, gl: 'br', hl: 'pt-BR' })
+      });
+      const j = await r.json().catch(()=> ({}));
+      const results = (j?.organic || []).map(x => ({
+        title: x.title, snippet: x.snippet || '', url: x.link
+      }));
+      return results.slice(0, maxResults);
+    }
+    return [];
+  } catch (e) {
+    console.warn('[ARCA][web] Erro no provedor de busca:', e?.message || e);
+    return [];
+  }
+}
+
 // arca.js — fora do handler (executa no cold start da função)
 if (!global.__ARCA_PERSONA_LOGGED__) {
   console.log('👤 ARCA_PERSONA:', process.env.ARCA_PERSONA || '(unset)');
@@ -54,6 +91,22 @@ async function handler(req, res) {
 
     addMessageToThread(threadId, "user", userInput);
     const messages = getThreadMessages(threadId);
+
+    // 🔎 Se webSearch foi solicitado, anexar contexto de busca à conversa
+    const webSearchRequested = !!(req.body?.webSearch);
+    if (webSearchRequested) {
+      const bareQuery = String(userInput || '').replace(/^\s*Modo\s+(?:t[eé]cnico|ritual)\s*:\s*/i, '').trim();
+      const results = await performWebSearch(bareQuery, 5);
+      if (results && results.length) {
+        const lines = results.map((r, i) => `${i+1}. ${r.title}\n${r.snippet}\nFonte: ${r.url}`);
+        const context = `Contexto externo — pesquisa na web (usar como evidência factual):\n\n${lines.join('\n\n')}\n\nInstrução: integre este contexto à resposta mantendo a persona ativa. CITE as fontes no corpo com [${1}]… e inclua uma seção "Referências" ao final listando os links.`;
+        // Inserir logo após as mensagens de sistema (topo)
+        messages.splice(3, 0, { role: "system", content: context });
+        console.log('[ARCA][web] Contexto anexado com', results.length, 'fontes');
+      } else {
+        console.log('[ARCA][web] Nenhum resultado ou provedor não configurado.');
+      }
+    }
     
     // Log das mensagens de sistema para verificação
     const systemMessages = messages.filter(m => m.role==='system');
@@ -76,7 +129,7 @@ async function handler(req, res) {
         model: "gpt-4o",
         messages,
         stream: true,
-        temperature: 1.10,
+        temperature: (typeof webSearchRequested !== 'undefined' && webSearchRequested) ? 0.6 : 1.10,
         max_tokens: 4000,
         top_p: 1.0,
         frequency_penalty: 0.0,
