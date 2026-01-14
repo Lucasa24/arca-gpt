@@ -156,6 +156,12 @@
       transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
     }
 
+    /* Ocultar o botão de menu enquanto a sidebar estiver aberta */
+    #toggleSidebar.sidebar-open {
+      opacity: 0;
+      pointer-events: none;
+    }
+
     /* Botão de menu permanece visível mesmo com sidebar aberta */
 
     #toggleSidebar:hover {
@@ -1727,7 +1733,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const history = rawHistory.filter(s => !s.archived);
       const currentThreadId = localStorage.getItem("threadId");
 
-      sidebar.innerHTML = "<h3>◊ Sessões</h3>";
+      sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar sessões' style='position:absolute; left:0; top:-5px; background:none; border:none; color:#fff; font-size:0.75rem; cursor:pointer;'>Fechar Sessões</button></h3>";
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
@@ -1971,8 +1977,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const isOpen = sidebar.classList.contains("open");
         if (isOpen) {
           sidebar.classList.remove("open");
+          btn.classList.remove("sidebar-open");
         } else {
           sidebar.classList.add("open");
+          btn.classList.add("sidebar-open");
         }
         btn.setAttribute("aria-expanded", sidebar.classList.contains("open") ? "true" : "false");
       } else {
