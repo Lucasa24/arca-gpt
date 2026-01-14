@@ -134,12 +134,15 @@
     #toggleSidebar {
       display: block;
       position: fixed;
-      top: 4px;
-      left: 4px;
+      top: 0;
+      left: 0;
       z-index: 999;
       width: 28px;
       height: 26px;
-      border-radius: 9999px;
+      border-top-left-radius: 0;
+      border-top-right-radius: 9999px;
+      border-bottom-right-radius: 9999px;
+      border-bottom-left-radius: 0;
       padding: 0;
       border: 1px solid rgba(255,255,255,0.14);
       background: rgba(179, 0, 0, 0.14);
