@@ -1733,7 +1733,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const history = rawHistory.filter(s => !s.archived);
       const currentThreadId = localStorage.getItem("threadId");
 
-      sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar sessões' style='position:absolute; left:0; top:-5px; background:none; border:none; color:#fff; font-size:0.75rem; cursor:pointer;'>Fechar Sessões</button></h3>";
+      sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar sessões' style='position:absolute; left:0; top:-5px; width:20px; height:20px; min-width:20px; background: rgba(179,0,0,0.18); border: 1px solid rgba(255,255,255,0.14); color:#fff; font-size:12px; line-height:18px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;'>▫</button></h3>";
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
