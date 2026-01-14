@@ -72,6 +72,84 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
+  } else if (req.method === 'POST' && req.url === '/api/embed') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const embedHandler = require('./api/embed.js');
+        await embedHandler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/moderation') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const moderationHandler = require('./api/moderation.js');
+        await moderationHandler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/assist') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const assistHandler = require('./api/assist.js');
+        await assistHandler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/images') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const imagesHandler = require('./api/images.js');
+        await imagesHandler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/speech') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const speechHandler = require('./api/speech.js');
+        await speechHandler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/transcribe') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const transcribeHandler = require('./api/transcribe.js');
+        await transcribeHandler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
   } else {
     res.writeHead(404);
     res.end('Not found');
