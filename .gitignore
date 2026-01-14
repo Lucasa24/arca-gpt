@@ -1,0 +1,38 @@
+# 🔐 Arquivos de Segurança - NUNCA commitar
+.env
+.env.local
+.env.production
+.env.staging
+
+# 📦 Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 🗂️ Logs
+logs
+*.log
+
+# 💾 Cache
+.cache/
+.parcel-cache/
+
+# 🏗️ Build
+dist/
+build/
+.next/
+.nuxt/
+
+# 🔧 IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 🖥️ Sistema
+.DS_Store
+Thumbs.db
+
+# 🚀 Vercel
+.vercel

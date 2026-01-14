@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "agentkeepalive": "^4.6.0",
+    "dotenv": "^16.6.1",
+    "event-source-polyfill": "^1.0.31",
+    "openai": "^5.16.0",
+    "undici": "^7.13.0"
+  }
+}

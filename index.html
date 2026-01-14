@@ -2,35 +2,616 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🛥️ A Arca - Ritual de Travessia 🌊</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
     body {
       background-color: #0e0e0e;
       color: #f5f5f5;
       font-family: 'Georgia', serif;
-      padding: 40px 1rem 300px;
       line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    #mainContent {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: margin-left 0.3s ease;
+      margin-left: 220px;
+      padding: 40px 1rem 300px;
       max-width: 700px;
-      margin: auto;
+      width: calc(100% - 220px);
       position: relative;
     }
 
-    h1 {
-      font-size: 2rem;
+    #mainContent.sidebar-hidden {
+      margin-left: 0;
+      width: 100%;
+    }
+
+    #mainContent .invoc {
+      align-self: center;
+      margin: 0;
       text-align: center;
-      margin-bottom: 2rem;
+      width: 100%;
+    }
+
+    #chatSidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 220px;
+      background: #111;
+      border-right: 1px solid #333;
+      padding: 1rem;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      z-index: 200;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+    }
+
+    #chatSidebar.hidden {
+      transform: translateX(-100%);
+    }
+
+    #chatSidebar h3 {
+      color: #f5f5f5;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      text-align: center;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.5rem;
+      position: relative;
+    }
+
+    #closeSidebar {
+      position: absolute;
+      top: -5px;
+      right: 0;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    #closeSidebar:hover {
+      background-color: rgba(179, 0, 0, 0.2);
+      color: #ff6b6b;
+    }
+
+    #chatSidebar button {
+      display: block;
+      width: 100%;
+      background: none;
+      color: #f5f5f5;
+      text-align: left;
+      border: none;
+      padding: 0.5rem;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background-color 0.2s;
+    }
+
+    #chatSidebar button:hover {
+      background-color: #222;
+    }
+
+    #chatSidebar .new-session {
+      background-color: #b30000 !important;
+      color: white;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #chatSidebar .new-session:hover {
+      background-color: #ff1a1a !important;
+    }
+
+    #toggleSidebar {
+      display: block;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 999;
+      width: 40px;
+      height: 33px;
+      border-radius: 9999px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(179, 0, 0, 0.14);
+      color: #fff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
+    }
+
+    /* Esconder o botão de menu quando sidebar estiver aberta no desktop */
+    @media (min-width: 769px) {
+      #toggleSidebar.sidebar-open {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    #toggleSidebar:hover {
+      background: rgba(179, 0, 0, 0.26);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    #toggleSidebar:active {
+      transform: scale(0.98);
+    }
+
+    #toggleSidebar:focus-visible {
+      outline: 2px solid #ff1a1a;
+      outline-offset: 3px;
+    }
+
+    /* Botão de ações ao lado do botão de sidebar */
+    #sidebarActions {
+      display: block;
+      position: fixed;
+      top: 12px;
+      left: 58px;
+      z-index: 999;
+      width: 36px;
+      height: 33px;
+      border-radius: 9999px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(179, 0, 0, 0.14);
+      color: #fff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
+    }
+    #sidebarActions:hover {
+      background: rgba(179, 0, 0, 0.26);
+      border-color: rgba(255,255,255,0.22);
+    }
+    #sidebarActions:active { transform: scale(0.98); }
+    #sidebarActions:focus-visible { outline: 2px solid #ff1a1a; outline-offset: 3px; }
+
+    .actions-menu {
+      position: fixed;
+      top: 52px;
+      left: 12px;
+      background: rgba(28,28,28,0.98);
+      border: 1px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      min-width: 200px;
+      z-index: 1001;
+      display: none;
+      overflow: hidden;
+    }
+    .actions-menu .action-item {
+      display: block;
+      width: 100%;
+      background: none;
+      color: #f5f5f5;
+      text-align: left;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background-color 0.2s;
+    }
+    .actions-menu .action-item:hover { background-color: #222; }
+    .actions-menu .action-item.danger { color: #ff6b6b; }
+
+    /* Esconder botão de ações no desktop quando a sidebar estiver aberta */
+    @media (min-width: 769px) {
+      #toggleSidebar.sidebar-open + #sidebarActions {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+    }
+
+    .modal-content {
+      background-color: #1c1c1c;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #333;
+      width: 300px;
+      text-align: center;
+      border-radius: 5px;
+      box-shadow: 0 0 20px rgba(179, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #b30000, #ff6b6b, #b30000);
+    }
+    
+    .modal-content h3 {
+      color: #ff6b6b;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+    
+    /* Estilos para o formulário de login */
+    #loginForm input[type="email"],
+    #loginForm input[type="tel"] {
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    
+    #loginForm input[type="email"]:focus,
+    #loginForm input[type="tel"]:focus {
+      border-color: #b30000;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(179, 0, 0, 0.2);
+    }
+    
+    #loginForm input[type="checkbox"] {
+      accent-color: #b30000;
+    }
+    
+    /* Animação para o campo de WhatsApp */
+    #whatsappField {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      opacity: 0;
+    }
+    
+    #whatsappField.visible {
+      max-height: 100px;
+      opacity: 1;
+      margin-bottom: 20px;
+    }
+
+    .modal-buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .modal-buttons button {
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .confirm-btn {
+      background-color: #b30000;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #666;
+      color: white;
+    }
+    .main-title {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      text-align: center;
+      margin: 0 0 1.5rem 0;
       text-transform: uppercase;
       letter-spacing: 1px;
+      width: 100%;
     }
 
     #response {
       margin-top: 2rem;
-      white-space: pre-wrap;
+      white-space: normal;
       background: #1c1c1c;
       padding: 1rem;
       border-left: 4px solid #b30000;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+      text-align: justify;
+      line-height: 1.8;
+      letter-spacing: 0.5px;
+      max-height: 70vh;
+      overflow-y: auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
+    #response div {
+      white-space: break-spaces;
+    }
+    
+    #response p {
+      margin-bottom: 1rem;
+    }
+
+    /* Estilos para formatação markdown */
+    strong, b {
+      font-weight: bold !important;
+      font-style: normal !important;
+      color: #ff6b6b !important;
+    }
+
+    em, i {
+      font-weight: normal !important;
+      font-style: italic !important;
+      color: #4ecdc4 !important;
+    }
+
+    strong em, b i, em strong, i b {
+      font-weight: bold !important;
+      font-style: italic !important;
+      color: #ffffff !important;
+    }
+
+    /* Estilos para cabeçalhos dentro das respostas */
+    #response h1 {
+      font-size: 1.8rem !important;
+      font-weight: bold !important;
+      color: #ff6b6b !important;
+      margin: 1.5rem 0 1rem 0 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+      border-bottom: 2px solid #b30000 !important;
+      padding-bottom: 0.5rem !important;
+    }
+
+    #response h2 {
+      font-size: 1.5rem !important;
+      font-weight: bold !important;
+      color: #4ecdc4 !important;
+      margin: 1.25rem 0 0.75rem 0 !important;
+      letter-spacing: 0.5px !important;
+    }
+
+    #response h3 {
+      font-size: 1.3rem !important;
+      font-weight: bold !important;
+      color: #ffffff !important;
+      margin: 1rem 0 0.5rem 0 !important;
+    }
+
+    #response h4 {
+      font-size: 1.1rem !important;
+      font-weight: bold !important;
+      color: #cccccc !important;
+      margin: 0.75rem 0 0.5rem 0 !important;
+    }
+
+    #response h5, #response h6 {
+      font-size: 1rem !important;
+      font-weight: bold !important;
+      color: #999999 !important;
+      margin: 0.5rem 0 0.25rem 0 !important;
+    }
+
+    /* Estilos para listas dentro das respostas */
+    #response ul, #response ol {
+      margin: 1rem 0 !important;
+      padding-left: 1.5rem !important;
+      color: #f5f5f5 !important;
+    }
+
+    #response li {
+      margin: 0.5rem 0 !important;
+      line-height: 1.6 !important;
+    }
+
+    #response ul li {
+      list-style-type: disc !important;
+    }
+
+    #response ol li {
+      list-style-type: decimal !important;
+    }
+
+    /* Estilos para citações dentro das respostas */
+    #response blockquote {
+      margin: 1.5rem 0 !important;
+      padding: 1rem 1.5rem !important;
+      border-left: 4px solid #4ecdc4 !important;
+      background: rgba(78, 205, 196, 0.1) !important;
+      font-style: italic !important;
+      color: #e0e0e0 !important;
+    }
+
+    /* Estilos para código dentro das respostas */
+    #response code {
+      background: #2a2a2a !important;
+      color: #4ecdc4 !important;
+      padding: 0.2rem 0.4rem !important;
+      border-radius: 3px !important;
+      font-family: 'Courier New', monospace !important;
+      font-size: 0.9rem !important;
+    }
+
+    #response pre {
+      background: #1a1a1a !important;
+      color: #f5f5f5 !important;
+      padding: 1rem !important;
+      border-radius: 5px !important;
+      border-left: 4px solid #ff6b6b !important;
+      overflow-x: auto !important;
+      margin: 1rem 0 !important;
+      font-family: 'Courier New', monospace !important;
+      line-height: 1.4 !important;
+    }
+
+    #response pre code {
+      background: transparent !important;
+      padding: 0 !important;
+      color: inherit !important;
+    }
+
+    /* Links dentro da resposta */
+    #response a {
+      color: #4ecdc4 !important;
+      text-decoration: none !important;
+      border-bottom: 1px dashed rgba(78,205,196,0.6);
+    }
+    #response a:hover {
+      color: #ffffff !important;
+      border-bottom-color: #ffffff !important;
+    }
+
+    /* Linha horizontal */
+    #response hr {
+      border: 0;
+      border-top: 1px solid #333;
+      margin: 1.25rem 0;
+    }
+
+    /* --- Toolbar ABAIXO da mensagem --- */
+    #response .msg {
+      position: relative;
+      padding-right: 0 !important;              /* não reserva espaço lateral */
+    }
+
+    #response .msg .msg-toolbar {
+      position: static !important;              /* deixa de ser absoluta */
+      top: auto;                                /* por garantia */
+      right: auto;                              /* por garantia */
+      display: flex;
+      justify-content: flex-end;                /* alinha à direita */
+      gap: 8px;
+      margin-top: 8px;                          /* separa do texto */
+      opacity: 1 !important;                    /* sempre visível (bom para mobile) */
+      z-index: auto;
+    }
+
+    /* Ícones pequenos e clicáveis */
+    #response .msg .msg-btn.icon {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    #response .msg .msg-btn.icon:hover { background: rgba(255,255,255,0.12); }
+    #response .msg .msg-btn.icon svg { width: 13px; height: 13px; fill: currentColor; }
+
+    /* feedback ok/erro (mantém o teu visual) */
+    #response .msg .msg-btn.icon.ok {
+      color: #4ecdc4; border-color: rgba(78,205,196,0.5); background: rgba(78,205,196,0.12);
+    }
+    #response .msg .msg-btn.icon.err {
+      color: #ff6b6b; border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.12);
+    }
+
+    /* Acessibilidade */
+    #response .msg .msg-btn:focus-visible { outline: 2px solid #4ecdc4; outline-offset: 2px; }
+
+    /* Mobile – um pouco mais compacto */
+    @media (max-width: 600px) {
+      #response .msg .msg-toolbar { gap: 6px; margin-top: 6px; }
+      #response .msg .msg-btn.icon { width: 20px; height: 20px; }
+      #response .msg .msg-btn.icon svg { width: 12px; height: 12px; }
+    }
+
+    /* Badge da linguagem e botão copiar nos blocos de código */
+    #response pre {
+      position: relative;
+      padding-top: 2.2rem !important;
+    }
+
+    #response pre .code-badge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 90px;
+      background: rgba(179, 0, 0, 0.18);
+      border-bottom: 1px solid rgba(179, 0, 0, 0.35);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.6rem;
+      color: #ff6b6b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+    }
+
+    #response pre .copy-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 0;
+      border-left: 1px solid rgba(179, 0, 0, 0.35);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+    }
+    #response pre .copy-btn:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* Animação sutil para indicar streaming ativo */
+    .streaming-active {
+      position: relative;
+    }
+
+    .streaming-active::after {
+      content: '▋';
+      color: #b30000;
+      animation: blink 1s infinite;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
     }
 
     .fixed-footer {
@@ -43,15 +624,19 @@
       border-top: 1px solid #333;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
       font-size: 0.85rem;
+      width: 100%;
+      z-index: 100;
     }
 
     .input-group {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
-      align-items: center;
+      /* Alinha o topo da barra de texto com os botões ao lado */
+      align-items: flex-start;
       gap: 0.5rem;
       max-width: 700px;
+      width: 100%;
       margin: 0 auto;
     }
 
@@ -60,11 +645,24 @@
       background: #1a1a1a;
       color: #f5f5f5;
       border: 1px solid #333;
-      padding: 0.5rem;
+      /* Reserva espaço para os botões de modo no canto inferior direito */
+       padding: 0.75rem 7rem 0.75rem 0.75rem;
       font-size: 0.75rem;
       resize: none;
-      height: 55px;
+      min-height: 55px;
+      max-height: 200px; /* altura máxima para ~10 linhas */
       font-family: 'Georgia', serif;
+      width: 100%;
+      /* Mostra rolagem quando necessário para não bloquear o texto */
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch; /* rolagem suave em iOS */
+      /* Permite gesto de rolagem vertical no mobile e melhora a composição em iOS */
+      touch-action: pan-y;
+      transform: translateZ(0);
+      transition: height 0.2s ease; /* transição suave ao expandir */
+      position: relative; /* Garante que o z-index funcione corretamente */
+      z-index: 1; /* Menor que o z-index dos botões */
     }
 
     button {
@@ -76,9 +674,11 @@
       letter-spacing: 1px;
       padding: 0.5rem 1rem;
       height: 55px;
+      min-width: 80px;
       display: flex;
       align-items: center;
       justify-content: center;
+      white-space: nowrap;
     }
 
     button:hover {
@@ -104,83 +704,1754 @@
       text-align: center;
       opacity: 0.7;
     }
+    /* Media Queries para responsividade */
+    @media (min-width: 769px) {
+      body {
+        padding: 0;
+      }
+      
+      #mainContent {
+        padding: 60px 2rem 300px;
+      }
+      
+      #mainContent.sidebar-hidden {
+        margin: 0 auto;
+        padding: 60px 2rem 300px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        display: block;
+        padding: 0;
+      }
+      
+      #mainContent {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 20px 0.75rem 250px;
+        align-items: stretch;
+      }
+      
+      #chatSidebar {
+        transform: translateX(-100%) !important;
+        width: 80%;
+        max-width: 260px;
+        z-index: 998;
+      }
+      
+      #chatSidebar.open {
+        transform: translateX(0) !important;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      #mainContent {
+        padding: 20px 0.75rem 250px;
+      }
+      
+      .main-title {
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
+        margin-bottom: 1rem;
+      }
+      
+      #response {
+        padding: 0.75rem;
+        margin-top: 1.5rem;
+      }
+      
+      .fixed-footer {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      button {
+        padding: 0.5rem 0.75rem;
+        min-width: 70px;
+      }
+      
+      textarea {
+        font-size: 0.7rem;
+        /* Reserva espaço extra no rodapé para os botões de modo ancorados no canto inferior direito */
+        padding-bottom: 2.2rem;
+      }
+    }
+    
+    @media (max-width: 400px) {
+      #mainContent {
+        padding: 15px 0.5rem 220px;
+      }
+      
+      .input-group {
+        gap: 0.3rem;
+      }
+      
+      button {
+        padding: 0.4rem 0.6rem;
+        min-width: 60px;
+        font-size: 0.7rem;
+      }
+    }
+
+    /* Evitar que a área transparente da caixa de modos capture toques no mobile — e garantir posicionamento correto no celular */
+    .mode-buttons { pointer-events: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; opacity: 1; z-index: 12; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 4px; }
+    .mode-buttons .mode-btn { pointer-events: auto; }
+
+    /* Ajustes de alinhamento no celular: botões à direita sempre centralizados verticalmente em relação ao textarea */
+    @media (max-width: 768px) {
+      .fixed-footer .input-group { align-items: center; }
+    }
+    @media (max-width: 600px) {
+      .fixed-footer .input-group { align-items: center; }
+      .textarea-container { position: relative; }
+      /* Mobile: ancorar os botões de modo no canto inferior direito da área de entrada */
+      .mode-buttons { right: 8px !important; bottom: 8px !important; top: auto !important; transform: none !important; }
+      /* Subir levemente os botões Invocar e ✛ – ajuste fino */
+      .fixed-footer .input-group > button { align-self: center; transform: translateY(-4px); }
+    }
+    @media (max-width: 400px) {
+      .fixed-footer .input-group { align-items: center; }
+      .mode-buttons { right: 6px !important; bottom: 6px !important; top: auto !important; transform: none !important; }
+      .fixed-footer .input-group > button { transform: translateY(-3px); }
+    }
+
+    /* Botão reset colado no canto inferior direito da página */
+    #cornerReset {
+      position: fixed;
+      right: 8px;
+      bottom: 8px;
+      width: 5px;
+      height: 5px;
+      min-width: 22px;
+      padding: 0;
+      border-radius: 4px;
+      background: #666;
+      color: #fff;
+      border: 1px solid #777;
+      font-size: 12px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      z-index: 150; /* acima do footer (100), abaixo do modal (1000) */
+    }
+    #cornerReset:hover { background: #777; }
+    @media (max-width: 600px) {
+      #cornerReset { right: 6px; bottom: 6px; width: 20px; height: 20px; min-width: 20px; font-size: 11px; }
+    }
   </style>
 </head>
 <body>
-  <h1>🛥️ A Arca - Ritual de Travessia 🌊</h1>
-  <p>Digite sua invocação abaixo e sinta a resposta da Arca:</p>
-  <div id="response"></div>
-
-  <div class="fixed-footer">
-    <div class="input-group">
-      <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
-      <button onclick="sendMessage()">Invocar</button>
+  <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
+  <button id="sidebarActions" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Ações do Sidebar" onclick="toggleSidebarMenu(event)">⋯</button>
+  <div id="sidebarMenu" class="actions-menu" role="menu" aria-label="Ações do Sidebar">
+    <button type="button" class="action-item" onclick="archiveSidebarButtons()">Arquivar sessões</button>
+    <button type="button" class="action-item danger" onclick="deleteSidebarButtons()">Excluir sessões</button>
+  </div>
+  <div id="chatSidebar"></div>
+  
+  <!-- Modal de Login -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content" style="width: 350px;">
+      <h3>◊ Portal de Travessia</h3>
+      <p style="margin-bottom: 20px; font-size: 0.85rem;">Identifique-se para iniciar sua jornada na Arca</p>
+      
+      <form id="loginForm" onsubmit="return handleLogin(event)">
+        <div style="margin-bottom: 15px;">
+          <label for="userEmail" style="display: block; margin-bottom: 5px; text-align: left; font-size: 0.8rem;">Email do Viajante</label>
+          <input type="email" id="userEmail" required placeholder="seu@email.com" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: flex; align-items: center; font-size: 0.8rem; cursor: pointer;">
+            <input type="checkbox" id="whatsappConsent" style="margin-right: 8px;">
+            <span>Receber novidades no WhatsApp</span>
+          </label>
+        </div>
+        
+        <div id="whatsappField" style="margin-bottom: 20px; display: none;">
+          <label for="userWhatsapp" style="display: block; margin-bottom: 5px; text-align: left; font-size: 0.8rem;">WhatsApp (com DDD)</label>
+          <input type="tel" id="userWhatsapp" placeholder="(00) 00000-0000" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
+        </div>
+        
+        <div class="modal-buttons">
+          <button type="submit" class="confirm-btn" style="width: 100%;">Iniciar Travessia</button>
+        </div>
+      </form>
+      
+      <p style="margin-top: 15px; font-size: 0.7rem; color: #777;">Seus dados são protegidos e utilizados apenas para sua jornada na Arca</p>
     </div>
-
-    <div id="loader" style="display:none;">
-      <div id="loadingBar"></div>
+  </div>
+  
+  <div id="resetModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Confirmação de Reset</h3>
+      <p>Tem certeza que deseja resetar e perder toda a conversa atual?</p>
+      <div class="modal-buttons">
+        <button class="confirm-btn" onclick="confirmReset()">Sim, Resetar</button>
+        <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
+      </div>
     </div>
-
-    <p class="footer-note">Os dados fornecidos são privados e protegidos!</p>
+  </div>
+  
+  <!-- Modal de Nomeação de Travessia -->
+  <div id="newTravessiaModal" class="modal">
+    <div class="modal-content">
+      <h3>⎈ Nova Travessia</h3>
+      <p>Nomeie sua jornada para iniciar a travessia:</p>
+      <div style="margin: 20px 0;">
+        <input type="text" id="travessiaName" placeholder="Nome da Travessia" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
+      </div>
+      <div class="modal-buttons">
+        <button class="confirm-btn" onclick="confirmNewTravessia()">Iniciar Jornada</button>
+        <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <main id="mainContent">
+    <h1 class="main-title">A Arca ﹏𓊝﹏</h1>
+    <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Entre na Arca:</p>
+    <div id="response"></div>
+
+    <div class="fixed-footer">
+      <div class="input-group">
+        <input type="file" id="imageInput" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
+        <div class="textarea-container" style="position: relative; flex-grow: 1;">
+          <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
+          <div class="mode-buttons" style="position: absolute; top: 50%; transform: translateY(-50%); right: 10px; display: flex; gap: 5px; opacity: 1; z-index: 10; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 4px;">
+            <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active" style="background: #b30000; color: white; border: none; border-radius: 3px; padding: 0 6px; font-size: 0.7rem; cursor: pointer; opacity: 1; transition: all 0.2s ease; box-shadow: 0 0 5px rgba(179,0,0,0.5); height: 15px; min-width: 40px; line-height: 15px; display: flex; align-items: center; justify-content: center;">Ritual</button>
+            <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn" style="background: #333; color: white; border: none; border-radius: 3px; padding: 0 6px; font-size: 0.7rem; cursor: pointer; opacity: 0.8; transition: all 0.2s ease; box-shadow: 0 0 5px rgba(0,0,0,0.5); height: 15px; min-width: 40px; line-height: 15px; display: flex; align-items: center; justify-content: center;">Técnico</button>
+          </div>
+        </div>
+        <button onclick="sendMessage()">Invocar</button>
+        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">✛</button>
+
+      </div>
+      <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
+          <!-- Imagens serão adicionadas dinamicamente aqui -->
+          <button onclick="removeImage()" style="background-color: #b30000; padding: 5px 10px; font-size: 0.6rem; display: block; margin: 10px auto 0;">Remover Todas</button>
+        </div>
+
+      <div id="loader" style="display:none;">
+        <div id="loadingBar"></div>
+      </div>
+
+      <p class="footer-note"><a href="#" onclick="showLoginModal(); return false;">Fazer login</a> • Memória persistente ativa</p>
+    </div>
+  </main>
+
+  <!-- Botão reset colado no canto inferior direito -->
+  <button id="cornerReset" type="button" aria-label="Resetar conversa" onclick="showResetModal()">▫</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+  <script>
+    marked.setOptions({
+      gfm: true,
+      breaks: true,
+      mangle: false,
+      headerIds: false,
+      langPrefix: 'language-' // preserva a classe de linguagem em <code>
+    });
+  </script>
 
   <script>
+    let messages = [];
+    let isInvocando = false;
+    let loaderInterval = null;
+    let progress = 0;
+    let userLoggedIn = false;
+    let userData = null;
+    
+    // Função para auto-expandir o textarea conforme o conteúdo
+    function autoResizeTextarea() {
+      const textarea = document.getElementById('userInput');
+      if (!textarea) return;
+      
+      // Resetar a altura para calcular corretamente
+      textarea.style.height = 'auto';
+      
+      // Definir a nova altura baseada no conteúdo (scrollHeight)
+      // com limite máximo definido pelo CSS (max-height: 200px)
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+      
+      // Reposiciona os botões de modo para permanecerem centralizados no mobile
+      positionModeButtons();
+    }
+    
+    // Garante posicionamento correto dos botões de modo
+    function positionModeButtons() {
+      const container = document.querySelector('.textarea-container');
+      const box = container ? container.querySelector('.mode-buttons') : null;
+      if (!container || !box) return;
+      const isMobile = window.innerWidth <= 600;
+      if (isMobile) {
+        // Mobile: ancorar no canto inferior direito
+        box.style.top = 'auto';
+        box.style.bottom = (window.innerWidth <= 400 ? 6 : 8) + 'px';
+        box.style.transform = 'none';
+        box.style.right = (window.innerWidth <= 400 ? 6 : 8) + 'px';
+      } else {
+        // Desktop: centralizado verticalmente na lateral direita
+        box.style.bottom = 'auto';
+        box.style.top = (container.offsetHeight / 2) + 'px';
+        box.style.transform = 'translateY(-50%)';
+        box.style.right = '10px';
+      }
+    }
+    
+    // Função para gerar ID único de thread
+    function generateThreadId() {
+      return 'thread_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // Função para garantir espaçamento correto no streaming
+    function safeAppend(idx, chunk) {
+      const prev = messages[idx].content || "";
+      if (prev && /[.!?]$/.test(prev) && chunk && !/^\s/.test(chunk)) {
+        chunk = " " + chunk; // injeta espaço se o token veio colado após pontuação
+      }
+      messages[idx].content += chunk;
+    }
+    
+    // Barra linear progressiva, nunca para nem oscila, só finaliza em 100% quando "invocando..." some.
+    function startLoaderBar() {
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+      loader.style.display = "block";
+      loadingBar.style.width = "0%";
+      progress = 0;
+      isInvocando = true;
+    
+      const DURATION = 18000; // tempo até 99% em milissegundos (18s)
+      const intervalDuration = 18; // ms
+      const MAX = 99;
+      const step = (MAX / (DURATION / intervalDuration));
+    
+      if (loaderInterval) clearInterval(loaderInterval);
+    
+      loaderInterval = setInterval(() => {
+        if (!isInvocando) return; // NÃO mexer se já pediu pra parar
+    
+        if (progress < MAX) {
+          progress += step;
+        } else {
+          // Ficou em 99%, não passa disso até "invocando..." sumir de fato
+          progress = MAX;
+        }
+        loadingBar.style.width = progress + "%";
+      }, intervalDuration);
+    }
+    
+    // Chame APENAS quando "invocando..." despachar:
+    function stopLoaderBar() {
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+      isInvocando = false;
+    
+      // ANIMA rápido até 100, encerra, some
+      loadingBar.style.width = "100%";
+      setTimeout(() => { loader.style.display = "none"; }, 220);
+      if (loaderInterval) clearInterval(loaderInterval);
+    }
+    
+    // Variável global para armazenar as imagens anexadas
+    let attachedImages = [];
+    
+    // Função para manipular upload de múltiplas imagens
+    function handleImageUpload(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+      
+      // Limitar a 5 imagens por mensagem
+      if (attachedImages.length + files.length > 5) {
+        alert('⚠️ Máximo de 5 imagens por mensagem.');
+        return;
+      }
+      
+      // Processar cada arquivo
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Verificar se é uma imagem
+        if (!file.type.startsWith('image/')) {
+          alert(`⚠️ Arquivo ${file.name} não é uma imagem válida.`);
+          continue;
+        }
+        
+        // Verificar tamanho (máximo 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`⚠️ Imagem ${file.name} muito grande. Máximo 10MB.`);
+          continue;
+        }
+        
+        // Gerar ID único para esta imagem
+        const imageId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // Armazenar arquivo para envio posterior
+        attachedImages.push({
+          id: imageId,
+          file: file
+        });
+        
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          // Criar container para preview se não existir
+          const previewDiv = document.getElementById('imagePreview');
+          previewDiv.style.display = 'block';
+          
+          // Criar container para esta imagem específica
+          const imageContainer = document.createElement('div');
+          imageContainer.id = 'container_' + imageId;
+          imageContainer.className = 'image-container';
+          imageContainer.style.display = 'inline-block';
+          imageContainer.style.margin = '5px';
+          imageContainer.style.position = 'relative';
+          
+          // Criar elemento de imagem
+          const imgElement = document.createElement('img');
+          imgElement.src = e.target.result;
+          imgElement.style.maxWidth = '150px';
+          imgElement.style.maxHeight = '100px';
+          imgElement.style.border = '1px solid #333';
+          imgElement.style.borderRadius = '5px';
+          
+          // Criar botão de remoção para esta imagem específica
+          const removeBtn = document.createElement('button');
+          removeBtn.innerHTML = '✕';
+          removeBtn.style.backgroundColor = '#b30000';
+          removeBtn.style.color = 'white';
+          removeBtn.style.border = 'none';
+          removeBtn.style.borderRadius = '50%';
+          removeBtn.style.width = '22px';
+          removeBtn.style.height = '22px';
+          removeBtn.style.fontSize = '0.6rem';
+          removeBtn.style.position = 'absolute';
+          removeBtn.style.top = '-8px';
+          removeBtn.style.right = '-8px';
+          removeBtn.style.cursor = 'pointer';
+          removeBtn.style.display = 'flex';
+          removeBtn.style.alignItems = 'center';
+          removeBtn.style.justifyContent = 'center';
+          removeBtn.onclick = function() { removeSpecificImage(imageId); };
+          
+          // Adicionar elementos ao container
+          imageContainer.appendChild(imgElement);
+          imageContainer.appendChild(removeBtn);
+          
+          // Adicionar container ao preview
+          previewDiv.appendChild(imageContainer);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    // Função para remover imagem específica
+    function removeSpecificImage(imageId) {
+      // Remover do array de imagens
+      attachedImages = attachedImages.filter(img => img.id !== imageId);
+      
+      // Remover elemento visual
+      const container = document.getElementById('container_' + imageId);
+      if (container) {
+        container.remove();
+      }
+      
+      // Esconder o preview se não houver mais imagens
+      if (attachedImages.length === 0) {
+        document.getElementById('imagePreview').style.display = 'none';
+      }
+    }
+    
+    // Função para remover todas as imagens anexadas
+    function removeImage() {
+      attachedImages = [];
+      const previewDiv = document.getElementById('imagePreview');
+      previewDiv.innerHTML = '';
+      previewDiv.style.display = 'none';
+      document.getElementById('imageInput').value = '';
+    }
+    
+    // Função para redimensionar imagem antes de enviar
+    function redimensionarImagem(file) {
+      return new Promise((resolve, reject) => {
+        // Tamanho máximo para qualquer dimensão da imagem
+        const MAX_DIMENSION = 1200;
+        
+        const img = new Image();
+        img.onload = function() {
+          // Verificar se a imagem precisa ser redimensionada
+          let width = img.width;
+          let height = img.height;
+          
+          // Se a imagem for menor que o limite, não redimensionar
+          if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
+            URL.revokeObjectURL(img.src); // Liberar memória
+            resolve(file); // Retornar o arquivo original
+            return;
+          }
+          
+          // Calcular novas dimensões mantendo proporção
+          if (width > height) {
+            height = Math.round(height * (MAX_DIMENSION / width));
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round(width * (MAX_DIMENSION / height));
+            height = MAX_DIMENSION;
+          }
+          
+          // Criar canvas para redimensionar
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Desenhar imagem redimensionada
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Converter para blob com qualidade reduzida para JPEG
+          canvas.toBlob((blob) => {
+            if (blob) {
+              // Criar novo arquivo com o mesmo nome
+              const newFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: file.lastModified
+              });
+              resolve(newFile);
+            } else {
+              resolve(file); // Fallback para o arquivo original
+            }
+            URL.revokeObjectURL(img.src); // Liberar memória
+          }, 'image/jpeg', 0.85); // 85% de qualidade
+        };
+        
+        img.onerror = function() {
+          URL.revokeObjectURL(img.src);
+          reject(new Error('Erro ao carregar imagem para redimensionamento'));
+        };
+        
+        img.src = URL.createObjectURL(file);
+      });
+    }
+    
+    // Função para enviar imagem para análise
+    async function enviarImagem(file, prompt) {
+      try {
+        // Redimensionar imagem antes de processar
+        const otimizedFile = await redimensionarImagem(file);
+        
+        // Função auxiliar para converter ArrayBuffer para base64 sem estouro de pilha
+        function arrayBufferToBase64(buffer) {
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          const chunkSize = 1024; // Tamanho do chunk para processamento seguro
+          
+          // Processar bytes em pequenos chunks para evitar estouro de pilha
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            const slice = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+            let binaryChunk = '';
+            for (let j = 0; j < slice.length; j++) {
+              binaryChunk += String.fromCharCode(slice[j]);
+            }
+            binary += binaryChunk;
+          }
+          
+          return btoa(binary);
+        }
+        
+        const buf = await otimizedFile.arrayBuffer();
+        const b64 = arrayBufferToBase64(buf);
+        
+        const resp = await fetch("/api/vision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, imageB64: b64, mime: otimizedFile.type })
+        });
+        
+        if (!resp.ok) {
+          throw new Error(`Erro na análise: ${resp.status}`);
+        }
+        
+        const { text } = await resp.json();
+        return text;
+      } catch (error) {
+        console.error('Erro ao enviar imagem:', error);
+        throw error;
+      }
+    }
+    
+    // Função para processar múltiplas imagens sequencialmente
+    async function processarMultiplasImagens(imagens, prompt) {
+      let resultadoCompleto = "";
+      let contadorImagens = 0;
+      
+      for (const img of imagens) {
+        contadorImagens++;
+        try {
+          // Adicionar contador à prompt para diferenciar as imagens
+          const promptComContador = imagens.length > 1 
+            ? `${prompt} [Imagem ${contadorImagens}/${imagens.length}]` 
+            : prompt;
+            
+          const resultado = await enviarImagem(img.file, promptComContador);
+          
+          // Adicionar separador entre resultados de imagens diferentes
+          if (resultadoCompleto) {
+            resultadoCompleto += "\n\n---\n\n";
+          }
+          
+          // Adicionar cabeçalho para cada imagem se houver múltiplas
+          if (imagens.length > 1) {
+            resultadoCompleto += `**Análise da Imagem ${contadorImagens}/${imagens.length}:**\n\n`;
+          }
+          
+          resultadoCompleto += resultado;
+        } catch (error) {
+          resultadoCompleto += `\n\nErro ao processar imagem ${contadorImagens}: ${error.message}`;
+        }
+      }
+      
+      return resultadoCompleto;
+    }
+    
     async function sendMessage() {
       const input = document.getElementById("userInput").value.trim();
       const responseDiv = document.getElementById("response");
       const loader = document.getElementById("loader");
       const loadingBar = document.getElementById("loadingBar");
 
-      if (!input) {
+      if (!input && attachedImages.length === 0) {
         responseDiv.innerHTML = "⚠️ Nada foi invocado.";
         return;
       }
 
-      responseDiv.innerHTML = "Invocando...";
-      loader.style.display = "block";
-      loadingBar.style.width = "0%";
+      // Reset do status INVOCANDO
+      isInvocando = true;
 
-      let progress = 0;
-      const interval = setInterval(() => {
-        if (progress < 90) {
-          progress += 1;
-          loadingBar.style.width = progress + "%";
+      // Verificar o modo atual e adicionar prefixo se necessário
+      const currentMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
+      let finalInput = input;
+      
+      // Adicionar prefixo apenas se não for análise de imagem
+      if (attachedImages.length === 0) {
+        if (currentMode === 'tecnico') {
+          finalInput = "Modo técnico: " + input;
+        } else if (currentMode === 'ritual') {
+          finalInput = "Modo ritual: " + input;
         }
-      }, 30);
+      }
+      
+      // Se há imagens anexadas, usar API de vision
+      if (attachedImages.length > 0) {
+        try {
+          const visionPrompt = input || "Analise a imagem e dê um diagnóstico executável.";
+          const prefixedPrompt = `**ESPELHO VISUAL**: ${visionPrompt}`;
+          
+          // Adicionar mensagem do usuário com indicação de imagem(ns)
+          const imagemTexto = attachedImages.length === 1 
+            ? "✛ *Imagem anexada para análise*" 
+            : `✛ *${attachedImages.length} imagens anexadas para análise*`;
+          
+          messages.push({ role: "user", content: `${input}\n\n${imagemTexto}` });
+          messages.push({ role: "assistant", content: "Invocando..." });
+          renderMessagesWithLiveMarkdown();
+          
+          // INICIA O RITUAL DA BARRA
+          startLoaderBar();
+          
+          // Analisar imagens
+          const visionResult = await processarMultiplasImagens(attachedImages, prefixedPrompt);
+          
+          // Limpar imagem após uso
+          removeImage();
+          
+          // Atualizar última mensagem com resultado
+          messages[messages.length - 1].content = visionResult;
+          renderMessagesWithLiveMarkdown();
+          
+          // Salvar no histórico
+          const threadId = localStorage.getItem("threadId") || generateThreadId();
+          if (!localStorage.getItem("threadId")) {
+            localStorage.setItem("threadId", threadId);
+          }
+          saveToHistory(input || "Análise de imagem", threadId);
+          
+          // Finalizar barra
+          stopLoaderBar();
+          
+          // Limpar input e redimensionar textarea
+          document.getElementById("userInput").value = "";
+          autoResizeTextarea();
+          return;
+          
+        } catch (error) {
+          console.error('Erro na análise de imagem:', error);
+          messages[messages.length - 1].content = `⚠️ Erro na análise da imagem: ${error.message}`;
+          renderMessagesWithLiveMarkdown();
+          stopLoaderBar();
+          return;
+        }
+      }
+
+      // Fluxo normal sem imagem
+      // Adicionar mensagem do usuário e mensagem "Invocando..."
+      messages.push({ role: "user", content: input }); // Mantém o input original na interface
+      messages.push({ role: "assistant", content: "Invocando..." });
+      renderMessagesWithLiveMarkdown(); // já mostra as duas
+      
+      // INICIA O RITUAL DA BARRA
+      startLoaderBar();
 
       try {
-        const res = await fetch("/api/arca", {
+        // Verificar se já existe threadId salvo
+        let threadId = localStorage.getItem("threadId");
+        
+        if (!threadId) {
+          // Criar nova thread e limpar mensagens
+          messages = [{ role: "user", content: input }, { role: "assistant", content: "" }];
+          const threadRes = await fetch("/api/thread", {
+            method: "POST"
+          });
+          const threadData = await threadRes.json();
+          threadId = threadData.threadId;
+          
+          // Salvar no navegador
+          localStorage.setItem("threadId", threadId);
+        }
+
+        const response = await fetch("/api/arca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ input })
+          body: JSON.stringify({ input: finalInput, threadId })
+        });
+
+        if (!response.ok) {
+  const body = await response.text().catch(()=> '');
+  throw new Error(`Falha ao invocar: ${response.status} ${response.statusText || ''} ${body}`);
+}
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop();
+
+          for (let part of parts) {
+            if (!part.startsWith("data: ")) continue;
+
+            // remove apenas o prefixo "data:" mantendo QUALQUER espaço do token
+const content = part.replace(/^data:\s?/, "");
+            
+            // Corrige problemas de formatação em tempo real durante o streaming
+            const fixedContent = content
+              .replace(/([.!?:])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // adiciona espaço após pontuação
+              .replace(/(RITUAL DE [A-ZÀ-Ÿ]+):(?=\d)/g, '$1: '); // corrige "RITUAL DE AÇÃO:1"
+            
+            if (content === "[DONE]") {
+              // Garantir renderização final e limpeza
+              clearTimeout(window.renderTimeout);
+              renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
+              
+              document.getElementById("userInput").value = "";
+              // Resetar o tamanho do textarea para o padrão
+              document.getElementById("userInput").style.height = "55px";
+              saveToHistory(input, threadId);
+              return;
+            }
+
+            // STREAMING RITUAL OTIMIZADO: máxima fluidez e presença
+            if (isInvocando && content !== "[DONE]") {
+              const idx = messages.length - 1;
+              if (messages[idx].content === "Invocando...") {
+                // Remove "Invocando..." e inicia resposta real
+                messages[idx].content = fixedContent;
+                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+                
+                // Remove barra de loading no primeiro token real
+                window.requestAnimationFrame(() => {
+                  stopLoaderBar();
+                });
+              } else {
+                // Acumula tokens com fluidez natural
+                safeAppend(idx, fixedContent);
+                
+                // Renderização otimizada: debounce inteligente para performance
+                clearTimeout(window.renderTimeout);
+                window.renderTimeout = setTimeout(() => {
+                  renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+                }, 16); // 60fps para máxima suavidade
+              }
+              
+              // 💾 AUTO-SAVE: Salvar progresso durante streaming
+              clearTimeout(window.autoSaveTimeout);
+              window.autoSaveTimeout = setTimeout(() => {
+                saveThreadMessages(threadId);
+              }, 1000); // Salva a cada 1 segundo durante streaming
+            } else {
+              // Streaming normal fora do estado de invocação
+              safeAppend(messages.length - 1, fixedContent);
+              
+              clearTimeout(window.renderTimeout);
+              window.renderTimeout = setTimeout(() => {
+                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+              }, 16);
+            }
+          }
+        }
+      } catch (err) {
+        stopLoaderBar();
+        responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
+      }
+    }
+
+    function renderMessages() {
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerHTML = "";
+
+      messages.forEach(msg => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
+        
+        if (msg.role === "user") {
+          div.style.fontStyle = "italic";
+          div.style.color = "#ccc";
+          div.style.backgroundColor = "#1a1a1a";
+          div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          attachMessageToolbar(div, raw);
+        } else {
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
+          
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          
+          // Forçar parágrafos se não houver \n\n no conteúdo
+          let content = msg.content; // não mate espaços de borda
+          
+          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+          }
+          
+          const html = marked.parse(content);
+div.innerHTML = DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: [
+    'p','strong','em','ul','ol','li',
+    'h1','h2','h3','h4','h5','h6',
+    'br','code','pre','blockquote','hr','a'
+  ],
+  ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
+});
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
+          attachMessageToolbar(div, raw);
+        }
+        
+        responseDiv.appendChild(div);
+      });
+
+      responseDiv.scrollTop = responseDiv.scrollHeight;
+    }
+
+    function renderMessagesWithLiveMarkdown(isStreaming = false) {
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerHTML = "";
+
+      messages.forEach((msg, index) => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
+        
+        if (msg.role === "user") {
+          div.style.fontStyle = "italic";
+          div.style.color = "#ccc";
+          div.style.backgroundColor = "#1a1a1a";
+          div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          attachMessageToolbar(div, raw);
+        } else {
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
+          
+          // Aplicar animação de streaming na última mensagem do assistente
+          const isLastAssistantMessage = index === messages.length - 1 && msg.role === "assistant";
+          if (isStreaming && isLastAssistantMessage) {
+            div.classList.add("streaming-active");
+          }
+          
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          
+          // Forçar parágrafos se não houver \n\n no conteúdo
+          let content = msg.content; // preserve o MD cru para copiar depois
+          
+          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!looksLikeCodeOrHeadings) {
+            // Corrige palavras coladas após pontuação e dois pontos
+            content = content
+              .replace(/([.!?:])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
+              .replace(/([.!?])\s+/g, '$1\n\n');           // quebra em parágrafos após pontuação
+            
+            // Corrige palavras coladas em frases como "RITUAL DE AÇÃO:1"
+            content = content.replace(/(RITUAL DE [A-ZÀ-Ÿ]+):(?=\d)/g, '$1: ');
+          }
+          
+          const html = marked.parse(content);
+          div.innerHTML = DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [
+              'p','strong','em','ul','ol','li',
+              'h1','h2','h3','h4','h5','h6',
+              'br','code','pre','blockquote','hr','a'
+            ],
+            ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
+          });
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
+          attachMessageToolbar(div, raw);
+        }
+        
+        responseDiv.appendChild(div);
+      });
+
+      responseDiv.scrollTop = responseDiv.scrollHeight;
+    }
+
+    function saveToHistory(userInput, threadId) {
+      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      
+      // Verificar se já existe essa sessão no histórico
+      const existingIndex = history.findIndex(session => session.id === threadId);
+      
+      if (existingIndex === -1) {
+        // Nova sessão
+        history.push({
+          id: threadId,
+          title: userInput.slice(0, 60) + (userInput.length > 60 ? "..." : ""),
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // 🔐 PATCH 3: Sanitização antes de salvar
+      const sanitizedHistory = history.map(session => ({
+        id: session.id,
+        title: session.title,
+        timestamp: session.timestamp
+      }));
+      
+      localStorage.setItem("chatHistory", JSON.stringify(sanitizedHistory));
+      
+      // 💾 SALVAR MENSAGENS DA SESSÃO ATUAL
+      saveThreadMessages(threadId);
+      
+      loadSidebar();
+    }
+
+    // 💾 Salvar mensagens completas no localStorage
+    function saveThreadMessages(threadId) {
+      if (!threadId || messages.length === 0) return;
+      
+      // Filtrar apenas mensagens user/assistant (sem system)
+      const userMessages = messages.filter(msg => msg.role !== "system");
+      
+      // Sanitizar conteúdo antes de salvar
+      const sanitizedMessages = userMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content || ""
+      }));
+      
+      localStorage.setItem(`thread_${threadId}`, JSON.stringify(sanitizedMessages));
+    }
+
+    // 📖 Carregar mensagens do localStorage
+    function loadThreadMessagesFromStorage(threadId) {
+      if (!threadId) return [];
+      
+      try {
+        const stored = localStorage.getItem(`thread_${threadId}`);
+        return stored ? JSON.parse(stored) : [];
+      } catch (err) {
+        console.warn('Erro ao carregar mensagens do localStorage:', err);
+        return [];
+      }
+    }
+
+    async function loadThreadMessages(threadId) {
+      try {
+        // 🔄 PRIORIDADE: Carregar do localStorage primeiro
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        
+        if (localMessages.length > 0) {
+          // Mensagens encontradas no localStorage
+          messages = localMessages;
+          renderMessages();
+          return;
+        }
+        
+        // 🌐 FALLBACK: Tentar carregar do servidor se localStorage vazio
+        const res = await fetch("/api/getMessages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ threadId })
         });
 
         const data = await res.json();
 
-        clearInterval(interval);
-        loadingBar.style.width = "100%";
-
-        setTimeout(() => {
-          loader.style.display = "none";
-          if (data.reply) {
-            responseDiv.innerHTML = marked.parse(data.reply);
-          } else if (data.error) {
-            responseDiv.innerHTML = "⚠️ A Arca falhou: " + data.error;
-          } else {
-            responseDiv.innerHTML = "⚠️ A Arca silenciou... (sem conteúdo)";
-          }
-        }, 400);
-      } catch (error) {
-        clearInterval(interval);
-        loader.style.display = "none";
-        responseDiv.innerHTML = "⚠️ Falha na invocação: " + error.message;
+        if (data.messages && data.messages.length > 0) {
+          messages = data.messages;
+          // Salvar no localStorage para próximas vezes
+          saveThreadMessages(threadId);
+        } else {
+          messages = [];
+        }
+        
+        renderMessages();
+      } catch (err) {
+        // Se falhar, tentar carregar do localStorage como último recurso
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        if (localMessages.length > 0) {
+          messages = localMessages;
+          renderMessages();
+        } else {
+          document.getElementById("response").innerHTML = "⚠️ Falha ao carregar mensagens.";
+        }
       }
     }
 
-    window.sendMessage = sendMessage;
-  </script>
+    function loadSidebar() {
+      const sidebar = document.getElementById("chatSidebar");
+      const rawHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      const history = rawHistory.filter(s => !s.archived);
+      const currentThreadId = localStorage.getItem("threadId");
 
+      sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar sessões'>×</button></h3>";
+
+      // Botão Nova Travessia
+      const newBtn = document.createElement("button");
+      newBtn.textContent = "⎈ Nova Travessia";
+      newBtn.className = "new-session";
+      newBtn.onclick = () => {
+        // Abrir modal para nomear a travessia
+        document.getElementById("newTravessiaModal").style.display = "block";
+        document.getElementById("travessiaName").focus();
+      };
+      sidebar.appendChild(newBtn);
+
+      // Histórico de sessões (mais recentes primeiro)
+      history.reverse().forEach(session => {
+        const btn = document.createElement("button");
+        btn.textContent = session.title;
+        // Exibir como ativo (opacidade 1 e negrito) SOMENTE se for a sessão atual E já tiver mensagens
+        let hasMessages = false;
+        try {
+          const stored = localStorage.getItem(`thread_${session.id}`);
+          if (stored) {
+            const msgs = JSON.parse(stored);
+            hasMessages = Array.isArray(msgs) && msgs.length > 0;
+          }
+        } catch (e) {}
+        const isActive = (session.id === currentThreadId) && hasMessages;
+        btn.style.opacity = isActive ? "1" : "0.7";
+        btn.style.fontWeight = isActive ? "bold" : "normal";
+        btn.onclick = () => {
+          localStorage.setItem("threadId", session.id);
+          loadThreadMessages(session.id);
+          document.getElementById("userInput").value = "";
+          loadSidebar();
+          
+          // Fechar sidebar no mobile após clicar em sessão (sem ocultar permanentemente)
+          if (window.innerWidth <= 768) {
+            const sb = document.getElementById("chatSidebar");
+            sb.classList.remove("open"); // fecha via classe
+            sb.style.display = ""; // remove qualquer display:none residual
+            document.getElementById("toggleSidebar").setAttribute("aria-expanded", "false");
+          }
+        };
+        
+        // Renomear via duplo clique e botão direito (context menu)
+        btn.style.position = "relative";
+        btn.addEventListener("dblclick", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          startInlineRename(btn, session.id, session.title);
+        });
+        btn.addEventListener("contextmenu", (e) => {
+          e.preventDefault(); // evita menu nativo
+          e.stopPropagation();
+          startInlineRename(btn, session.id, session.title);
+        });
+        
+        sidebar.appendChild(btn);
+      });
+    }
+
+    // Inline rename para botões do sidebar via duplo clique e clique direito
+    function startInlineRename(btn, sessionId, currentTitle) {
+      try {
+        const sidebar = document.getElementById("chatSidebar");
+
+        // Remove qualquer overlay de renomeação já aberto
+        const existing = sidebar.querySelector(".rename-overlay");
+        if (existing) existing.remove();
+
+        // Calcula posição relativa ao sidebar
+        const sideRect = sidebar.getBoundingClientRect();
+        const rect = btn.getBoundingClientRect();
+
+        const overlay = document.createElement("div");
+        overlay.className = "rename-overlay";
+        overlay.style.position = "absolute";
+        overlay.style.left = (rect.left - sideRect.left + 8) + "px"; // ligeiro deslocamento
+        overlay.style.top = (rect.top - sideRect.top) + "px";
+        overlay.style.width = Math.max(160, rect.width - 16) + "px";
+        overlay.style.background = "#1c1c1c";
+        overlay.style.border = "1px solid #333";
+        overlay.style.borderRadius = "4px";
+        overlay.style.boxShadow = "0 4px 12px rgba(0,0,0,0.35)";
+        overlay.style.padding = "6px";
+        overlay.style.zIndex = "1001";
+        overlay.style.display = "flex";
+        overlay.style.gap = "6px";
+        overlay.style.alignItems = "center";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = currentTitle || "";
+        input.autofocus = true;
+        input.setAttribute("aria-label", "Renomear sessão");
+        input.placeholder = "Novo título...";
+        input.style.flex = "1";
+        input.style.background = "#1a1a1a";
+        input.style.color = "#f5f5f5";
+        input.style.border = "1px solid #333";
+        input.style.padding = "6px 8px";
+        input.style.fontSize = "0.75rem";
+        input.style.borderRadius = "3px";
+
+        // Evita que o clique no overlay selecione a sessão
+        overlay.addEventListener("mousedown", (e) => { e.stopPropagation(); });
+
+        const commit = () => {
+          const newTitle = (input.value || "").trim();
+          if (newTitle && newTitle !== currentTitle) {
+            const fullHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+            const idx = fullHistory.findIndex(s => s.id === sessionId);
+            if (idx !== -1) {
+              fullHistory[idx].title = newTitle;
+              localStorage.setItem("chatHistory", JSON.stringify(fullHistory));
+            }
+          }
+          overlay.remove();
+          loadSidebar();
+        };
+
+        const cancel = () => {
+          overlay.remove();
+          loadSidebar();
+        };
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); commit(); }
+          else if (e.key === "Escape") { e.preventDefault(); cancel(); }
+        });
+
+        input.addEventListener("blur", () => {
+          const newTitle = (input.value || "").trim();
+          if (newTitle && newTitle !== currentTitle) commit(); else cancel();
+        });
+
+        overlay.appendChild(input);
+        sidebar.appendChild(overlay);
+
+        // Foca e seleciona imediatamente
+        requestAnimationFrame(() => { input.focus(); input.select(); });
+      } catch (err) {
+        console.error("Erro ao iniciar renomeação:", err);
+      }
+    }
+
+    function showResetModal() {
+      document.getElementById("resetModal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("resetModal").style.display = "none";
+      document.getElementById("loginModal").style.display = "none";
+      document.getElementById("newTravessiaModal").style.display = "none";
+    }
+    
+    function confirmNewTravessia() {
+      const travessiaName = document.getElementById("travessiaName").value.trim() || "Nova Travessia";
+      
+      // Limpa tudo
+      localStorage.removeItem("threadId");
+      messages = [];
+      document.getElementById("response").innerHTML = "";
+      document.getElementById("userInput").value = "";
+      document.getElementById("userInput").style.height = "55px";
+      
+      // Cria nova thread
+      const newThreadId = generateThreadId();
+      localStorage.setItem("threadId", newThreadId);
+      
+      // Salva no histórico com o nome da travessia REAL
+      saveToHistory(travessiaName, newThreadId);
+      
+      // Inicia mensagens vazias pra essa thread
+      localStorage.setItem(`thread_${newThreadId}`, JSON.stringify([]));
+      
+      // Fecha modal e atualiza UI
+      closeModal();
+      loadSidebar();
+    }
+
+    function confirmReset() {
+      const currentThreadId = localStorage.getItem("threadId");
+      
+      // Remover sessão atual do histórico
+      if (currentThreadId) {
+        const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+        const updatedHistory = history.filter(session => session.id !== currentThreadId);
+        localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+        
+        // 🗑️ LIMPAR MENSAGENS DA SESSÃO RESETADA
+        localStorage.removeItem(`thread_${currentThreadId}`);
+      }
+      
+      // Resetar thread atual
+      localStorage.removeItem("threadId");
+      messages = []; // Limpar mensagens
+      document.getElementById("response").innerHTML = "🔄 Memória resetada. Nova travessia iniciada.";
+      document.getElementById("userInput").value = "";
+      // Resetar o tamanho do textarea para o padrão
+      document.getElementById("userInput").style.height = "55px";
+      
+      closeModal();
+      loadSidebar();
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("chatSidebar");
+      const main = document.getElementById("mainContent");
+      const btn = document.getElementById("toggleSidebar");
+
+      if (window.innerWidth <= 768) {
+        // Mobile: usa classe 'open'
+        const isOpen = sidebar.classList.contains("open");
+        if (isOpen) {
+          sidebar.classList.remove("open");
+        } else {
+          sidebar.classList.add("open");
+        }
+        btn.setAttribute("aria-expanded", sidebar.classList.contains("open") ? "true" : "false");
+      } else {
+        // Desktop: usa classe 'hidden' para sidebar e 'sidebar-hidden' para main
+        const isHidden = sidebar.classList.contains("hidden");
+        if (isHidden) {
+          // Mostrar sidebar
+          sidebar.classList.remove("hidden");
+          main.classList.remove("sidebar-hidden");
+          btn.classList.add("sidebar-open");
+        } else {
+          // Esconder sidebar
+          sidebar.classList.add("hidden");
+          main.classList.add("sidebar-hidden");
+          btn.classList.remove("sidebar-open");
+        }
+        btn.setAttribute("aria-expanded", !sidebar.classList.contains("hidden") ? "true" : "false");
+      }
+    }
+
+    // Menu de ações ao lado do botão do sidebar
+    function toggleSidebarMenu(e) {
+      const menu = document.getElementById('sidebarMenu');
+      if (!menu) return;
+      if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+        const btn = document.getElementById('sidebarActions');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      } else {
+        const btn = document.getElementById('sidebarActions');
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          menu.style.top = (rect.bottom + 8) + 'px';
+          menu.style.left = rect.left + 'px';
+        }
+        menu.style.display = 'block';
+        const btn2 = document.getElementById('sidebarActions');
+        if (btn2) btn2.setAttribute('aria-expanded', 'true');
+      }
+      if (e && e.stopPropagation) e.stopPropagation();
+    }
+
+    function archiveSidebarButtons() {
+      try {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        if (history.length === 0) { alert('Não há sessões para arquivar.'); return; }
+        if (!confirm('Arquivar todas as sessões do sidebar? Elas continuarão preservadas e poderão ser restauradas futuramente.')) return;
+        const updated = history.map(s => ({ ...s, archived: true }));
+        localStorage.setItem('chatHistory', JSON.stringify(updated));
+        loadSidebar();
+        const menu = document.getElementById('sidebarMenu');
+        if (menu) menu.style.display = 'none';
+      } catch (e) {
+        alert('Falha ao arquivar sessões.');
+      }
+    }
+
+    function deleteSidebarButtons() {
+      try {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        if (history.length === 0) { alert('Não há sessões para excluir.'); return; }
+        if (!confirm('Tem certeza que deseja excluir TODAS as sessões do sidebar e respectivas memórias? Esta ação não pode ser desfeita.')) return;
+        history.forEach(sess => {
+          if (sess && sess.id) {
+            localStorage.removeItem(`thread_${sess.id}`);
+          }
+        });
+        localStorage.removeItem('chatHistory');
+        localStorage.removeItem('threadId');
+        loadSidebar();
+        const menu = document.getElementById('sidebarMenu');
+        if (menu) menu.style.display = 'none';
+        const input = document.getElementById('userInput');
+        if (input) input.value = '';
+        const resp = document.getElementById('response');
+        if (resp) resp.innerHTML = '🗑️ Todas as sessões foram excluídas.';
+      } catch (e) {
+        alert('Falha ao excluir sessões.');
+      }
+    }
+
+    // Carregar sidebar ao inicializar
+    window.onload = function () {
+      loadSidebar();
+      
+      // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
+      const currentThreadId = localStorage.getItem("threadId");
+      if (currentThreadId) {
+        loadThreadMessages(currentThreadId);
+      }
+
+      // Se for desktop, garante que o sidebar apareça (remove classe hidden se existir)
+      if (window.innerWidth > 768) {
+        const sidebar = document.getElementById("chatSidebar");
+        const main = document.getElementById("mainContent");
+        const btn = document.getElementById("toggleSidebar");
+        sidebar.classList.remove("hidden");
+        main.classList.remove("sidebar-hidden");
+        btn.classList.add("sidebar-open");
+        btn.setAttribute("aria-expanded", "true");
+      }
+      
+      // Verificar status de login
+      checkLoginStatus();
+    };
+
+    // Fechar modal clicando fora dele
+    window.onclick = function(event) {
+      const resetModal = document.getElementById("resetModal");
+      const loginModal = document.getElementById("loginModal");
+      const newTravessiaModal = document.getElementById("newTravessiaModal");
+      
+      if (event.target === resetModal || event.target === loginModal || event.target === newTravessiaModal) {
+        closeModal();
+      }
+
+      // Fechar menu de ações se clicar fora
+      const actionsMenu = document.getElementById("sidebarMenu");
+      const actionsBtn = document.getElementById("sidebarActions");
+      if (actionsMenu && actionsMenu.style.display === "block") {
+        const clickInsideMenu = actionsMenu.contains(event.target);
+        const clickOnBtn = actionsBtn && actionsBtn.contains(event.target);
+        if (!clickInsideMenu && !clickOnBtn) {
+          actionsMenu.style.display = "none";
+          if (actionsBtn) actionsBtn.setAttribute("aria-expanded", "false");
+        }
+      }
+    }
+
+    function enhanceCodeBlocks(container) {
+      const pres = container.querySelectorAll('pre');
+      pres.forEach(pre => {
+        if (pre.dataset.enhanced === '1') return;
+
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        // Linguagem via class="language-xxx"
+        const cls = (code.getAttribute('class') || '').split(/\s+/);
+        let lang = cls.find(c => c.startsWith('language-'));
+        lang = lang ? lang.replace('language-', '').toUpperCase() : 'TXT';
+
+        // Badge de linguagem
+        const badge = document.createElement('div');
+        badge.className = 'code-badge';
+        badge.textContent = lang;
+
+        // Botão copiar
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.type = 'button';
+        btn.textContent = 'Copiar';
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const raw = code.innerText;
+          try {
+            await navigator.clipboard.writeText(raw);
+            btn.textContent = 'Copiado!';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          } catch {
+            btn.textContent = 'Falhou';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          }
+        });
+
+        pre.appendChild(badge);
+        pre.appendChild(btn);
+        pre.dataset.enhanced = '1';
+      });
+    }
+
+    function hardenLinks(container) {
+      container.querySelectorAll('a[href]').forEach(a => {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      });
+    }
+
+    async function copyText(text, btn) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Copiado!';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      } catch {
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Falhou';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      }
+    }
+
+    function iconSVG(kind) {
+      switch (kind) {
+        case 'text': // documento com linhas
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm8 1.5V9h4.5L14 4.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2zm0-8h4v2H8V8z"/></svg>';
+        case 'md':   // chaves {}
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.7 7.3 5 11l3.7 3.7 1.4-1.4L7.8 11l2.3-2.3-1.4-1.4zm6.6 0-1.4 1.4L16.2 11l-2.3 2.3 1.4 1.4L19 11l-3.7-3.7zM10 18l2-12 2 .3-2 12-2-.3z"/></svg>';
+        case 'ok':   // check
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+        case 'err':  // X
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>';
+        default:
+          return '';
+      }
+    }
+
+    function setIcon(btn, state) {
+      btn.classList.remove('ok', 'err');
+      if (state === 'ok') btn.classList.add('ok');
+      if (state === 'err') btn.classList.add('err');
+      btn.innerHTML = iconSVG(state);
+    }
+
+    async function clipboardWrite(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function attachMessageToolbar(div, rawMarkdown) {
+      // Evita duplicar
+      if (div.querySelector('.msg-toolbar')) return;
+
+      // Cria toolbar
+      const bar = document.createElement('div');
+      bar.className = 'msg-toolbar';
+
+      // Botão: copiar TEXTO (renderizado)
+      const btnTxt = document.createElement('button');
+      btnTxt.className = 'msg-btn icon';
+      btnTxt.type = 'button';
+      btnTxt.setAttribute('aria-label', 'Copiar texto');
+      btnTxt.title = 'Copiar texto';
+      btnTxt.innerHTML = iconSVG('text');
+      btnTxt.addEventListener('click', async () => {
+        const plain = div.innerText.replace(/^Você:\s*/,'').trim();
+        const ok = await clipboardWrite(plain);
+        setIcon(btnTxt, ok ? 'ok' : 'err');
+        setTimeout(() => { btnTxt.classList.remove('ok','err'); btnTxt.innerHTML = iconSVG('text'); }, 1200);
+      });
+
+      // Botão: copiar MARKDOWN (cru)
+      const btnMd = document.createElement('button');
+      btnMd.className = 'msg-btn icon';
+      btnMd.type = 'button';
+      btnMd.setAttribute('aria-label', 'Copiar Markdown');
+      btnMd.title = 'Copiar Markdown';
+      btnMd.innerHTML = iconSVG('md');
+      btnMd.addEventListener('click', async () => {
+        const ok = await clipboardWrite(rawMarkdown || '');
+        setIcon(btnMd, ok ? 'ok' : 'err');
+        setTimeout(() => { btnMd.classList.remove('ok','err'); btnMd.innerHTML = iconSVG('md'); }, 1200);
+      });
+
+      bar.appendChild(btnTxt);
+      bar.appendChild(btnMd);
+      div.appendChild(bar);
+    }
+
+    // Event listener para ENTER no campo de nome da travessia
+    document.getElementById('travessiaName').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmNewTravessia();
+      }
+    });
+    
+    // Event listener para ENTER invocar e SHIFT+ENTER quebrar linha
+    // No mobile, ENTER não funciona para evitar problemas de UX
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        // Detectar se é dispositivo móvel
+        const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          // No mobile, ENTER sempre quebra linha (comportamento padrão)
+          return;
+        }
+        
+        if (e.shiftKey) {
+          // SHIFT+ENTER: permite quebra de linha (comportamento padrão)
+          return;
+        } else {
+          // ENTER: invoca a mensagem (apenas no desktop)
+          e.preventDefault();
+          sendMessage();
+        }
+      }
+    });
+
+    // Função para mostrar o modal de login
+    function showLoginModal() {
+      document.getElementById('loginModal').style.display = 'block';
+    }
+    
+    // Função para validar email
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+    
+    // Função para validar número de WhatsApp
+    function validateWhatsApp(number) {
+      // Remove caracteres não numéricos
+      const cleanNumber = number.replace(/\D/g, '');
+      // Verifica se tem entre 10 e 11 dígitos (com ou sem o 9)
+      return cleanNumber.length >= 10 && cleanNumber.length <= 11;
+    }
+    
+    // Função para formatar número de WhatsApp
+    function formatWhatsApp(number) {
+      const cleanNumber = number.replace(/\D/g, '');
+      if (cleanNumber.length === 11) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 7)}-${cleanNumber.substring(7)}`;
+      } else if (cleanNumber.length === 10) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 6)}-${cleanNumber.substring(6)}`;
+      }
+      return number;
+    }
+    
+    // Função para lidar com o login
+    function handleLogin(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('userEmail').value.trim();
+      const whatsappConsent = document.getElementById('whatsappConsent').checked;
+      let whatsapp = '';
+      
+      if (!validateEmail(email)) {
+        alert('Por favor, insira um email válido.');
+        return false;
+      }
+      
+      if (whatsappConsent) {
+        whatsapp = document.getElementById('userWhatsapp').value.trim();
+        if (!validateWhatsApp(whatsapp)) {
+          alert('Por favor, insira um número de WhatsApp válido com DDD.');
+          return false;
+        }
+      }
+      
+      // Armazena os dados do usuário
+      userData = {
+        email: email,
+        whatsapp: whatsappConsent ? formatWhatsApp(whatsapp) : '',
+        consentWhatsapp: whatsappConsent,
+        loginDate: new Date().toISOString()
+      };
+      
+      // Salva no localStorage
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      // Atualiza o estado de login
+      userLoggedIn = true;
+      
+      // Fecha o modal
+      closeModal();
+      
+      // Atualiza a interface para mostrar que o usuário está logado
+      updateLoginStatus();
+      
+      return false;
+    }
+    
+    // Função para atualizar o status de login na interface
+    function updateLoginStatus() {
+      const footerNote = document.querySelector('.footer-note');
+      if (userLoggedIn && userData) {
+        footerNote.innerHTML = `<span style="color: #b30000;">⦿</span> ${userData.email.split('@')[0]} | <a href="#" onclick="showLoginModal(); return false;" style="color: #777; text-decoration: underline;">Alterar</a>`;
+      } else {
+        footerNote.innerHTML = `<a href="#" onclick="showLoginModal(); return false;">Fazer login</a>`;
+      }
+    }
+    
+    // Função para alternar entre os modos ritual e técnico
+    function setPersonaMode(mode) {
+      // Armazena o modo selecionado no localStorage
+      localStorage.setItem('arcaPersonaMode', mode);
+      
+      // Atualiza a aparência dos botões
+      const ritualBtn = document.getElementById('ritualModeBtn');
+      const tecnicoBtn = document.getElementById('tecnicoModeBtn');
+      
+      if (mode === 'ritual') {
+        ritualBtn.classList.add('active');
+        ritualBtn.style.background = '#b30000';
+        ritualBtn.style.opacity = '0.8';
+        
+        tecnicoBtn.classList.remove('active');
+        tecnicoBtn.style.background = '#333';
+        tecnicoBtn.style.opacity = '0.6';
+      } else {
+        tecnicoBtn.classList.add('active');
+        tecnicoBtn.style.background = '#0066cc';
+        tecnicoBtn.style.opacity = '0.8';
+        
+        ritualBtn.classList.remove('active');
+        ritualBtn.style.background = '#333';
+        ritualBtn.style.opacity = '0.6';
+      }
+      
+      // Atualiza o placeholder do textarea de acordo com o modo
+      const userInput = document.getElementById('userInput');
+      if (mode === 'ritual') {
+        userInput.placeholder = 'Escreva com presença. Aqui não há espaço para palavras vazias.';
+      } else {
+        userInput.placeholder = 'Digite sua instrução técnica de forma clara e objetiva.';
+      }
+    }
+    
+    // Função para verificar o login ao carregar a página
+    function checkLoginStatus() {
+      const storedUserData = localStorage.getItem('userData');
+      if (storedUserData) {
+        userData = JSON.parse(storedUserData);
+        userLoggedIn = true;
+        updateLoginStatus();
+      } else {
+        // Se não estiver logado, mostra o modal de login
+        showLoginModal();
+      }
+      
+      // Inicializar o modo da persona ao carregar a página
+      const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
+      setPersonaMode(savedMode);
+    }
+    
+    // Mostrar/esconder campo de WhatsApp baseado no checkbox
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar o modo da persona ao carregar a página
+      const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
+      setPersonaMode(savedMode);
+      
+      const whatsappConsent = document.getElementById('whatsappConsent');
+      const whatsappField = document.getElementById('whatsappField');
+      
+      if (whatsappConsent && whatsappField) {
+        whatsappConsent.addEventListener('change', function() {
+          if (this.checked) {
+            whatsappField.style.display = 'block';
+            whatsappField.classList.add('visible');
+            document.getElementById('userWhatsapp').required = true;
+          } else {
+            whatsappField.classList.remove('visible');
+            setTimeout(() => {
+              whatsappField.style.display = 'none';
+            }, 300);
+            document.getElementById('userWhatsapp').required = false;
+          }
+        });
+      }
+      
+      // Configurar auto-expansão do textarea
+      const userInput = document.getElementById('userInput');
+      if (userInput) {
+        // Aplicar ao carregar a página
+        autoResizeTextarea();
+        positionModeButtons();
+        
+        // Aplicar quando o usuário digita
+        userInput.addEventListener('input', autoResizeTextarea);
+        
+        // Aplicar quando o usuário cola texto
+        userInput.addEventListener('paste', function() {
+          // Pequeno delay para garantir que o conteúdo colado seja processado
+          setTimeout(() => { autoResizeTextarea(); positionModeButtons(); }, 10);
+        });
+      }
+      
+      // Atualizar posicionamento em mudanças de tamanho/rotação (mobile)
+      window.addEventListener('resize', positionModeButtons);
+      window.addEventListener('orientationchange', () => setTimeout(positionModeButtons, 60));
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', positionModeButtons);
+      }
+    });
+    
+    window.sendMessage = sendMessage;
+    window.showResetModal = showResetModal;
+    window.showLoginModal = showLoginModal;
+    window.closeModal = closeModal;
+    window.confirmReset = confirmReset;
+    window.toggleSidebar = toggleSidebar;
+    window.toggleSidebarMenu = toggleSidebarMenu;
+    window.archiveSidebarButtons = archiveSidebarButtons;
+    window.deleteSidebarButtons = deleteSidebarButtons;
+    window.handleLogin = handleLogin;
+  </script>
 </body>
 </html>
