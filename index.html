@@ -156,13 +156,7 @@
       transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
     }
 
-    /* Esconder o botão de menu quando sidebar estiver aberta no desktop */
-    @media (min-width: 769px) {
-      #toggleSidebar.sidebar-open {
-        opacity: 0;
-        pointer-events: none;
-      }
-    }
+    /* Botão de menu permanece visível mesmo com sidebar aberta */
 
     #toggleSidebar:hover {
       background: rgba(179, 0, 0, 0.26);
@@ -236,13 +230,7 @@
     .actions-menu .action-item:hover { background-color: #222; }
     .actions-menu .action-item.danger { color: #ff6b6b; }
 
-    /* Esconder botão de ações no desktop quando a sidebar estiver aberta */
-    @media (min-width: 769px) {
-      #toggleSidebar.sidebar-open + #sidebarActions {
-        opacity: 0;
-        pointer-events: none;
-      }
-    }
+    /* Removido comportamento de ocultação do botão de ações */
 
     .modal {
       display: none;
@@ -2085,15 +2073,15 @@ div.innerHTML = DOMPurify.sanitize(html, {
         loadThreadMessages(currentThreadId);
       }
 
-      // Se for desktop, garante que o sidebar apareça (remove classe hidden se existir)
+      // Estado inicial: sidebar fechada no desktop, mostrando apenas o menu
       if (window.innerWidth > 768) {
         const sidebar = document.getElementById("chatSidebar");
         const main = document.getElementById("mainContent");
         const btn = document.getElementById("toggleSidebar");
-        sidebar.classList.remove("hidden");
-        main.classList.remove("sidebar-hidden");
-        btn.classList.add("sidebar-open");
-        btn.setAttribute("aria-expanded", "true");
+        sidebar.classList.add("hidden");
+        main.classList.add("sidebar-hidden");
+        btn.classList.remove("sidebar-open");
+        btn.setAttribute("aria-expanded", "false");
       }
       
       // Verificar status de login
