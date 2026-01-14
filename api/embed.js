@@ -1,6 +1,6 @@
+const { fetch } = require("undici");
 
-// Geração de embeddings
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { input } = req.body;
   const api_key = process.env.OPENAI_API_KEY;
 
@@ -11,12 +11,14 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${api_key}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ input, model: "text-embedding-ada-002" })
+      body: JSON.stringify({ input, model: "text-embedding-3-small" })
     });
 
     const embed = await embedRes.json();
-    res.status(200).json(embed.data[0]);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(embed.data?.[0] || embed));
   } catch (err) {
-    res.status(500).json({ error: "Erro ao gerar embedding: " + err.message });
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Erro ao gerar embedding: " + err.message }));
   }
 }
