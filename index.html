@@ -2477,6 +2477,36 @@ div.innerHTML = DOMPurify.sanitize(html, {
     window.archiveSidebarButtons = archiveSidebarButtons;
     window.deleteSidebarButtons = deleteSidebarButtons;
     window.handleLogin = handleLogin;
+    async function apiPost(path, body) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const json = await res.json();
+      return json;
+    }
+    async function arcaAssist(input, assistantId, threadId) {
+      return apiPost('/api/assist', { input, assistant_id: assistantId, threadId });
+    }
+    async function arcaImage(prompt, size) {
+      const r = await apiPost('/api/images', { prompt, size });
+      return r;
+    }
+    async function arcaSpeak(input, voice, format) {
+      const r = await apiPost('/api/speech', { input, voice, format });
+      if (r && r.audio_b64) {
+        const src = 'data:audio/' + (r.format || 'mp3') + ';base64,' + r.audio_b64;
+        const audio = new Audio(src);
+        audio.play();
+      }
+      return r;
+    }
+    async function arcaTranscribeFromUrl(audioUrl, mime) {
+      return apiPost('/api/transcribe', { audioUrl, mime });
+    }
+    async function arcaTranscribeFile(file, mime) {
+      const ab = await file.arrayBuffer();
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
+      return apiPost('/api/transcribe', { audioB64: b64, mime: mime || file.type || 'audio/mpeg' });
+    }
+    window.arca = { assist: arcaAssist, image: arcaImage, speak: arcaSpeak, transcribeFromUrl: arcaTranscribeFromUrl, transcribeFile: arcaTranscribeFile };
   </script>
 </body>
 </html>
