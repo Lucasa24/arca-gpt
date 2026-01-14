@@ -1817,7 +1817,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
         dots.style.cursor = "pointer";
         dots.style.opacity = "0.85";
         dots.addEventListener("click", (e) => {
+          e.preventDefault();
           e.stopPropagation();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
           openItemMenu(e, session.id, btn, session.title);
         });
         btn.appendChild(dots);
@@ -2024,12 +2026,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const rect = e.currentTarget.getBoundingClientRect();
       menu.style.display = 'block';
       const mRect = menu.getBoundingClientRect();
-      let top = rect.top - mRect.height - 8; // acima do botão
+      let top = rect.top - mRect.height - 8;
       if (top < 8) {
-        top = rect.bottom + 8; // fallback: abaixo se não houver espaço
+        top = rect.bottom + 8;
       }
+      let left = Math.min(Math.max(rect.left, 8), window.innerWidth - mRect.width - 8);
       menu.style.top = top + 'px';
-      menu.style.left = rect.left + 'px';
+      menu.style.left = left + 'px';
       menu.dataset.anchorId = String(sessionId);
     }
 
