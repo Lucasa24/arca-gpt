@@ -1739,7 +1739,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const history = rawHistory.filter(s => !s.archived);
       const currentThreadId = localStorage.getItem("threadId");
 
-      sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar sessões'>×</button></h3>";
+      sidebar.innerHTML = "<h3>◊ Sessões</h3>";
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
