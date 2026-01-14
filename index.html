@@ -842,12 +842,8 @@
 </head>
 <body>
   <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
-  <button id="sidebarActions" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Ações do Sidebar" onclick="toggleSidebarMenu(event)">⋯</button>
-  <div id="sidebarMenu" class="actions-menu" role="menu" aria-label="Ações do Sidebar">
-    <button type="button" class="action-item" onclick="archiveSidebarButtons()">Arquivar sessões</button>
-    <button type="button" class="action-item danger" onclick="deleteSidebarButtons()">Excluir sessões</button>
-  </div>
   <div id="chatSidebar"></div>
+  <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
   
   <!-- Modal de Login -->
   <div id="loginModal" class="modal">
@@ -1797,6 +1793,32 @@ div.innerHTML = DOMPurify.sanitize(html, {
           startInlineRename(btn, session.id, session.title);
         });
         
+        const dots = document.createElement("span");
+        dots.textContent = "⋯";
+        dots.setAttribute("aria-label", "Ações da sessão");
+        dots.style.position = "absolute";
+        dots.style.right = "8px";
+        dots.style.top = "50%";
+        dots.style.transform = "translateY(-50%)";
+        dots.style.width = "22px";
+        dots.style.height = "22px";
+        dots.style.border = "1px solid rgba(255,255,255,0.14)";
+        dots.style.borderRadius = "9999px";
+        dots.style.background = "rgba(179, 0, 0, 0.14)";
+        dots.style.color = "#fff";
+        dots.style.fontSize = "14px";
+        dots.style.lineHeight = "22px";
+        dots.style.display = "inline-flex";
+        dots.style.alignItems = "center";
+        dots.style.justifyContent = "center";
+        dots.style.cursor = "pointer";
+        dots.style.opacity = "0.85";
+        dots.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openItemMenu(e, session.id, btn, session.title);
+        });
+        btn.appendChild(dots);
+        
         sidebar.appendChild(btn);
       });
     }
@@ -1978,26 +2000,23 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
 
-    // Menu de ações ao lado do botão do sidebar
-    function toggleSidebarMenu(e) {
-      const menu = document.getElementById('sidebarMenu');
+    function openItemMenu(e, sessionId, btn, title) {
+      const menu = document.getElementById('itemMenu');
       if (!menu) return;
-      if (menu.style.display === 'block') {
+      menu.innerHTML = '';
+      const renameBtn = document.createElement('button');
+      renameBtn.type = 'button';
+      renameBtn.className = 'action-item';
+      renameBtn.textContent = 'Renomear';
+      renameBtn.onclick = () => {
+        startInlineRename(btn, sessionId, title);
         menu.style.display = 'none';
-        const btn = document.getElementById('sidebarActions');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-      } else {
-        const btn = document.getElementById('sidebarActions');
-        if (btn) {
-          const rect = btn.getBoundingClientRect();
-          menu.style.top = (rect.bottom + 8) + 'px';
-          menu.style.left = rect.left + 'px';
-        }
-        menu.style.display = 'block';
-        const btn2 = document.getElementById('sidebarActions');
-        if (btn2) btn2.setAttribute('aria-expanded', 'true');
-      }
-      if (e && e.stopPropagation) e.stopPropagation();
+      };
+      menu.appendChild(renameBtn);
+      const rect = e.currentTarget.getBoundingClientRect();
+      menu.style.top = (rect.bottom + 8) + 'px';
+      menu.style.left = rect.left + 'px';
+      menu.style.display = 'block';
     }
 
     function archiveSidebarButtons() {
@@ -2074,16 +2093,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
         closeModal();
       }
 
-      // Fechar menu de ações se clicar fora
-      const actionsMenu = document.getElementById("sidebarMenu");
-      const actionsBtn = document.getElementById("sidebarActions");
-      if (actionsMenu && actionsMenu.style.display === "block") {
-        const clickInsideMenu = actionsMenu.contains(event.target);
-        const clickOnBtn = actionsBtn && actionsBtn.contains(event.target);
-        if (!clickInsideMenu && !clickOnBtn) {
-          actionsMenu.style.display = "none";
-          if (actionsBtn) actionsBtn.setAttribute("aria-expanded", "false");
-        }
+      const itemMenu = document.getElementById("itemMenu");
+      if (itemMenu && itemMenu.style.display === "block" && !itemMenu.contains(event.target)) {
+        itemMenu.style.display = "none";
       }
     }
 
