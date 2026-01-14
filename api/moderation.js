@@ -1,6 +1,6 @@
+const { fetch } = require("undici");
 
-// Checagem de conteúdo com Moderation API
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { input } = req.body;
   const api_key = process.env.OPENAI_API_KEY;
 
@@ -11,12 +11,14 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${api_key}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ input })
+      body: JSON.stringify({ input, model: "omni-moderation-latest" })
     });
 
     const result = await moderationRes.json();
-    res.status(200).json(result.results[0]);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(result.results?.[0] || result));
   } catch (err) {
-    res.status(500).json({ error: "Erro na moderação: " + err.message });
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Erro na moderação: " + err.message }));
   }
 }
