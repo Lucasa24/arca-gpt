@@ -2006,6 +2006,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function openItemMenu(e, sessionId, btn, title) {
       const menu = document.getElementById('itemMenu');
       if (!menu) return;
+      // Toggle se já estiver aberto para o mesmo item
+      if (menu.style.display === 'block' && menu.dataset.anchorId === String(sessionId)) {
+        menu.style.display = 'none';
+        return;
+      }
       menu.innerHTML = '';
       const renameBtn = document.createElement('button');
       renameBtn.type = 'button';
@@ -2017,9 +2022,15 @@ div.innerHTML = DOMPurify.sanitize(html, {
       };
       menu.appendChild(renameBtn);
       const rect = e.currentTarget.getBoundingClientRect();
-      menu.style.top = (rect.bottom + 8) + 'px';
-      menu.style.left = rect.left + 'px';
       menu.style.display = 'block';
+      const mRect = menu.getBoundingClientRect();
+      let top = rect.top - mRect.height - 8; // acima do botão
+      if (top < 8) {
+        top = rect.bottom + 8; // fallback: abaixo se não houver espaço
+      }
+      menu.style.top = top + 'px';
+      menu.style.left = rect.left + 'px';
+      menu.dataset.anchorId = String(sessionId);
     }
 
     function archiveSidebarButtons() {
