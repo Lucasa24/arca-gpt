@@ -909,7 +909,7 @@
     <div class="fixed-footer">
       <div class="input-group">
         <input type="file" id="imageInput" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
-        <input type="file" id="audioInput" accept="audio/*" style="display: none;" onchange="handleAudioTranscribe(event)">
+        
         <div class="textarea-container" style="position: relative; flex-grow: 1;">
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
           <div class="mode-buttons" style="position: absolute; top: 50%; transform: translateY(-50%); right: 10px; display: flex; gap: 5px; opacity: 1; z-index: 10; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 4px;">
@@ -919,9 +919,7 @@
         </div>
         <button onclick="sendMessage()">Invocar</button>
         <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">✛</button>
-        <button onclick="handleGenerateImageButton()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2); margin-left: 4px;" title="Gerar imagem">🖼</button>
-        <button onclick="document.getElementById('audioInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2); margin-left: 4px;" title="Transcrever áudio">🎧</button>
-        <button onclick="invokeAssistantFromInput()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2); margin-left: 4px;" title="Invocar por Assistente">⎈</button>
+        
 
       </div>
       <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
@@ -2524,58 +2522,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
       return apiPost('/api/transcribe', { audioB64: b64, mime: mime || file.type || 'audio/mpeg' });
     }
     window.arca = { assist: arcaAssist, image: arcaImage, speak: arcaSpeak, transcribeFromUrl: arcaTranscribeFromUrl, transcribeFile: arcaTranscribeFile };
-    async function ensureThreadSession(initialTitle) {
-      let threadId = localStorage.getItem('threadId');
-      if (!threadId) {
-        const r = await fetch('/api/thread', { method: 'POST' });
-        const j = await r.json();
-        threadId = j.threadId;
-        localStorage.setItem('threadId', threadId);
-        saveToHistory(initialTitle || 'Nova Travessia', threadId);
-        localStorage.setItem(`thread_${threadId}`, JSON.stringify([]));
-      }
-      return threadId;
-    }
-    async function handleGenerateImageButton() {
-      const prompt = (document.getElementById('userInput').value || '').trim();
-      if (!prompt) { alert('Informe um prompt para gerar imagem.'); return; }
-      const res = await window.arca.image(prompt, '512x512');
-      if (res && res.image_b64) {
-        const previewDiv = document.getElementById('imagePreview');
-        previewDiv.style.display = 'block';
-        const img = document.createElement('img');
-        img.src = 'data:image/png;base64,' + res.image_b64;
-        img.style.maxWidth = '150px';
-        img.style.maxHeight = '100px';
-        img.style.border = '1px solid #333';
-        img.style.borderRadius = '5px';
-        previewDiv.appendChild(img);
-      }
-    }
-    async function handleAudioTranscribe(e) {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const textRes = await window.arca.transcribeFile(file);
-      const content = textRes && textRes.text ? textRes.text : '(sem texto)';
-      const threadId = await ensureThreadSession('Transcrição de áudio');
-      messages.push({ role: 'assistant', content });
-      renderMessages();
-      saveThreadMessages(threadId);
-      e.target.value = '';
-    }
-    async function invokeAssistantFromInput() {
-      const input = (document.getElementById('userInput').value || '').trim();
-      if (!input) { alert('Escreva algo para invocar pelo Assistente.'); return; }
-      const r = await window.arca.assist(input);
-      const tid = r && r.threadId ? r.threadId : await ensureThreadSession('Assistente');
-      localStorage.setItem('threadId', tid);
-      messages.push({ role: 'user', content: input });
-      messages.push({ role: 'assistant', content: r && r.reply ? r.reply : '(sem resposta)' });
-      renderMessages();
-      saveThreadMessages(tid);
-      document.getElementById('userInput').value = '';
-      autoResizeTextarea();
-    }
   </script>
 </body>
 </html>
