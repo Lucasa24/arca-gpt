@@ -83,7 +83,7 @@ async function handler(req, res) {
         model: userModel,
         messages,
         stream: true,
-        temperature: 1.10,
+        temperature: 0.85,
         max_tokens: 16000,
         top_p: 1.0,
         frequency_penalty: 0.0,
