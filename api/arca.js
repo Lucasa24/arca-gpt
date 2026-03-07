@@ -84,7 +84,7 @@ async function handler(req, res) {
         messages,
         stream: true,
         temperature: 1.10,
-        max_tokens: 4000,
+        max_tokens: 16000,
         top_p: 1.0,
         frequency_penalty: 0.0,
         presence_penalty: 0.0,
