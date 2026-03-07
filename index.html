@@ -1761,7 +1761,15 @@
             if (!part.startsWith("data: ")) continue;
 
             // remove apenas o prefixo "data:" mantendo QUALQUER espaço do token
-const content = part.replace(/^data:\s?/, "");
+            let content = part.replace(/^data:\s?/, "");
+            
+            // Tenta parsear JSON se o servidor estiver enviando JSON (nova versão)
+            try {
+              const parsed = JSON.parse(content);
+              content = parsed;
+            } catch (e) {
+              // Se falhar, assume texto cru (versão antiga ou erro de formato)
+            }
             
             // Corrige problemas de formatação em tempo real durante o streaming
             const fixedContent = content
