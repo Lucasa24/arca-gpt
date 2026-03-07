@@ -2,7 +2,20 @@
 const fs = require('fs');
 const path = require('path');
 
+// --- SUPABASE CLIENT SETUP (Persistência Real) ---
+let supabase;
+try {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
+    const { createClient } = require('@supabase/supabase-js');
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+    console.log("[ARCA MEMORY] Conectado ao Supabase (Persistência Ativa)");
+  }
+} catch (e) {
+  console.warn("[ARCA MEMORY] Supabase indisponível (Memória Volátil):", e.message);
+}
+
 const threadMemory = new Map();
+global.threadMemory = threadMemory; // Expõe para api/arca.js
 const DEFAULT_PERSONA = process.env.ARCA_PERSONA || "tecnico"; // ritual | clinico | tecnico
 const SYSTEM_VERSION = "2025-08-09-r3"; // mude quando editar o sistema
 
@@ -334,46 +347,104 @@ function buildSystemMessages(persona = DEFAULT_PERSONA, threadId = null) {
   ];
 }
 
-function getThreadMessages(threadId) {
-  const rec = threadMemory.get(threadId);
+async function getThreadMessages(threadId) {
+  // 1. Tenta carregar do Supabase se não estiver em memória (Cold Start)
+  if (!threadMemory.has(threadId) && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('threads')
+        .select('data')
+        .eq('id', threadId)
+        .single();
+      
+      if (data && data.data) {
+        threadMemory.set(threadId, data.data);
+      }
+    } catch (e) {
+      console.warn(`[ARCA MEMORY] Erro ao carregar thread ${threadId}:`, e.message);
+    }
+  }
+
+  let rec = threadMemory.get(threadId);
   if (!rec) {
     const msgs = buildSystemMessages(DEFAULT_PERSONA, threadId);
-    threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs, lastOpening: null, currentPersona: DEFAULT_PERSONA });
+    rec = { version: SYSTEM_VERSION, messages: msgs, lastOpening: null, currentPersona: DEFAULT_PERSONA };
+    threadMemory.set(threadId, rec);
+    
+    // Salva estado inicial no Supabase
+    if (supabase) {
+      await supabase.from('threads').upsert({ 
+        id: threadId, 
+        data: rec,
+        updated_at: new Date()
+      });
+    }
+    
     return msgs;
   }
+
+  // Verifica versão do sistema e atualiza se necessário
   if (rec.version !== SYSTEM_VERSION) {
-    // Preserva a persona atual se existir
     const currentPersona = rec.currentPersona || DEFAULT_PERSONA;
     const msgs = buildSystemMessages(currentPersona, threadId);
-    threadMemory.set(threadId, { version: SYSTEM_VERSION, messages: msgs, lastOpening: null, currentPersona });
+    // Preserva mensagens do usuário se possível, ou reseta? 
+    // O código original resetava messages com buildSystemMessages, mas perdia histórico?
+    // Não, o código original retornava SÓ system messages se versão mudasse?
+    // Ah, o código original (linhas 344-349) retornava msgs = buildSystemMessages... e SALVAVA isso.
+    // Isso significa que resetava o histórico ao mudar versão? 
+    // NÃO! Linhas 353-363 lidam com "Se persona mudou".
+    // Mas linhas 344-349 parecem resetar. Vamos manter o comportamento original por segurança,
+    // mas idealmente deveríamos preservar o histórico não-system.
+    // Vamos manter fiel ao original para não introduzir bugs de lógica.
+    
+    rec = { version: SYSTEM_VERSION, messages: msgs, lastOpening: null, currentPersona };
+    threadMemory.set(threadId, rec);
+    
+    if (supabase) {
+       await supabase.from('threads').upsert({ id: threadId, data: rec, updated_at: new Date() });
+    }
     return msgs;
   }
   
   // Se a persona foi alterada, reconstrói as mensagens do sistema
   if (rec.currentPersona && rec.messages.length > 0 && rec.messages[0].role === "system") {
+    const currentSystemContent = rec.messages[0].content;
+    // Verificação simplificada: se a persona mudou, o conteúdo do system deve ser diferente?
+    // O código original fazia isso implicitamente. Vamos manter a lógica de reconstrução.
+    // Mas para evitar reprocessamento desnecessário, podemos confiar no estado.
+    
+    // A lógica original (353-363) parece tentar "reparar" a thread se a persona mudou.
+    // Vamos manter.
+    
     // Separa as mensagens do sistema das mensagens do usuário
     const nonSystems = rec.messages.filter(m => m.role !== "system");
     
     // Reconstrói as mensagens do sistema com a persona atual
     const newSystems = buildSystemMessages(rec.currentPersona, threadId);
     
-    // Atualiza as mensagens na thread
+    // Verifica se precisa atualizar (comparando conteúdo ou assumindo que sempre precisa)
+    // O código original sempre fazia.
     rec.messages = [...newSystems, ...nonSystems];
     threadMemory.set(threadId, rec);
+    
+    // Não salva no Supabase aqui para evitar writes excessivos em leitura, 
+    // mas se mudou algo estrutural, talvez devesse. Deixa para o addMessage salvar.
   }
   
   return rec.messages;
 }
 
-function addMessageToThread(threadId, role, content) {
+async function addMessageToThread(threadId, role, content) {
+  // Garante que está carregado
   if (!threadMemory.has(threadId)) {
-    getThreadMessages(threadId);
+    await getThreadMessages(threadId);
   }
+  
   let record = threadMemory.get(threadId);
   
   // garante que record tem a estrutura correta
   if (!record || !Array.isArray(record.messages)) {
-    getThreadMessages(threadId);
+    await getThreadMessages(threadId);
     record = threadMemory.get(threadId);
   }
   
@@ -384,30 +455,18 @@ function addMessageToThread(threadId, role, content) {
     const match = content.match(modoTecnicoRegex);
     
     if (match) {
-      // Extrai a instrução técnica após o prefixo
       const instrucaoTecnica = match[1].trim();
-      
-      // Define a persona como técnica para esta thread
       record.currentPersona = "tecnico";
       threadMemory.set(threadId, record);
-      
-      // Substitui o conteúdo original pelo conteúdo após o prefixo
       content = instrucaoTecnica;
     } else {
-      // Se não for um comando de modo técnico, verifica se devemos voltar ao modo ritual
-      // Verifica se a mensagem começa com "Modo ritual:" (case insensitive)
       const modoRitualRegex = /^\s*modo\s+ritual\s*:\s*(.*)/i;
       const matchRitual = content.match(modoRitualRegex);
       
       if (matchRitual) {
-        // Extrai a instrução ritual após o prefixo
         const instrucaoRitual = matchRitual[1].trim();
-        
-        // Define a persona como ritual para esta thread
         record.currentPersona = "ritual";
         threadMemory.set(threadId, record);
-        
-        // Substitui o conteúdo original pelo conteúdo após o prefixo
         content = instrucaoRitual;
       }
     }
@@ -421,12 +480,27 @@ function addMessageToThread(threadId, role, content) {
   nonSystems.push({ role, content });
   
   // mantém só as últimas N não-system
-  const MAX_NON_SYSTEM = 58; // 58 + 3 systems = 61 total
+  const MAX_NON_SYSTEM = 58; 
   const trimmed = nonSystems.slice(-MAX_NON_SYSTEM);
   
   // regrava fixando as systems no topo
   record.messages = [...systems, ...trimmed];
   threadMemory.set(threadId, record);
+  
+  // Persiste no Supabase
+  if (supabase) {
+    // Fire and forget (sem await) para não travar a resposta? 
+    // Melhor await para garantir consistência.
+    try {
+        await supabase.from('threads').upsert({ 
+            id: threadId, 
+            data: record,
+            updated_at: new Date()
+        });
+    } catch (e) {
+        console.error("[ARCA MEMORY] Erro ao salvar thread:", e.message);
+    }
+  }
 }
 
 // ===== FECHAMENTOS COM VARIEDADE ILIMITADA =====
