@@ -2646,10 +2646,17 @@ div.innerHTML = DOMPurify.sanitize(html, {
       btn.disabled = true;
       
       try {
+        const payload = { 
+            action: authMode, 
+            email, 
+            password,
+            threadId: localStorage.getItem('threadId') // Envia a thread atual para vincular
+        };
+
         const res = await fetch('/api/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: authMode, email, password })
+          body: JSON.stringify(payload)
         });
         
         const data = await res.json();
@@ -2659,6 +2666,25 @@ div.innerHTML = DOMPurify.sanitize(html, {
           localStorage.setItem('userData', JSON.stringify(data.user));
           localStorage.removeItem('isGuest'); // Remove flag de convidado se existir
           
+          // Sincronização de Thread (PC <-> Celular)
+          if (data.user.threadId) {
+             const currentThread = localStorage.getItem('threadId');
+             if (currentThread !== data.user.threadId) {
+                 // Se a thread do usuário for diferente da atual, atualiza!
+                 localStorage.setItem('threadId', data.user.threadId);
+                 console.log("[ARCA] Thread sincronizada com a conta:", data.user.threadId);
+                 
+                 // Limpar o chat atual visualmente para carregar o novo contexto
+                 const historyEl = document.getElementById('chatHistory');
+                 if (historyEl) historyEl.innerHTML = ''; 
+                 
+                 // Recarregar a página para garantir estado limpo? 
+                 // Melhor recarregar para puxar o histórico do backend se ele existir (ainda não implementamos o load on init no front, mas o threadId estará correto)
+                 window.location.reload();
+                 return;
+             }
+          }
+
           userLoggedIn = true;
           userData = data.user;
           updateLoginStatus();
