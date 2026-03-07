@@ -52,8 +52,8 @@ async function handler(req, res) {
     // (opcional) ping keepalive
     const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
 
-    addMessageToThread(threadId, "user", userInput);
-    const messages = getThreadMessages(threadId);
+    await addMessageToThread(threadId, "user", userInput);
+    const messages = await getThreadMessages(threadId);
     
     // Log das mensagens de sistema para verificação
     const systemMessages = messages.filter(m => m.role==='system');
@@ -132,7 +132,7 @@ async function handler(req, res) {
           
           // Salva resposta completa com abertura + corpo + fechamento
           const finalResponse = composeAssistantContent(assistantResponse, threadId);
-          addMessageToThread(threadId, "assistant", finalResponse);
+          await addMessageToThread(threadId, "assistant", finalResponse);
           
           res.write(`data: [DONE]\n\n`);
           clearInterval(keepalive);
