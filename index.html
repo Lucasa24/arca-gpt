@@ -940,13 +940,179 @@
     @media (max-width: 600px) {
       #cornerReset { right: 6px; bottom: 6px; width: 20px; height: 20px; min-width: 20px; font-size: 11px; }
     }
+
+    /* --- CENA RITUAL: ARCA + DIAMANTE + ÁGUA --- */
+    .ritual-scene {
+      position: relative;
+      width: 220px;
+      height: 140px;
+      margin: 0 auto 10px auto;
+      overflow: hidden;
+    }
+
+    /* 1. O Diamante (O Espírito/Guia) - Pairando sobre a Arca */
+    .blue-diamond {
+      width: 30px;
+      height: 30px;
+      background: #00f0ff; /* Ciano brilhante */
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      margin-left: -15px;
+      transform: rotate(45deg);
+      box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff, 0 0 30px rgba(0, 240, 255, 0.5);
+      animation: spin-ccw 8s linear infinite, hoverDiamond 4s ease-in-out infinite;
+      z-index: 10;
+    }
+    .blue-diamond::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.4);
+      filter: blur(4px);
+    }
+
+    /* 2. A Arca (O Veículo) */
+    .ark-structure {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 50px;
+      z-index: 5;
+      animation: floatArk 5s ease-in-out infinite;
+    }
+    
+    .ark-hull {
+      position: absolute;
+      bottom: 0;
+      width: 100px;
+      height: 25px;
+      background: #3e2723; /* Madeira escura */
+      border-radius: 4px 4px 30px 30px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+      border: 1px solid #281815;
+    }
+    .ark-hull::after { /* Detalhe de tábuas */
+      content: '';
+      position: absolute;
+      top: 8px; left: 0; right: 0; height: 1px;
+      background: rgba(0,0,0,0.4);
+      box-shadow: 0 8px 0 rgba(0,0,0,0.4);
+    }
+
+    .ark-cabin {
+      position: absolute;
+      bottom: 24px;
+      left: 15px;
+      width: 70px;
+      height: 15px;
+      background: #4e342e;
+      border-radius: 2px 2px 0 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 5px;
+      border: 1px solid #281815;
+    }
+    .ark-cabin::before { /* Telhado */
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -4px;
+      width: 78px;
+      height: 6px;
+      background: #281815;
+      border-radius: 2px 2px 0 0;
+    }
+    .ark-window {
+      width: 4px;
+      height: 4px;
+      background: #000;
+      border-radius: 50%;
+      box-shadow: 0 0 2px rgba(255, 200, 0, 0.2);
+    }
+
+    /* 3. As Águas (O Caos/Suporte) */
+    .ocean-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 35px;
+      z-index: 8;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 200%;
+      height: 100%;
+      background-repeat: repeat-x;
+      background-position: bottom;
+      background-size: 50px 20px;
+    }
+    /* SVG Data URIs para máxima performance (sem requisições externas) */
+    .wave-back {
+      z-index: 1;
+      opacity: 0.4;
+      animation: waveMove 10s linear infinite reverse;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 20'%3E%3Cpath d='M0 10 Q 12.5 0, 25 10 T 50 10 V 20 H 0 Z' fill='%23005f73'/%3E%3C/svg%3E");
+    }
+    .wave-front {
+      z-index: 2;
+      opacity: 0.7;
+      bottom: -2px;
+      animation: waveMove 7s linear infinite;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 20'%3E%3Cpath d='M0 10 Q 12.5 20, 25 10 T 50 10 V 20 H 0 Z' fill='%230a9396'/%3E%3C/svg%3E");
+    }
+
+    @keyframes spin-ccw {
+      from { transform: rotate(45deg); }
+      to { transform: rotate(-315deg); }
+    }
+    @keyframes hoverDiamond {
+      0%, 100% { top: 15px; }
+      50% { top: 20px; }
+    }
+    @keyframes floatArk {
+      0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+      50% { transform: translateX(-50%) translateY(2px) rotate(1deg); }
+    }
+    @keyframes waveMove {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50px); }
+    }
   </style>
 </head>
 <body>
 
   <!-- PORTAL DE ENTRADA -->
   <div id="authPortal">
-    <div class="portal-logo">𓊝</div>
+    <div class="ritual-scene">
+      <!-- O Diamante (Espírito) -->
+      <div class="blue-diamond"></div>
+      
+      <!-- A Arca (Corpo/Veículo) -->
+      <div class="ark-structure">
+        <div class="ark-cabin">
+          <div class="ark-window"></div>
+          <div class="ark-window"></div>
+          <div class="ark-window"></div>
+        </div>
+        <div class="ark-hull"></div>
+      </div>
+      
+      <!-- As Águas (O Inconsciente) -->
+      <div class="ocean-container">
+        <div class="wave wave-back"></div>
+        <div class="wave wave-front"></div>
+      </div>
+    </div>
+
     <div class="portal-title">A ARCA</div>
     
     <div class="portal-options" id="portalOptions">
@@ -969,38 +1135,7 @@
   <div id="chatSidebar"></div>
   <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
   
-  <!-- Modal de Login -->
-  <div id="loginModal" class="modal">
-    <div class="modal-content" style="width: 350px;">
-      <h3>◊ Portal de Travessia</h3>
-      <p style="margin-bottom: 20px; font-size: 0.85rem;">Identifique-se para iniciar sua jornada na Arca</p>
-      
-      <form id="loginForm" onsubmit="return handleLogin(event)">
-        <div style="margin-bottom: 15px;">
-          <label for="userEmail" style="display: block; margin-bottom: 5px; text-align: left; font-size: 0.8rem;">Email do Viajante</label>
-          <input type="email" id="userEmail" required placeholder="seu@email.com" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <label style="display: flex; align-items: center; font-size: 0.8rem; cursor: pointer;">
-            <input type="checkbox" id="whatsappConsent" style="margin-right: 8px;">
-            <span>Receber novidades no WhatsApp</span>
-          </label>
-        </div>
-        
-        <div id="whatsappField" style="margin-bottom: 20px; display: none;">
-          <label for="userWhatsapp" style="display: block; margin-bottom: 5px; text-align: left; font-size: 0.8rem;">WhatsApp (com DDD)</label>
-          <input type="tel" id="userWhatsapp" placeholder="(00) 00000-0000" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
-        </div>
-        
-        <div class="modal-buttons">
-          <button type="submit" class="confirm-btn" style="width: 100%;">Iniciar Travessia</button>
-        </div>
-      </form>
-      
-      <p style="margin-top: 15px; font-size: 0.7rem; color: #777;">Seus dados são protegidos e utilizados apenas para sua jornada na Arca</p>
-    </div>
-  </div>
+  <!-- Modal de Login (Removido) -->
   
   <div id="resetModal" class="modal">
     <div class="modal-content">
@@ -1058,7 +1193,7 @@
         <div id="loadingBar"></div>
       </div>
 
-      <p class="footer-note"><a href="#" onclick="showLoginModal(); return false;">Fazer login</a> • Memória persistente ativa</p>
+      <p class="footer-note"><a href="#" onclick="document.getElementById('authPortal').style.display='flex'; showAuthForm(); return false;">Fazer login</a> • Memória persistente ativa</p>
     </div>
   </main>
 
@@ -2422,80 +2557,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     });
 
-    // Função para mostrar o modal de login
-    function showLoginModal() {
-      document.getElementById('loginModal').style.display = 'block';
-    }
-    
-    // Função para validar email
-    function validateEmail(email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return re.test(email);
-    }
-    
-    // Função para validar número de WhatsApp
-    function validateWhatsApp(number) {
-      // Remove caracteres não numéricos
-      const cleanNumber = number.replace(/\D/g, '');
-      // Verifica se tem entre 10 e 11 dígitos (com ou sem o 9)
-      return cleanNumber.length >= 10 && cleanNumber.length <= 11;
-    }
-    
-    // Função para formatar número de WhatsApp
-    function formatWhatsApp(number) {
-      const cleanNumber = number.replace(/\D/g, '');
-      if (cleanNumber.length === 11) {
-        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 7)}-${cleanNumber.substring(7)}`;
-      } else if (cleanNumber.length === 10) {
-        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 6)}-${cleanNumber.substring(6)}`;
-      }
-      return number;
-    }
-    
-    // Função para lidar com o login
-    function handleLogin(event) {
-      event.preventDefault();
-      
-      const email = document.getElementById('userEmail').value.trim();
-      const whatsappConsent = document.getElementById('whatsappConsent').checked;
-      let whatsapp = '';
-      
-      if (!validateEmail(email)) {
-        alert('Por favor, insira um email válido.');
-        return false;
-      }
-      
-      if (whatsappConsent) {
-        whatsapp = document.getElementById('userWhatsapp').value.trim();
-        if (!validateWhatsApp(whatsapp)) {
-          alert('Por favor, insira um número de WhatsApp válido com DDD.');
-          return false;
-        }
-      }
-      
-      // Armazena os dados do usuário
-      userData = {
-        email: email,
-        whatsapp: whatsappConsent ? formatWhatsApp(whatsapp) : '',
-        consentWhatsapp: whatsappConsent,
-        loginDate: new Date().toISOString()
-      };
-      
-      // Salva no localStorage
-      localStorage.setItem('userData', JSON.stringify(userData));
-      
-      // Atualiza o estado de login
-      userLoggedIn = true;
-      
-      // Fecha o modal
-      closeModal();
-      
-      // Atualiza a interface para mostrar que o usuário está logado
-      updateLoginStatus();
-      
-      return false;
-    }
-    
+    // (Funções de modal antigo removidas)
+
     // Função para atualizar o status de login na interface
     function updateLoginStatus() {
       const footerNote = document.querySelector('.footer-note');
