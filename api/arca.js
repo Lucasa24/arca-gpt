@@ -1,4 +1,4 @@
-const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('./memory.js');
+const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('../lib/memory.js');
 const { fetch } = require('undici');
 
 // arca.js — fora do handler (executa no cold start da função)
