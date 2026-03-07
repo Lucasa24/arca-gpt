@@ -87,7 +87,7 @@ async function handler(req, res) {
         max_tokens: 16000,
         top_p: 1.0,
         frequency_penalty: 0.0,
-        presence_penalty: 0.0,
+        presence_penalty: 0.3,
         stream_options: { include_usage: false }
       })
     });
