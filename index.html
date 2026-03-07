@@ -950,6 +950,26 @@
       overflow: hidden;
     }
 
+    /* Miniatura do Ritual para o Header */
+    .header-ritual-container {
+      display: inline-block;
+      width: 80px;
+      height: 50px;
+      position: relative;
+      vertical-align: middle;
+      margin-left: 10px;
+      overflow: hidden;
+    }
+    
+    .header-ritual-container .ritual-scene {
+      transform: scale(0.35);
+      transform-origin: left top;
+      margin: 0;
+      position: absolute;
+      top: 5px;
+      left: 0;
+    }
+
     /* 1. O Diamante (O Espírito/Guia) - Pairando sobre a Arca */
     .blue-diamond {
       width: 30px;
@@ -1164,7 +1184,31 @@
   </div>
 
   <main id="mainContent">
-    <h1 class="main-title">A Arca ﹏𓊝﹏</h1>
+    <h1 class="main-title">
+      A Arca 
+      <div class="header-ritual-container">
+        <div class="ritual-scene">
+          <!-- O Diamante (Espírito) -->
+          <div class="blue-diamond"></div>
+          
+          <!-- A Arca (Corpo/Veículo) -->
+          <div class="ark-structure">
+            <div class="ark-cabin">
+              <div class="ark-window"></div>
+              <div class="ark-window"></div>
+              <div class="ark-window"></div>
+            </div>
+            <div class="ark-hull"></div>
+          </div>
+          
+          <!-- As Águas (O Inconsciente) -->
+          <div class="ocean-container">
+            <div class="wave wave-back"></div>
+            <div class="wave wave-front"></div>
+          </div>
+        </div>
+      </div>
+    </h1>
     <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Entre na Arca:</p>
     <div id="response"></div>
 
