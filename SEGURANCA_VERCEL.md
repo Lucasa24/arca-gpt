@@ -45,8 +45,11 @@ const sanitizedHistory = history.map(session => ({
 ### **Passo 2: Adicionar Variáveis**
 ```
 OPENAI_API_KEY = sk-sua-chave-real-da-openai
+SUPABASE_URL = https://wqobsdyviumkfcaiolvk.supabase.co
+SUPABASE_KEY = sb_publishable_I2wPxp-7eiStWiyhE3Xllg_q6wfLxhT
 PORT = 3000
 ```
+> **Nota:** Não adicione essas chaves no GitHub. Apenas na Vercel e no seu arquivo `.env` local (que é ignorado pelo Git).
 
 ### **Passo 3: Deploy**
 - Faça um novo deploy ou redeploy

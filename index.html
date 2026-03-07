@@ -24,6 +24,111 @@
       min-height: 100vh;
     }
 
+    /* --- PORTAL DE ENTRADA (LOGIN) --- */
+    #authPortal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      transition: opacity 0.8s ease;
+    }
+    #authPortal.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .portal-logo {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+      animation: pulse 3s infinite;
+    }
+    .portal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      color: #aaa;
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .portal-options {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .portal-btn {
+      padding: 15px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #fff;
+      font-family: 'Georgia', serif;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .portal-btn:hover {
+      border-color: #fff;
+      background: rgba(255,255,255,0.05);
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    }
+    .portal-btn.primary {
+      border-color: #555;
+      background: rgba(255,255,255,0.02);
+    }
+    .portal-btn.guest {
+      border-color: #222;
+      color: #666;
+      font-size: 0.8rem;
+    }
+    .portal-btn.guest:hover {
+      color: #aaa;
+      border-color: #444;
+    }
+
+    /* Formulário de Login */
+    #authForm {
+      display: none; /* Escondido por padrão */
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+      max-width: 320px;
+      animation: fadeIn 0.5s ease;
+    }
+    .auth-input {
+      background: #111;
+      border: 1px solid #333;
+      padding: 12px;
+      color: #fff;
+      font-family: monospace;
+      width: 100%;
+      outline: none;
+    }
+    .auth-input:focus {
+      border-color: #666;
+    }
+    .auth-toggle {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 10px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .auth-toggle:hover { color: #888; }
+    
+    @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- FIM DO PORTAL --- */
+
     #mainContent {
       display: flex;
       flex-direction: column;
@@ -838,6 +943,27 @@
   </style>
 </head>
 <body>
+
+  <!-- PORTAL DE ENTRADA -->
+  <div id="authPortal">
+    <div class="portal-logo">𓊝</div>
+    <div class="portal-title">A ARCA</div>
+    
+    <div class="portal-options" id="portalOptions">
+      <button class="portal-btn primary" onclick="showAuthForm()">Entrar na Arca</button>
+      <button class="portal-btn guest" onclick="enterAsGuest()">Acessar como Visitante</button>
+    </div>
+
+    <form id="authForm" onsubmit="handleAuth(event)">
+      <div style="font-size: 0.9rem; color: #888; margin-bottom: 10px;">IDENTIFIQUE-SE</div>
+      <input type="email" id="authEmail" class="auth-input" placeholder="E-mail" required>
+      <input type="password" id="authPass" class="auth-input" placeholder="Senha" required>
+      <button type="submit" class="portal-btn primary" style="width:100%; margin-top: 10px;">CONFIRMAR</button>
+      
+      <div class="auth-toggle" onclick="toggleAuthMode()">Não tem conta? Crie uma agora.</div>
+      <div class="auth-toggle" onclick="hideAuthForm()" style="margin-top: 20px;">← Voltar</div>
+    </form>
+  </div>
   <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
   <div id="chatSidebar"></div>
   <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
@@ -2373,10 +2499,37 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function updateLoginStatus() {
       const footerNote = document.querySelector('.footer-note');
       if (userLoggedIn && userData) {
-        footerNote.innerHTML = `<span style="color: #b30000;">⦿</span> ${userData.email.split('@')[0]} | <a href="#" onclick="showLoginModal(); return false;" style="color: #777; text-decoration: underline;">Alterar</a>`;
+        footerNote.innerHTML = `<span style="color: #b30000;">⦿</span> ${userData.email.split('@')[0]} | <a href="#" onclick="handleLogout(); return false;" style="color: #777; text-decoration: underline;">Sair</a>`;
       } else {
-        footerNote.innerHTML = `<a href="#" onclick="showLoginModal(); return false;">Fazer login</a>`;
+        const isGuest = localStorage.getItem('isGuest');
+        if (isGuest) {
+            footerNote.innerHTML = `<span style="color: #666;">⦿</span> Visitante | <a href="#" onclick="handleLogout(); return false;" style="color: #777; text-decoration: underline;">Entrar</a>`;
+        } else {
+            footerNote.innerHTML = `<a href="#" onclick="showAuthForm(); return false;">Fazer login</a>`;
+        }
       }
+    }
+
+    function handleLogout() {
+      // Limpa dados de sessão
+      localStorage.removeItem('userData');
+      localStorage.removeItem('isGuest');
+      userLoggedIn = false;
+      userData = null;
+      
+      // Atualiza UI
+      updateLoginStatus();
+      
+      // Mostra o portal novamente
+      const portal = document.getElementById('authPortal');
+      if (portal) {
+        portal.style.display = 'flex';
+        portal.classList.remove('hidden');
+      }
+      
+      // Reseta visualização do portal para opções iniciais
+      document.getElementById('authForm').style.display = 'none';
+      document.getElementById('portalOptions').style.display = 'flex';
     }
     
     // Função para alternar entre os modos ritual e técnico
@@ -2418,18 +2571,110 @@ div.innerHTML = DOMPurify.sanitize(html, {
     // Função para verificar o login ao carregar a página
     function checkLoginStatus() {
       const storedUserData = localStorage.getItem('userData');
+      const isGuest = localStorage.getItem('isGuest');
+      
       if (storedUserData) {
         userData = JSON.parse(storedUserData);
         userLoggedIn = true;
         updateLoginStatus();
+        document.getElementById('authPortal').style.display = 'none';
+      } else if (isGuest) {
+        document.getElementById('authPortal').style.display = 'none';
       } else {
-        // Se não estiver logado, mostra o modal de login
-        showLoginModal();
+        // Se não estiver logado nem for convidado, mostra o PORTAL
+        const portal = document.getElementById('authPortal');
+        if (portal) portal.style.display = 'flex';
       }
       
       // Inicializar o modo da persona ao carregar a página
       const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
       setPersonaMode(savedMode);
+    }
+
+    // --- LÓGICA DO NOVO PORTAL (Vercel/Supabase Ready) ---
+
+    let authMode = 'login'; // 'login' ou 'signup'
+
+    function showAuthForm() {
+      document.getElementById('portalOptions').style.display = 'none';
+      document.getElementById('authForm').style.display = 'block';
+      document.getElementById('authEmail').focus();
+    }
+
+    function hideAuthForm() {
+      document.getElementById('authForm').style.display = 'none';
+      document.getElementById('portalOptions').style.display = 'flex';
+    }
+
+    function toggleAuthMode() {
+      const btn = document.querySelector('#authForm button[type="submit"]');
+      const toggle = document.querySelector('.auth-toggle');
+      
+      if (authMode === 'login') {
+        authMode = 'signup';
+        btn.textContent = 'CRIAR CONTA';
+        toggle.textContent = 'Já tem conta? Faça login.';
+      } else {
+        authMode = 'login';
+        btn.textContent = 'ENTRAR';
+        toggle.textContent = 'Não tem conta? Crie uma agora.';
+      }
+    }
+
+    function enterAsGuest() {
+      localStorage.setItem('isGuest', 'true');
+      document.getElementById('authPortal').style.display = 'none';
+      
+      // Se não tiver threadId, gera um
+      if (!localStorage.getItem('threadId')) {
+        const tId = generateThreadId();
+        localStorage.setItem('threadId', tId);
+      }
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPass').value;
+      const btn = document.querySelector('#authForm button[type="submit"]');
+      
+      if (!email || !password) return;
+      
+      const originalText = btn.textContent;
+      btn.textContent = 'Processando...';
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: authMode, email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          // Sucesso
+          localStorage.setItem('userData', JSON.stringify(data.user));
+          localStorage.removeItem('isGuest'); // Remove flag de convidado se existir
+          
+          userLoggedIn = true;
+          userData = data.user;
+          updateLoginStatus();
+          
+          document.getElementById('authPortal').style.display = 'none';
+          
+          // Se tiver mensagem de boas-vindas, pode exibir ou só fechar
+        } else {
+          alert('Erro: ' + (data.error || 'Falha na autenticação'));
+        }
+      } catch (err) {
+        alert('Erro de conexão: ' + err.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
     }
     
     // Mostrar/esconder campo de WhatsApp baseado no checkbox

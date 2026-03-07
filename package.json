@@ -1,5 +1,9 @@
 {
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
     "agentkeepalive": "^4.6.0",
     "dotenv": "^16.6.1",
     "event-source-polyfill": "^1.0.31",

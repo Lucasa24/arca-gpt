@@ -66,6 +66,13 @@ async function handler(req, res) {
     const threadRecord = global.threadMemory?.get(threadId);
     console.log('[ARCA][persona]', threadRecord?.currentPersona || 'default');
 
+    // MODELO PADRÃO: GPT-4o (Inteligência Máxima)
+    // Decisão estratégica: Como temos poucos usuários, priorizamos a QUALIDADE ABSOLUTA.
+    // O custo é maior, mas a experiência é incomparável.
+    const userModel = "gpt-4o";
+    
+    console.log(`[ARCA] Usando modelo: ${userModel} (Fase Inicial: Qualidade Total)`);
+
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -73,7 +80,7 @@ async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: userModel,
         messages,
         stream: true,
         temperature: 1.10,
