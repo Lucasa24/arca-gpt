@@ -127,6 +127,72 @@
     @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+
+    /* --- ANIMAÇÃO ARCA & DIAMANTE --- */
+    .blue-diamond-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .blue-diamond {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 191, 255, 0.1);
+      border: 2px solid #00bfff;
+      transform: rotate(45deg);
+      box-shadow: 0 0 15px #00bfff, inset 0 0 10px #00bfff;
+      animation: diamond-spin 10s linear infinite reverse; /* Sentido anti-horário (esquerda) */
+      z-index: 2;
+    }
+    
+    @keyframes diamond-spin {
+      0% { transform: rotate(45deg); }
+      100% { transform: rotate(-315deg); }
+    }
+
+    .ark-symbol {
+      position: absolute;
+      bottom: 20px; /* Ajuste para ficar dentro/abaixo do diamante */
+      font-size: 2rem;
+      color: #f5f5f5;
+      z-index: 3;
+      animation: ark-float 3s ease-in-out infinite;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+    }
+
+    @keyframes ark-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .water-base {
+      position: absolute;
+      bottom: 10px;
+      width: 60px;
+      height: 10px;
+      border-top: 2px solid rgba(0, 191, 255, 0.5);
+      border-radius: 50%;
+      animation: water-flow 2s ease-in-out infinite alternate;
+      z-index: 1;
+    }
+
+    @keyframes water-flow {
+      0% { transform: scaleX(1); opacity: 0.5; }
+      100% { transform: scaleX(1.2); opacity: 0.8; }
+    }
+
+    .arca-anim {
+      display: inline-block;
+      animation: ark-float 3s ease-in-out infinite;
+      color: #00bfff;
+      text-shadow: 0 0 5px rgba(0, 191, 255, 0.5);
+    }
+
     /* --- FIM DO PORTAL --- */
 
     #mainContent {
@@ -940,224 +1006,33 @@
     @media (max-width: 600px) {
       #cornerReset { right: 6px; bottom: 6px; width: 20px; height: 20px; min-width: 20px; font-size: 11px; }
     }
-
-    /* --- CENA RITUAL: ARCA + DIAMANTE + ÁGUA --- */
-    .ritual-scene {
-      position: relative;
-      width: 220px;
-      height: 140px;
-      margin: 0 auto 10px auto;
-      overflow: hidden;
-    }
-
-    /* Miniatura do Ritual para o Header */
-    .header-ritual-container {
-      display: inline-block;
-      width: 80px;
-      height: 50px;
-      position: relative;
-      vertical-align: middle;
-      margin-left: 10px;
-      overflow: hidden;
-    }
-    
-    .header-ritual-container .ritual-scene {
-      transform: scale(0.35);
-      transform-origin: left top;
-      margin: 0;
-      position: absolute;
-      top: 5px;
-      left: 0;
-    }
-
-    /* 1. O Diamante (O Espírito/Guia) - Pairando sobre a Arca */
-    .blue-diamond {
-      width: 30px;
-      height: 30px;
-      background: #00f0ff; /* Ciano brilhante */
-      position: absolute;
-      top: 15px;
-      left: 50%;
-      margin-left: -15px;
-      transform: rotate(45deg);
-      box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff, 0 0 30px rgba(0, 240, 255, 0.5);
-      animation: spin-ccw 8s linear infinite, hoverDiamond 4s ease-in-out infinite;
-      z-index: 10;
-    }
-    .blue-diamond::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255, 255, 255, 0.4);
-      filter: blur(4px);
-    }
-
-    /* 2. A Arca (O Veículo) */
-    .ark-structure {
-      position: absolute;
-      bottom: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 50px;
-      z-index: 5;
-      animation: floatArk 5s ease-in-out infinite;
-    }
-    
-    .ark-hull {
-      position: absolute;
-      bottom: 0;
-      width: 100px;
-      height: 25px;
-      background: #3e2723; /* Madeira escura */
-      border-radius: 4px 4px 30px 30px;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
-      border: 1px solid #281815;
-    }
-    .ark-hull::after { /* Detalhe de tábuas */
-      content: '';
-      position: absolute;
-      top: 8px; left: 0; right: 0; height: 1px;
-      background: rgba(0,0,0,0.4);
-      box-shadow: 0 8px 0 rgba(0,0,0,0.4);
-    }
-
-    .ark-cabin {
-      position: absolute;
-      bottom: 24px;
-      left: 15px;
-      width: 70px;
-      height: 15px;
-      background: #4e342e;
-      border-radius: 2px 2px 0 0;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 0 5px;
-      border: 1px solid #281815;
-    }
-    .ark-cabin::before { /* Telhado */
-      content: '';
-      position: absolute;
-      top: -6px;
-      left: -4px;
-      width: 78px;
-      height: 6px;
-      background: #281815;
-      border-radius: 2px 2px 0 0;
-    }
-    .ark-window {
-      width: 4px;
-      height: 4px;
-      background: #000;
-      border-radius: 50%;
-      box-shadow: 0 0 2px rgba(255, 200, 0, 0.2);
-    }
-
-    /* 3. As Águas (O Caos/Suporte) */
-    .ocean-container {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 35px;
-      z-index: 8;
-      opacity: 0.9;
-      pointer-events: none;
-    }
-    .wave {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 200%;
-      height: 100%;
-      background-repeat: repeat-x;
-      background-position: bottom;
-      background-size: 50px 20px;
-    }
-    /* SVG Data URIs para máxima performance (sem requisições externas) */
-    .wave-back {
-      z-index: 1;
-      opacity: 0.4;
-      animation: waveMove 10s linear infinite reverse;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 20'%3E%3Cpath d='M0 10 Q 12.5 0, 25 10 T 50 10 V 20 H 0 Z' fill='%23005f73'/%3E%3C/svg%3E");
-    }
-    .wave-front {
-      z-index: 2;
-      opacity: 0.7;
-      bottom: -2px;
-      animation: waveMove 7s linear infinite;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 20'%3E%3Cpath d='M0 10 Q 12.5 20, 25 10 T 50 10 V 20 H 0 Z' fill='%230a9396'/%3E%3C/svg%3E");
-    }
-
-    @keyframes spin-ccw {
-      from { transform: rotate(45deg); }
-      to { transform: rotate(-315deg); }
-    }
-    @keyframes hoverDiamond {
-      0%, 100% { top: 15px; }
-      50% { top: 20px; }
-    }
-    @keyframes floatArk {
-      0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
-      50% { transform: translateX(-50%) translateY(2px) rotate(1deg); }
-    }
-    @keyframes waveMove {
-      from { transform: translateX(0); }
-      to { transform: translateX(-50px); }
-    }
   </style>
 </head>
 <body>
 
   <!-- PORTAL DE ENTRADA -->
   <div id="authPortal">
-    <div class="ritual-scene">
-      <!-- O Diamante (Espírito) -->
+    <!-- LOGO ANIMADO: Diamante + Arca + Água -->
+    <div class="blue-diamond-container">
       <div class="blue-diamond"></div>
-      
-      <!-- A Arca (Corpo/Veículo) -->
-      <div class="ark-structure">
-        <div class="ark-cabin">
-          <div class="ark-window"></div>
-          <div class="ark-window"></div>
-          <div class="ark-window"></div>
-        </div>
-        <div class="ark-hull"></div>
-      </div>
-      
-      <!-- As Águas (O Inconsciente) -->
-      <div class="ocean-container">
-        <div class="wave wave-back"></div>
-        <div class="wave wave-front"></div>
-      </div>
+      <div class="ark-symbol">𓊝</div>
+      <div class="water-base"></div>
     </div>
-
     <div class="portal-title">A ARCA</div>
     
     <div class="portal-options" id="portalOptions">
       <button class="portal-btn primary" onclick="showAuthForm()">Entrar na Arca</button>
+      <button class="portal-btn google" onclick="loginWithGoogle()" style="display:flex; align-items:center; justify-content:center; gap:10px; border-color: #4285F4; background: rgba(66, 133, 244, 0.1);">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27c3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12.5S6.42 23 12.1 23c5.83 0 8.84-4.15 8.84-8.83c0-.86-.1-1.78-.15-2.08z"/></svg>
+        Entrar com Google
+      </button>
       <button class="portal-btn guest" onclick="enterAsGuest()">Acessar como Visitante</button>
     </div>
 
     <form id="authForm" onsubmit="handleAuth(event)">
       <div style="font-size: 0.9rem; color: #888; margin-bottom: 10px;">IDENTIFIQUE-SE</div>
-      
-      <!-- Botão Google -->
-      <button type="button" onclick="handleGoogleAuth()" style="width:100%; margin-bottom: 15px; background: #fff; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold;">
-        <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.159 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
-        Entrar com Google
-      </button>
-
-      <div style="display: flex; align-items: center; margin: 10px 0; color: #666; font-size: 0.8rem;">
-        <div style="flex: 1; height: 1px; background: #444;"></div>
-        <div style="padding: 0 10px;">OU</div>
-        <div style="flex: 1; height: 1px; background: #444;"></div>
-      </div>
-
       <input type="email" id="authEmail" class="auth-input" placeholder="E-mail" required>
       <input type="password" id="authPass" class="auth-input" placeholder="Senha" required>
-      <div id="authError" style="color: #ff4444; font-size: 0.85rem; margin: 10px 0; display: none; text-align: center;"></div>
       <button type="submit" class="portal-btn primary" style="width:100%; margin-top: 10px;">CONFIRMAR</button>
       
       <div class="auth-toggle" onclick="toggleAuthMode()">Não tem conta? Crie uma agora.</div>
@@ -1168,7 +1043,7 @@
   <div id="chatSidebar"></div>
   <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
   
-  <!-- Modal de Login (Removido) -->
+  <!-- Modal de Login REMOVIDO -->
   
   <div id="resetModal" class="modal">
     <div class="modal-content">
@@ -1197,31 +1072,7 @@
   </div>
 
   <main id="mainContent">
-    <h1 class="main-title">
-      A Arca 
-      <div class="header-ritual-container">
-        <div class="ritual-scene">
-          <!-- O Diamante (Espírito) -->
-          <div class="blue-diamond"></div>
-          
-          <!-- A Arca (Corpo/Veículo) -->
-          <div class="ark-structure">
-            <div class="ark-cabin">
-              <div class="ark-window"></div>
-              <div class="ark-window"></div>
-              <div class="ark-window"></div>
-            </div>
-            <div class="ark-hull"></div>
-          </div>
-          
-          <!-- As Águas (O Inconsciente) -->
-          <div class="ocean-container">
-            <div class="wave wave-back"></div>
-            <div class="wave wave-front"></div>
-          </div>
-        </div>
-      </div>
-    </h1>
+    <h1 class="main-title">A Arca <span class="arca-anim">𓊝</span></h1>
     <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Entre na Arca:</p>
     <div id="response"></div>
 
@@ -1250,7 +1101,7 @@
         <div id="loadingBar"></div>
       </div>
 
-      <p class="footer-note"><a href="#" onclick="document.getElementById('authPortal').style.display='flex'; showAuthForm(); return false;">Fazer login</a> • Memória persistente ativa</p>
+      <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer login</a> • Memória persistente ativa</p>
     </div>
   </main>
 
@@ -1761,16 +1612,7 @@
             if (!part.startsWith("data: ")) continue;
 
             // remove apenas o prefixo "data:" mantendo QUALQUER espaço do token
-            let content = part.replace(/^data:\s?/, "");
-            
-            // Tenta parsear JSON se o servidor estiver enviando JSON (nova versão)
-            try {
-              const parsed = JSON.parse(content);
-              content = parsed;
-            } catch (e) {
-              console.warn("Falha no JSON parse do stream:", e, content);
-              // Se falhar, assume texto cru (versão antiga ou erro de formato)
-            }
+const content = part.replace(/^data:\s?/, "");
             
             // Corrige problemas de formatação em tempo real durante o streaming
             const fixedContent = content
@@ -2623,8 +2465,80 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     });
 
-    // (Funções de modal antigo removidas)
-
+    // Função para mostrar o modal de login
+    function showLoginModal() {
+      document.getElementById('loginModal').style.display = 'block';
+    }
+    
+    // Função para validar email
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+    
+    // Função para validar número de WhatsApp
+    function validateWhatsApp(number) {
+      // Remove caracteres não numéricos
+      const cleanNumber = number.replace(/\D/g, '');
+      // Verifica se tem entre 10 e 11 dígitos (com ou sem o 9)
+      return cleanNumber.length >= 10 && cleanNumber.length <= 11;
+    }
+    
+    // Função para formatar número de WhatsApp
+    function formatWhatsApp(number) {
+      const cleanNumber = number.replace(/\D/g, '');
+      if (cleanNumber.length === 11) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 7)}-${cleanNumber.substring(7)}`;
+      } else if (cleanNumber.length === 10) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 6)}-${cleanNumber.substring(6)}`;
+      }
+      return number;
+    }
+    
+    // Função para lidar com o login
+    function handleLogin(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('userEmail').value.trim();
+      const whatsappConsent = document.getElementById('whatsappConsent').checked;
+      let whatsapp = '';
+      
+      if (!validateEmail(email)) {
+        alert('Por favor, insira um email válido.');
+        return false;
+      }
+      
+      if (whatsappConsent) {
+        whatsapp = document.getElementById('userWhatsapp').value.trim();
+        if (!validateWhatsApp(whatsapp)) {
+          alert('Por favor, insira um número de WhatsApp válido com DDD.');
+          return false;
+        }
+      }
+      
+      // Armazena os dados do usuário
+      userData = {
+        email: email,
+        whatsapp: whatsappConsent ? formatWhatsApp(whatsapp) : '',
+        consentWhatsapp: whatsappConsent,
+        loginDate: new Date().toISOString()
+      };
+      
+      // Salva no localStorage
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      // Atualiza o estado de login
+      userLoggedIn = true;
+      
+      // Fecha o modal
+      closeModal();
+      
+      // Atualiza a interface para mostrar que o usuário está logado
+      updateLoginStatus();
+      
+      return false;
+    }
+    
     // Função para atualizar o status de login na interface
     function updateLoginStatus() {
       const footerNote = document.querySelector('.footer-note');
@@ -2698,6 +2612,88 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
     
+    // Função para iniciar login com Google
+    async function loginWithGoogle() {
+      try {
+        const btn = document.querySelector('.portal-btn.google');
+        const originalContent = btn.innerHTML;
+        btn.textContent = 'Conectando...';
+        btn.disabled = true;
+
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_google_url' })
+        });
+        
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Erro ao obter URL de login: ' + (data.error || 'Desconhecido'));
+          btn.innerHTML = originalContent;
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro de conexão ao tentar login com Google.');
+        const btn = document.querySelector('.portal-btn.google');
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // Verifica se voltou do Google com token na URL
+    async function checkUrlHashForAuth() {
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token')) {
+        // Extrair token
+        const params = new URLSearchParams(hash.substring(1)); // remove #
+        const accessToken = params.get('access_token');
+        
+        if (!accessToken) return;
+
+        // Limpar hash da URL visualmente
+        window.history.replaceState(null, null, window.location.pathname);
+
+        // Feedback visual simples (pode ser melhorado)
+        const portal = document.getElementById('authPortal');
+        if (portal) {
+           const title = portal.querySelector('.portal-title');
+           if (title) title.textContent = 'Verificando credenciais...';
+        }
+
+        try {
+           const res = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'verify_token', access_token: accessToken })
+          });
+          
+          const data = await res.json();
+          if (data.success && data.user) {
+            localStorage.setItem('userData', JSON.stringify(data.user));
+            localStorage.removeItem('isGuest');
+            userLoggedIn = true;
+            userData = data.user;
+            updateLoginStatus();
+            if (portal) portal.style.display = 'none';
+          } else {
+            alert('Falha ao verificar login Google: ' + (data.error || 'Erro desconhecido'));
+            if (portal) {
+                const title = portal.querySelector('.portal-title');
+                if (title) title.textContent = 'A ARCA';
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao verificar token Google:', err);
+          if (portal) {
+                const title = portal.querySelector('.portal-title');
+                if (title) title.textContent = 'A ARCA';
+            }
+        }
+      }
+    }
+
     // Função para verificar o login ao carregar a página
     function checkLoginStatus() {
       const storedUserData = localStorage.getItem('userData');
@@ -2762,53 +2758,24 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
 
-    // Função de validação de formato de email (Regex robusto)
-    function isValidEmail(email) {
-      return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-    }
-
     async function handleAuth(e) {
       e.preventDefault();
       
       const email = document.getElementById('authEmail').value;
       const password = document.getElementById('authPass').value;
       const btn = document.querySelector('#authForm button[type="submit"]');
-      const errorEl = document.getElementById('authError');
       
-      // 1. Validação Visual Imediata (O Guardião do Portal)
       if (!email || !password) return;
-
-      if (!isValidEmail(email)) {
-        errorEl.textContent = 'O formato do email está incorreto.';
-        errorEl.style.display = 'block';
-        return;
-      }
-
-      if (password.length < 6) {
-        errorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.';
-        errorEl.style.display = 'block';
-        return;
-      }
-
-      // Limpa erros anteriores
-      errorEl.style.display = 'none';
       
       const originalText = btn.textContent;
       btn.textContent = 'Processando...';
       btn.disabled = true;
       
       try {
-        const payload = { 
-            action: authMode, 
-            email, 
-            password,
-            threadId: localStorage.getItem('threadId') // Envia a thread atual para vincular
-        };
-
         const res = await fetch('/api/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ action: authMode, email, password })
         });
         
         const data = await res.json();
@@ -2818,25 +2785,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
           localStorage.setItem('userData', JSON.stringify(data.user));
           localStorage.removeItem('isGuest'); // Remove flag de convidado se existir
           
-          // Sincronização de Thread (PC <-> Celular)
-          if (data.user.threadId) {
-             const currentThread = localStorage.getItem('threadId');
-             if (currentThread !== data.user.threadId) {
-                 // Se a thread do usuário for diferente da atual, atualiza!
-                 localStorage.setItem('threadId', data.user.threadId);
-                 console.log("[ARCA] Thread sincronizada com a conta:", data.user.threadId);
-                 
-                 // Limpar o chat atual visualmente para carregar o novo contexto
-                 const historyEl = document.getElementById('chatHistory');
-                 if (historyEl) historyEl.innerHTML = ''; 
-                 
-                 // Recarregar a página para garantir estado limpo? 
-                 // Melhor recarregar para puxar o histórico do backend se ele existir (ainda não implementamos o load on init no front, mas o threadId estará correto)
-                 window.location.reload();
-                 return;
-             }
-          }
-
           userLoggedIn = true;
           userData = data.user;
           updateLoginStatus();
@@ -2845,124 +2793,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
           
           // Se tiver mensagem de boas-vindas, pode exibir ou só fechar
         } else {
-          // Exibir erro no frontend
-          const errorEl = document.getElementById('authError');
-          errorEl.textContent = 'Erro: ' + (data.error || 'Falha na autenticação');
-          errorEl.style.display = 'block';
-          
-          // Ocultar erro após 5 segundos
-          setTimeout(() => {
-            errorEl.style.display = 'none';
-          }, 5000);
+          alert('Erro: ' + (data.error || 'Falha na autenticação'));
         }
       } catch (err) {
-        const errorEl = document.getElementById('authError');
-        errorEl.textContent = 'Erro de conexão: ' + err.message;
-        errorEl.style.display = 'block';
+        alert('Erro de conexão: ' + err.message);
       } finally {
         btn.textContent = originalText;
         btn.disabled = false;
       }
     }
     
-    async function handleGoogleAuth() {
-      try {
-        const btn = document.querySelector('button[onclick="handleGoogleAuth()"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = 'Redirecionando...';
-        btn.disabled = true;
-
-        const res = await fetch('/api/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'google_auth_url' })
-        });
-        const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          alert('Erro ao iniciar login Google. Verifique a configuração.');
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-        }
-      } catch (e) {
-        console.error(e);
-        alert('Erro de conexão.');
-      }
-    }
-
-    async function checkGoogleCallback() {
-      // Verifica se há token na URL (retorno do Google/Supabase)
-      const hash = window.location.hash;
-      if (hash && hash.includes('access_token')) {
-        // Extrai o token
-        const params = new URLSearchParams(hash.substring(1)); // remove #
-        const accessToken = params.get('access_token');
-        
-        if (!accessToken) return;
-
-        // Limpa a URL para não ficar feia
-        window.history.replaceState(null, null, window.location.pathname);
-        
-        // Mostra loading no portal se estiver visível, ou abre o portal
-        const portal = document.getElementById('authPortal');
-        if (portal) {
-            portal.style.display = 'flex';
-            // Opcional: mostrar mensagem de carregando
-        }
-        
-        // Chama backend para validar e logar
-        try {
-           const res = await fetch('/api/auth', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ 
-               action: 'google_callback', 
-               token: accessToken,
-               threadId: localStorage.getItem('threadId')
-             })
-           });
-           
-           const data = await res.json();
-           if (data.success) {
-              localStorage.setItem('userData', JSON.stringify(data.user));
-              localStorage.removeItem('isGuest');
-              
-              if (data.user.threadId) {
-                 const currentThread = localStorage.getItem('threadId');
-                 if (currentThread !== data.user.threadId) {
-                     localStorage.setItem('threadId', data.user.threadId);
-                     window.location.reload();
-                     return;
-                 }
-              }
-              
-              userLoggedIn = true;
-              userData = data.user;
-              updateLoginStatus();
-              if (portal) portal.style.display = 'none';
-           } else {
-              // Mostra erro no portal se possível
-              const errorEl = document.getElementById('authError');
-              if (errorEl) {
-                  errorEl.textContent = 'Falha Google: ' + (data.error || 'Erro desconhecido');
-                  errorEl.style.display = 'block';
-              } else {
-                  alert('Falha no login Google: ' + (data.error || 'Erro desconhecido'));
-              }
-           }
-        } catch (e) {
-           console.error(e);
-           alert('Erro ao processar login Google.');
-        }
-      }
-    }
-    
     // Mostrar/esconder campo de WhatsApp baseado no checkbox
     document.addEventListener('DOMContentLoaded', function() {
-      // Verifica callback do Google
-      checkGoogleCallback();
-
       // Inicializar o modo da persona ao carregar a página
       const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
       setPersonaMode(savedMode);
