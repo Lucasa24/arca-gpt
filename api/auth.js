@@ -116,13 +116,74 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { action, email, password } = req.body;
+    const { action, email, password, token, threadId } = req.body;
 
-    if (!email || !password) {
+    // Ação 1: URL DE LOGIN GOOGLE
+    if (action === 'google_auth_url') {
+      if (!supabase) throw new Error("Supabase não configurado.");
+      
+      const redirectUrl = req.headers.origin || 'https://arca-gpt.vercel.app'; // Fallback seguro
+      // URL para fluxo implícito (retorna token no fragmento #)
+      const url = `${process.env.SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectUrl}`;
+      
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ url }));
+    }
+
+    // Ação 2: CALLBACK GOOGLE (Troca token por usuário)
+    if (action === 'google_callback') {
+      if (!supabase) throw new Error("Supabase não configurado.");
+      if (!token) throw new Error("Token obrigatório.");
+
+      // Valida o token com Supabase Auth
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      
+      if (error || !user) throw new Error("Token inválido ou expirado.");
+      
+      const userEmail = user.email;
+      
+      // Verifica/Cria usuário na tabela userslogin (Sincronização)
+      let dbUser = await findUserByEmail(userEmail);
+      
+      if (!dbUser) {
+         // Cria usuário sem senha (login via Google)
+         const id = user.id; // Usa o mesmo ID do Auth se possível, ou gera novo
+         // Nota: findUserByEmail pode retornar null se não achar.
+         // createUser espera um objeto.
+         // Vamos gerar uma senha aleatória forte para satisfazer a coluna se for NOT NULL
+         const randomPass = crypto.randomBytes(16).toString('hex');
+         
+         dbUser = await createUser({ 
+            id: id, 
+            email: userEmail, 
+            password: randomPass, // Senha dummy, user nunca vai usar
+            is_pro: false,
+            threadId: threadId || null
+         });
+      } else {
+         // Atualiza thread se fornecida
+         if (threadId && (!dbUser.active_thread_id || dbUser.active_thread_id !== threadId)) {
+             dbUser.active_thread_id = threadId;
+             if (supabase) {
+                await supabase.from('userslogin').update({ active_thread_id: threadId }).eq('id', dbUser.id);
+             }
+         }
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ 
+        success: true, 
+        user: { id: dbUser.id, email: dbUser.email, isPro: dbUser.is_pro, threadId: dbUser.active_thread_id },
+        message: "Login Google realizado com sucesso."
+      }));
+    }
+
+    // Validação comum para Login/Signup normal
+    if ((action === 'signup' || action === 'login') && (!email || !password)) {
       throw new Error("Email e senha são obrigatórios.");
     }
 
-    // Ação 1: CADASTRO (Sign Up)
+    // Ação 3: CADASTRO (Sign Up)
     if (action === 'signup') {
       const { email, password, threadId } = req.body; // Recebe threadId do front
       if (!email || !password) throw new Error("E-mail e senha obrigatórios.");
