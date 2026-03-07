@@ -1,4 +1,4 @@
-const { getThreadMessages } = require('./memory.js');
+const { getThreadMessages } = require('../lib/memory.js');
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
