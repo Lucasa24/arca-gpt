@@ -23,14 +23,14 @@ const DB_PATH = path.join(__dirname, '../database/users.json');
 async function findUserByEmail(email) {
   // 1. Tenta Supabase
   if (supabase) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-    if (error && error.code !== 'PGRST116') console.error("Supabase Error:", error);
-    return data;
-  }
+      const { data, error } = await supabase
+        .from('userslogin')
+        .select('*')
+        .eq('email', email)
+        .single();
+      if (error && error.code !== 'PGRST116') console.error("Supabase Error:", error);
+      return data;
+    }
 
   // 2. Tenta Local (users.json)
   try {
@@ -49,14 +49,26 @@ async function findUserByEmail(email) {
 async function createUser(userData) {
   // 1. Tenta Supabase
   if (supabase) {
-    const { data, error } = await supabase
-      .from('users')
-      .insert([userData])
-      .select()
-      .single();
-    if (error) throw new Error("Erro ao salvar no Supabase: " + error.message);
-    return data;
-  }
+      // Verifica se já existe
+      const { data: existingUser } = await supabase
+        .from('userslogin')
+        .select('*')
+        .eq('email', userData.email)
+        .single();
+      
+      if (existingUser) {
+        throw new Error("E-mail já cadastrado.");
+      }
+
+      const { data, error } = await supabase
+        .from('userslogin')
+        .insert([{ ...userData, active_thread_id: userData.threadId || null }]) // Salva threadId inicial
+        .select()
+        .single();
+      
+      if (error) throw new Error("Erro ao salvar no Supabase: " + error.message);
+      return data;
+    }
 
   // 2. Tenta Local e Memória
   MEMORY_USERS.push(userData);
@@ -103,41 +115,48 @@ module.exports = async function handler(req, res) {
 
     // Ação 1: CADASTRO (Sign Up)
     if (action === 'signup') {
-      const existingUser = await findUserByEmail(email);
-      if (existingUser) {
-        throw new Error("Este email já está cadastrado.");
-      }
+      const { email, password, threadId } = req.body; // Recebe threadId do front
+      if (!email || !password) throw new Error("E-mail e senha obrigatórios.");
+      
+      const existing = await findUserByEmail(email);
+      if (existing) throw new Error("E-mail já cadastrado.");
 
-      const newUser = {
-        id: crypto.randomUUID(),
-        email,
-        password, // TODO: Hash em produção real
-        created_at: new Date().toISOString(),
-        is_pro: false
-      };
-
-      const savedUser = await createUser(newUser);
-
+      const id = crypto.randomUUID();
+      // Em produção, use bcrypt para hashear a senha!
+      const user = await createUser({ id, email, password, is_pro: false, threadId });
+      
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ 
         success: true, 
-        user: { id: savedUser.id, email: savedUser.email, isPro: savedUser.is_pro },
-        message: "Conta criada com sucesso! Bem-vindo à Arca."
+        user: { id: user.id, email: user.email, isPro: user.is_pro, threadId: user.active_thread_id },
+        message: "Cadastro realizado com sucesso."
       }));
     }
 
     // Ação 2: LOGIN (Sign In)
     if (action === 'login') {
+      const { email, password, threadId } = req.body; // Recebe threadId atual do front (opcional)
+      if (!email || !password) throw new Error("E-mail e senha obrigatórios.");
+
       const user = await findUserByEmail(email);
-
-      if (!user || user.password !== password) {
-        throw new Error("Email ou senha incorretos.");
+      if (!user) throw new Error("Usuário não encontrado.");
+      if (user.password !== password) throw new Error("Senha incorreta.");
+      
+      // Lógica de Sincronização de Thread (PC <-> Celular)
+      let finalThreadId = user.active_thread_id;
+      
+      // Se o usuário não tem thread salva, usa a atual e salva
+      if (!finalThreadId && threadId) {
+        finalThreadId = threadId;
+        if (supabase) {
+           await supabase.from('userslogin').update({ active_thread_id: threadId }).eq('id', user.id);
+        }
       }
-
+      
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ 
         success: true, 
-        user: { id: user.id, email: user.email, isPro: user.is_pro },
+        user: { id: user.id, email: user.email, isPro: user.is_pro, threadId: finalThreadId },
         message: "Login realizado com sucesso."
       }));
     }
