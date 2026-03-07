@@ -60,9 +60,18 @@ async function createUser(userData) {
         throw new Error("E-mail já cadastrado.");
       }
 
+      // Prepara objeto para inserção (mapeia campos corretamente para o banco)
+      const dbUser = {
+        id: userData.id,
+        email: userData.email,
+        password: userData.password,
+        is_pro: userData.is_pro,
+        active_thread_id: userData.threadId || null
+      };
+
       const { data, error } = await supabase
         .from('userslogin')
-        .insert([{ ...userData, active_thread_id: userData.threadId || null }]) // Salva threadId inicial
+        .insert([dbUser]) 
         .select()
         .single();
       
