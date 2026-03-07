@@ -1142,6 +1142,19 @@
 
     <form id="authForm" onsubmit="handleAuth(event)">
       <div style="font-size: 0.9rem; color: #888; margin-bottom: 10px;">IDENTIFIQUE-SE</div>
+      
+      <!-- Botão Google -->
+      <button type="button" onclick="handleGoogleAuth()" style="width:100%; margin-bottom: 15px; background: #fff; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold;">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.159 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+        Entrar com Google
+      </button>
+
+      <div style="display: flex; align-items: center; margin: 10px 0; color: #666; font-size: 0.8rem;">
+        <div style="flex: 1; height: 1px; background: #444;"></div>
+        <div style="padding: 0 10px;">OU</div>
+        <div style="flex: 1; height: 1px; background: #444;"></div>
+      </div>
+
       <input type="email" id="authEmail" class="auth-input" placeholder="E-mail" required>
       <input type="password" id="authPass" class="auth-input" placeholder="Senha" required>
       <div id="authError" style="color: #ff4444; font-size: 0.85rem; margin: 10px 0; display: none; text-align: center;"></div>
@@ -2740,14 +2753,36 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
 
+    // Função de validação de formato de email (Regex robusto)
+    function isValidEmail(email) {
+      return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+    }
+
     async function handleAuth(e) {
       e.preventDefault();
       
       const email = document.getElementById('authEmail').value;
       const password = document.getElementById('authPass').value;
       const btn = document.querySelector('#authForm button[type="submit"]');
+      const errorEl = document.getElementById('authError');
       
+      // 1. Validação Visual Imediata (O Guardião do Portal)
       if (!email || !password) return;
+
+      if (!isValidEmail(email)) {
+        errorEl.textContent = 'O formato do email está incorreto.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (password.length < 6) {
+        errorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // Limpa erros anteriores
+      errorEl.style.display = 'none';
       
       const originalText = btn.textContent;
       btn.textContent = 'Processando...';
@@ -2821,8 +2856,104 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
     
+    async function handleGoogleAuth() {
+      try {
+        const btn = document.querySelector('button[onclick="handleGoogleAuth()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Redirecionando...';
+        btn.disabled = true;
+
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'google_auth_url' })
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Erro ao iniciar login Google. Verifique a configuração.');
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Erro de conexão.');
+      }
+    }
+
+    async function checkGoogleCallback() {
+      // Verifica se há token na URL (retorno do Google/Supabase)
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token')) {
+        // Extrai o token
+        const params = new URLSearchParams(hash.substring(1)); // remove #
+        const accessToken = params.get('access_token');
+        
+        if (!accessToken) return;
+
+        // Limpa a URL para não ficar feia
+        window.history.replaceState(null, null, window.location.pathname);
+        
+        // Mostra loading no portal se estiver visível, ou abre o portal
+        const portal = document.getElementById('authPortal');
+        if (portal) {
+            portal.style.display = 'flex';
+            // Opcional: mostrar mensagem de carregando
+        }
+        
+        // Chama backend para validar e logar
+        try {
+           const res = await fetch('/api/auth', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ 
+               action: 'google_callback', 
+               token: accessToken,
+               threadId: localStorage.getItem('threadId')
+             })
+           });
+           
+           const data = await res.json();
+           if (data.success) {
+              localStorage.setItem('userData', JSON.stringify(data.user));
+              localStorage.removeItem('isGuest');
+              
+              if (data.user.threadId) {
+                 const currentThread = localStorage.getItem('threadId');
+                 if (currentThread !== data.user.threadId) {
+                     localStorage.setItem('threadId', data.user.threadId);
+                     window.location.reload();
+                     return;
+                 }
+              }
+              
+              userLoggedIn = true;
+              userData = data.user;
+              updateLoginStatus();
+              if (portal) portal.style.display = 'none';
+           } else {
+              // Mostra erro no portal se possível
+              const errorEl = document.getElementById('authError');
+              if (errorEl) {
+                  errorEl.textContent = 'Falha Google: ' + (data.error || 'Erro desconhecido');
+                  errorEl.style.display = 'block';
+              } else {
+                  alert('Falha no login Google: ' + (data.error || 'Erro desconhecido'));
+              }
+           }
+        } catch (e) {
+           console.error(e);
+           alert('Erro ao processar login Google.');
+        }
+      }
+    }
+    
     // Mostrar/esconder campo de WhatsApp baseado no checkbox
     document.addEventListener('DOMContentLoaded', function() {
+      // Verifica callback do Google
+      checkGoogleCallback();
+
       // Inicializar o modo da persona ao carregar a página
       const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
       setPersonaMode(savedMode);
