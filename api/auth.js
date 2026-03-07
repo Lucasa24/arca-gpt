@@ -23,14 +23,14 @@ const DB_PATH = path.join(__dirname, '../database/users.json');
 async function findUserByEmail(email) {
   // 1. Tenta Supabase
   if (supabase) {
-      const { data, error } = await supabase
-        .from('userslogin')
-        .select('*')
-        .eq('email', email)
-        .single();
-      if (error && error.code !== 'PGRST116') console.error("Supabase Error:", error);
-      return data;
-    }
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+    if (error && error.code !== 'PGRST116') console.error("Supabase Error:", error);
+    return data;
+  }
 
   // 2. Tenta Local (users.json)
   try {
@@ -49,35 +49,14 @@ async function findUserByEmail(email) {
 async function createUser(userData) {
   // 1. Tenta Supabase
   if (supabase) {
-      // Verifica se já existe
-      const { data: existingUser } = await supabase
-        .from('userslogin')
-        .select('*')
-        .eq('email', userData.email)
-        .single();
-      
-      if (existingUser) {
-        throw new Error("E-mail já cadastrado.");
-      }
-
-      // Prepara objeto para inserção (mapeia campos corretamente para o banco)
-      const dbUser = {
-        id: userData.id,
-        email: userData.email,
-        password: userData.password,
-        is_pro: userData.is_pro,
-        active_thread_id: userData.threadId || null
-      };
-
-      const { data, error } = await supabase
-        .from('userslogin')
-        .insert([dbUser]) 
-        .select()
-        .single();
-      
-      if (error) throw new Error("Erro ao salvar no Supabase: " + error.message);
-      return data;
-    }
+    const { data, error } = await supabase
+      .from('users')
+      .insert([userData])
+      .select()
+      .single();
+    if (error) throw new Error("Erro ao salvar no Supabase: " + error.message);
+    return data;
+  }
 
   // 2. Tenta Local e Memória
   MEMORY_USERS.push(userData);
@@ -116,117 +95,109 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { action, email, password, token, threadId } = req.body;
+    const { action, email, password, access_token } = req.body;
 
-    // Ação 1: URL DE LOGIN GOOGLE
-    if (action === 'google_auth_url') {
-      if (!supabase) throw new Error("Supabase não configurado.");
+    // Actions que não requerem email/senha
+    if (action === 'get_google_url') {
+      if (!supabase) {
+        throw new Error("Login com Google indisponível (Supabase não configurado).");
+      }
       
-      const redirectUrl = req.headers.origin || 'https://arca-gpt.vercel.app'; // Fallback seguro
-      // URL para fluxo implícito (retorna token no fragmento #)
-      const url = `${process.env.SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectUrl}`;
+      // Tenta detectar a URL de origem, fallback para a produção
+      const origin = req.headers.origin || "https://arca-gpt.vercel.app";
+      const redirectUrl = `${origin}/`;
       
-      res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ url }));
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) throw error;
+      return res.end(JSON.stringify({ url: data.url }));
     }
 
-    // Ação 2: CALLBACK GOOGLE (Troca token por usuário)
-    if (action === 'google_callback') {
-      if (!supabase) throw new Error("Supabase não configurado.");
-      if (!token) throw new Error("Token obrigatório.");
+    if (action === 'verify_token') {
+      if (!supabase) throw new Error("Supabase indisponível.");
+      if (!access_token) throw new Error("Token ausente.");
 
-      // Valida o token com Supabase Auth
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      const { data: { user }, error } = await supabase.auth.getUser(access_token);
       
       if (error || !user) throw new Error("Token inválido ou expirado.");
+
+      // Verifica se o usuário já existe na nossa tabela 'users' customizada (sincronia)
+      // O Supabase Auth cria no 'auth.users', mas nós usamos 'public.users' ou fallback
+      // Vamos garantir que ele exista no nosso registro local/public
       
-      const userEmail = user.email;
+      let localUser = await findUserByEmail(user.email);
       
-      // Verifica/Cria usuário na tabela userslogin (Sincronização)
-      let dbUser = await findUserByEmail(userEmail);
-      
-      if (!dbUser) {
-         // Cria usuário sem senha (login via Google)
-         const id = user.id; // Usa o mesmo ID do Auth se possível, ou gera novo
-         // Nota: findUserByEmail pode retornar null se não achar.
-         // createUser espera um objeto.
-         // Vamos gerar uma senha aleatória forte para satisfazer a coluna se for NOT NULL
-         const randomPass = crypto.randomBytes(16).toString('hex');
-         
-         dbUser = await createUser({ 
-            id: id, 
-            email: userEmail, 
-            password: randomPass, // Senha dummy, user nunca vai usar
-            is_pro: false,
-            threadId: threadId || null
-         });
-      } else {
-         // Atualiza thread se fornecida
-         if (threadId && (!dbUser.active_thread_id || dbUser.active_thread_id !== threadId)) {
-             dbUser.active_thread_id = threadId;
-             if (supabase) {
-                await supabase.from('userslogin').update({ active_thread_id: threadId }).eq('id', dbUser.id);
-             }
-         }
+      if (!localUser) {
+        // Cria usuário localmente baseado no Google
+        localUser = {
+          id: user.id,
+          email: user.email,
+          password: crypto.randomUUID(), // Senha aleatória, pois é login social
+          created_at: new Date().toISOString(),
+          is_pro: false,
+          provider: 'google'
+        };
+        await createUser(localUser);
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ 
         success: true, 
-        user: { id: dbUser.id, email: dbUser.email, isPro: dbUser.is_pro, threadId: dbUser.active_thread_id },
-        message: "Login Google realizado com sucesso."
+        user: { id: localUser.id, email: localUser.email, isPro: localUser.is_pro },
+        message: "Login com Google realizado com sucesso."
       }));
     }
 
-    // Validação comum para Login/Signup normal
-    if ((action === 'signup' || action === 'login') && (!email || !password)) {
+    if (!email || !password) {
       throw new Error("Email e senha são obrigatórios.");
     }
 
-    // Ação 3: CADASTRO (Sign Up)
+    // Ação 1: CADASTRO (Sign Up)
     if (action === 'signup') {
-      const { email, password, threadId } = req.body; // Recebe threadId do front
-      if (!email || !password) throw new Error("E-mail e senha obrigatórios.");
-      
-      const existing = await findUserByEmail(email);
-      if (existing) throw new Error("E-mail já cadastrado.");
+      const existingUser = await findUserByEmail(email);
+      if (existingUser) {
+        throw new Error("Este email já está cadastrado.");
+      }
 
-      const id = crypto.randomUUID();
-      // Em produção, use bcrypt para hashear a senha!
-      const user = await createUser({ id, email, password, is_pro: false, threadId });
-      
+      const newUser = {
+        id: crypto.randomUUID(),
+        email,
+        password, // TODO: Hash em produção real
+        created_at: new Date().toISOString(),
+        is_pro: false
+      };
+
+      const savedUser = await createUser(newUser);
+
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ 
         success: true, 
-        user: { id: user.id, email: user.email, isPro: user.is_pro, threadId: user.active_thread_id },
-        message: "Cadastro realizado com sucesso."
+        user: { id: savedUser.id, email: savedUser.email, isPro: savedUser.is_pro },
+        message: "Conta criada com sucesso! Bem-vindo à Arca."
       }));
     }
 
     // Ação 2: LOGIN (Sign In)
     if (action === 'login') {
-      const { email, password, threadId } = req.body; // Recebe threadId atual do front (opcional)
-      if (!email || !password) throw new Error("E-mail e senha obrigatórios.");
-
       const user = await findUserByEmail(email);
-      if (!user) throw new Error("Usuário não encontrado.");
-      if (user.password !== password) throw new Error("Senha incorreta.");
-      
-      // Lógica de Sincronização de Thread (PC <-> Celular)
-      let finalThreadId = user.active_thread_id;
-      
-      // Se o usuário não tem thread salva, usa a atual e salva
-      if (!finalThreadId && threadId) {
-        finalThreadId = threadId;
-        if (supabase) {
-           await supabase.from('userslogin').update({ active_thread_id: threadId }).eq('id', user.id);
-        }
+
+      if (!user || user.password !== password) {
+        throw new Error("Email ou senha incorretos.");
       }
-      
+
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ 
         success: true, 
-        user: { id: user.id, email: user.email, isPro: user.is_pro, threadId: finalThreadId },
+        user: { id: user.id, email: user.email, isPro: user.is_pro },
         message: "Login realizado com sucesso."
       }));
     }
