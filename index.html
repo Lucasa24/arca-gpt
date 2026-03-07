@@ -958,6 +958,7 @@
       <div style="font-size: 0.9rem; color: #888; margin-bottom: 10px;">IDENTIFIQUE-SE</div>
       <input type="email" id="authEmail" class="auth-input" placeholder="E-mail" required>
       <input type="password" id="authPass" class="auth-input" placeholder="Senha" required>
+      <div id="authError" style="color: #ff4444; font-size: 0.85rem; margin: 10px 0; display: none; text-align: center;"></div>
       <button type="submit" class="portal-btn primary" style="width:100%; margin-top: 10px;">CONFIRMAR</button>
       
       <div class="auth-toggle" onclick="toggleAuthMode()">Não tem conta? Crie uma agora.</div>
@@ -2693,10 +2694,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
           
           // Se tiver mensagem de boas-vindas, pode exibir ou só fechar
         } else {
-          alert('Erro: ' + (data.error || 'Falha na autenticação'));
+          // Exibir erro no frontend
+          const errorEl = document.getElementById('authError');
+          errorEl.textContent = 'Erro: ' + (data.error || 'Falha na autenticação');
+          errorEl.style.display = 'block';
+          
+          // Ocultar erro após 5 segundos
+          setTimeout(() => {
+            errorEl.style.display = 'none';
+          }, 5000);
         }
       } catch (err) {
-        alert('Erro de conexão: ' + err.message);
+        const errorEl = document.getElementById('authError');
+        errorEl.textContent = 'Erro de conexão: ' + err.message;
+        errorEl.style.display = 'block';
       } finally {
         btn.textContent = originalText;
         btn.disabled = false;
