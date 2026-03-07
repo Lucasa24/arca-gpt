@@ -1,4 +1,4 @@
-const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('../lib/memory.js');
+const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('./memory.js');
 const { fetch } = require('undici');
 
 // arca.js — fora do handler (executa no cold start da função)
@@ -52,8 +52,8 @@ async function handler(req, res) {
     // (opcional) ping keepalive
     const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
 
-    await addMessageToThread(threadId, "user", userInput);
-    const messages = await getThreadMessages(threadId);
+    addMessageToThread(threadId, "user", userInput);
+    const messages = getThreadMessages(threadId);
     
     // Log das mensagens de sistema para verificação
     const systemMessages = messages.filter(m => m.role==='system');
@@ -71,17 +71,36 @@ async function handler(req, res) {
     // O custo é maior, mas a experiência é incomparável.
     const userModel = "gpt-4o";
     
-    console.log(`[ARCA] Usando modelo: ${userModel} (Fase Inicial: Qualidade Total)`);
+    // --- MIGRAÇÃO PARA RESPONSES API (BETA) ---
+    // Documentação: https://developers.openai.com/api/docs/guides/migrate-to-responses
+    
+    let endpoint = "https://api.openai.com/v1/responses";
+    let requestBody = {
+      model: userModel,
+      input: messages, // Responses API usa 'input' (pode ser lista de mensagens)
+      stream: true,
+      temperature: 0.85, // Parâmetros de controle
+      max_tokens: 16000, // Garante respostas longas
+    };
 
-    const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    console.log(`[ARCA] Tentando API Responses...`);
+
+    let finalRes = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${api_key}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
+      body: JSON.stringify(requestBody)
+    });
+
+    // Fallback para Chat Completions se falhar (404, 400, etc)
+    if (!finalRes.ok) {
+      console.warn(`[ARCA] Responses API falhou (${finalRes.status}). Fallback para Chat Completions.`);
+      endpoint = "https://api.openai.com/v1/chat/completions";
+      requestBody = {
         model: userModel,
-        messages,
+        messages, // Volta para 'messages' padrão
         stream: true,
         temperature: 0.85,
         max_tokens: 16000,
@@ -89,18 +108,27 @@ async function handler(req, res) {
         frequency_penalty: 0.0,
         presence_penalty: 0.3,
         stream_options: { include_usage: false }
-      })
-    });
+      };
+      
+      finalRes = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${api_key}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+    }
 
-    if (!oaRes.ok) {
+    if (!finalRes.ok) {
       clearInterval(keepalive);
-      res.statusCode = oaRes.status;
-      res.write(`data: ${JSON.stringify(`⚠️ OpenAI: ${oaRes.status} ${oaRes.statusText}`)}\n\n`);
+      res.statusCode = finalRes.status;
+      res.write(`data: ⚠️ OpenAI Error: ${finalRes.status} ${finalRes.statusText}\n\n`);
       res.write(`data: [DONE]\n\n`);
       return res.end();
     }
 
-    const reader = oaRes.body.getReader();
+    const reader = finalRes.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
     let assistantResponse = "";
@@ -127,12 +155,12 @@ async function handler(req, res) {
           // Adiciona fechamento variável apenas para persona ritual
           if (currentPersona !== "tecnico") {
             const closing = `\n\n${generateClosing()}`;
-            res.write(`data: ${JSON.stringify(closing)}\n\n`);
+            res.write(`data: ${closing}\n\n`);
           }
           
           // Salva resposta completa com abertura + corpo + fechamento
           const finalResponse = composeAssistantContent(assistantResponse, threadId);
-          await addMessageToThread(threadId, "assistant", finalResponse);
+          addMessageToThread(threadId, "assistant", finalResponse);
           
           res.write(`data: [DONE]\n\n`);
           clearInterval(keepalive);
@@ -140,7 +168,18 @@ async function handler(req, res) {
         }
         try {
           const parsed = JSON.parse(payload);
-          const chunk = parsed.choices?.[0]?.delta?.content || "";
+          let chunk = "";
+          
+          // 1. Tenta extrair do formato RESPONSES API
+          if (parsed.type === 'response.output_text.delta') {
+             // Garante que pega o texto seja ele string direta ou objeto com value
+             chunk = (typeof parsed.delta === 'string') ? parsed.delta : (parsed.delta?.value || "");
+          }
+          // 2. Tenta extrair do formato CHAT COMPLETIONS (Legacy)
+          else if (parsed.choices?.[0]?.delta?.content) {
+             chunk = parsed.choices[0].delta.content;
+          }
+
           if (chunk) {
             // Envia abertura na primeira chunk válida (apenas para persona ritual)
             if (!openingSent) {
@@ -152,13 +191,13 @@ async function handler(req, res) {
                 const { pickOpening } = require('./memory.js');
                 // Simula uma abertura aleatória para a primeira chunk
                 const opening = pickOpening(null);
-                res.write(`data: ${JSON.stringify(opening)}\n\n`);
+                res.write(`data: ${opening}\n\n`);
               }
               openingSent = true;
             }
             
             assistantResponse += chunk;
-            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+            res.write(`data: ${chunk}\n\n`);
           }
         } catch { /* ignora pings/linhas quebradas */ }
       }
@@ -170,7 +209,7 @@ async function handler(req, res) {
 
   } catch (err) {
     try {
-      res.write(`data: ${JSON.stringify(`⚠️ A Arca silenciou: ${err.message}`)}\n\n`);
+      res.write(`data: ⚠️ A Arca silenciou: ${err.message}\n\n`);
       res.write(`data: [DONE]\n\n`);
       res.end();
     } catch {
@@ -182,3 +221,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
+
