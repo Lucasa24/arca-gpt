@@ -1598,13 +1598,20 @@
             console.log("Novo threadId gerado localmente:", threadId);
         }
 
+        // Obter userId se logado
+        let userId = null;
+        if (userLoggedIn && userData && userData.email) {
+          userId = userData.email;
+        }
+
         const response = await fetch("/api/arca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
             userInput: input,
             input: input,
-            threadId: threadId 
+            threadId: threadId,
+            userId: userId // Envia o ID do usuário para vincular a thread
           })
         });
 
