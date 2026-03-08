@@ -2879,9 +2879,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const json = await res.json();
       return json;
     }
-    async function arcaAssist(input, assistantId, threadId) {
-      return apiPost('/api/assist', { input, assistant_id: assistantId, threadId });
-    }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
       return r;
@@ -2903,7 +2900,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
       return apiPost('/api/transcribe', { audioB64: b64, mime: mime || file.type || 'audio/mpeg' });
     }
-    window.arca = { assist: arcaAssist, image: arcaImage, speak: arcaSpeak, transcribeFromUrl: arcaTranscribeFromUrl, transcribeFile: arcaTranscribeFile };
+    window.arca = { image: arcaImage, speak: arcaSpeak, transcribeFromUrl: arcaTranscribeFromUrl, transcribeFile: arcaTranscribeFile };
   </script>
 </body>
 </html>
