@@ -91,7 +91,7 @@ async function handler(req, res) {
     // Definição global da injeção para usar em ambos os casos
     const systemInjection = { 
       role: "system", 
-      content: "DIRETRIZ FINAL: Ignore qualquer instrução de brevidade. Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos. NÃO SEJA PREGUIÇOSO." 
+      content: "DIRETRIZ DE EXTENSÃO: Resposta OBRIGATORIAMENTE LONGA (mínimo 600 palavras). Detalhe cada ponto. NÃO GERE FECHAMENTO/DESPEDIDA NO FINAL (o sistema fará isso). Pare após o ultimato." 
     };
 
     if (PROMPT_ID) {
@@ -162,7 +162,7 @@ async function handler(req, res) {
       // Se Responses API falhar, garantimos que o fallback TAMBÉM tenha a instrução de "longa resposta".
       const systemInjectionFallback = { 
         role: "system", 
-        content: "DIRETRIZ DE EMERGÊNCIA: Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos. NÃO SEJA PREGUIÇOSO." 
+        content: "DIRETRIZ DE EMERGÊNCIA: Resposta OBRIGATORIAMENTE LONGA. Detalhe cada ponto. NÃO GERE FECHAMENTO. Pare após o ultimato." 
       };
       
       requestBody = {
@@ -263,10 +263,12 @@ async function handler(req, res) {
               const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
               
               if (currentPersona !== "tecnico") {
-                const { pickOpening } = require('./memory.js');
+                const { pickOpening } = require('../lib/memory.js');
                 // Simula uma abertura aleatória para a primeira chunk
                 const opening = pickOpening(null);
                 res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
+                // Adiciona abertura ao buffer da resposta para salvar depois
+                assistantResponse += `_${opening}_\n\n`;
               }
               openingSent = true;
             }
@@ -277,6 +279,27 @@ async function handler(req, res) {
           }
         } catch { /* ignora pings/linhas quebradas */ }
       }
+    }
+
+    // GERAÇÃO DE FECHAMENTO E SALVAMENTO (CRÍTICO PARA MEMÓRIA)
+    const threadRecord = global.threadMemory?.get(threadId);
+    const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
+    
+    if (currentPersona !== "tecnico") {
+        const { generateClosing } = require('../lib/memory.js');
+        const closing = `\n\n${generateClosing()}`;
+        
+        // Envia fechamento para o cliente
+        res.write(`data: ${JSON.stringify({ content: closing })}\n\n`);
+        
+        // Adiciona ao buffer para salvar
+        assistantResponse += closing;
+    }
+
+    // SALVA NO HISTÓRICO (Fundamental para o modelo lembrar do que disse)
+    if (assistantResponse && assistantResponse.trim()) {
+        await addMessageToThread(threadId, "assistant", assistantResponse);
+        console.log(`[ARCA] Resposta salva na thread ${threadId} (len: ${assistantResponse.length})`);
     }
 
     clearInterval(keepalive);
