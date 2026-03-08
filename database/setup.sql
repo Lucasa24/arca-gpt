@@ -42,7 +42,8 @@ using (true);
 create table if not exists public.threads (
   id text primary key, -- ID da thread (ex: thread_123456789)
   data jsonb not null default '{}'::jsonb, -- Armazena mensagens e estado
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  user_id text -- Vincula a thread a um usuário (email ou uuid)
 );
 
 -- 5. Ativa a Segurança de Nível de Linha para Threads
