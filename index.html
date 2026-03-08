@@ -1964,9 +1964,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
           // Fechar sidebar no mobile após clicar em sessão (sem ocultar permanentemente)
           if (window.innerWidth <= 768) {
             const sb = document.getElementById("chatSidebar");
-            sb.classList.remove("open"); // fecha via classe
-            sb.style.display = ""; // remove qualquer display:none residual
-            document.getElementById("toggleSidebar").setAttribute("aria-expanded", "false");
+            if (sb) {
+              sb.classList.remove("open"); // fecha via classe
+              sb.style.display = ""; // remove qualquer display:none residual
+            }
+            
+            const toggleBtn = document.getElementById("toggleSidebar");
+            if (toggleBtn) {
+              // Garante que o botão reapareça removendo a classe e forçando reset
+              toggleBtn.classList.remove("sidebar-open");
+              toggleBtn.setAttribute("aria-expanded", "false");
+              // Fallback de segurança visual
+              toggleBtn.style.opacity = "";
+              toggleBtn.style.pointerEvents = "";
+            }
           }
         };
         
