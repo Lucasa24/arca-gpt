@@ -2833,7 +2833,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return;
       }
 
-      if (!confirm(`Deseja enviar um link de recuperação para ${email}?`)) return;
+      if (!confirm(`Deseja invocar o ritual de renovação da sua identidade para ${email}?`)) return;
 
       try {
         const res = await fetch('/api/auth', {
@@ -2843,12 +2843,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
         });
         const data = await res.json();
         if (data.success) {
-          alert(data.message);
+          // 𓊝 Ritual de Mensagem: Prioriza a voz da Arca
+          alert(data.ritual_message || data.message);
         } else {
-          alert("Erro: " + data.error);
+          alert("A Arca recusa: " + data.error);
         }
       } catch (err) {
-        alert("Erro ao enviar e-mail: " + err.message);
+        alert("O eco falhou: " + err.message);
       }
     }
 
