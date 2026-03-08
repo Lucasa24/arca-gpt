@@ -1034,7 +1034,9 @@
       <input type="email" id="authEmail" class="auth-input" placeholder="E-mail" required>
       <div style="position: relative; width: 100%;">
         <input type="password" id="authPass" class="auth-input" placeholder="Senha" required style="padding-right: 40px;">
-        <span id="togglePassBtn" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; user-select: none;" title="Mostrar senha">👁️</span>
+        <span id="togglePassBtn" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; user-select: none; display: flex; align-items: center; justify-content: center;" title="Mostrar senha">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(255,107,107,0.5)); pointer-events: none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
       </div>
       
       <div id="forgotPassLink" class="auth-toggle" onclick="handleForgotPassword()" style="text-align: right; margin-top: 5px; font-size: 0.75rem; display: block;">Esqueci a senha</div>
@@ -2816,11 +2818,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const toggleBtn = document.getElementById('togglePassBtn');
       if (passInput.type === 'password') {
         passInput.type = 'text';
-        toggleBtn.textContent = '🔒';
+        toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(179,0,0,0.5)); pointer-events: none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
         toggleBtn.title = "Ocultar senha";
       } else {
         passInput.type = 'password';
-        toggleBtn.textContent = '👁️';
+        toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(255,107,107,0.5)); pointer-events: none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
         toggleBtn.title = "Mostrar senha";
       }
     }
