@@ -145,7 +145,7 @@ async function handler(req, res) {
     if (!finalRes.ok) {
       clearInterval(keepalive);
       res.statusCode = finalRes.status;
-      res.write(`data: ⚠️ OpenAI Error: ${finalRes.status} ${finalRes.statusText}\n\n`);
+      res.write(`data: ${JSON.stringify({ content: `⚠️ OpenAI Error: ${finalRes.status} ${finalRes.statusText}` })}\n\n`);
       res.write(`data: [DONE]\n\n`);
       return res.end();
     }
@@ -177,7 +177,7 @@ async function handler(req, res) {
           // Adiciona fechamento variável apenas para persona ritual
           if (currentPersona !== "tecnico") {
             const closing = `\n\n${generateClosing()}`;
-            res.write(`data: ${closing}\n\n`);
+            res.write(`data: ${JSON.stringify({ content: closing })}\n\n`);
           }
           
           // Salva resposta completa com abertura + corpo + fechamento
@@ -213,13 +213,14 @@ async function handler(req, res) {
                 const { pickOpening } = require('./memory.js');
                 // Simula uma abertura aleatória para a primeira chunk
                 const opening = pickOpening(null);
-                res.write(`data: ${opening}\n\n`);
+                res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
               }
               openingSent = true;
             }
             
             assistantResponse += chunk;
-            res.write(`data: ${chunk}\n\n`);
+            // Envia como JSON para preservar quebras de linha e caracteres especiais
+            res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
           }
         } catch { /* ignora pings/linhas quebradas */ }
       }
@@ -231,7 +232,7 @@ async function handler(req, res) {
 
   } catch (err) {
     try {
-      res.write(`data: ⚠️ A Arca silenciou: ${err.message}\n\n`);
+      res.write(`data: ${JSON.stringify({ content: `⚠️ A Arca silenciou: ${err.message}` })}\n\n`);
       res.write(`data: [DONE]\n\n`);
       res.end();
     } catch {
