@@ -17,10 +17,13 @@ create table if not exists public.users (
 alter table public.users enable row level security;
 
 -- 3. Políticas de Acesso (As Regras do Templo)
--- Como estamos usando a chave 'publishable' (pública) no backend,
--- precisamos permitir que ela leia e escreva na tabela users.
+-- Limpa políticas antigas para evitar conflitos
+drop policy if exists "Permitir cadastro público" on public.users;
+drop policy if exists "Permitir leitura pública" on public.users;
+drop policy if exists "Enable insert for all" on public.users;
+drop policy if exists "Enable select for all" on public.users;
 
--- Permite cadastro (INSERT) para qualquer visitante
+-- Permite cadastro (INSERT) para qualquer visitante (necessário para SignUp)
 create policy "Permitir cadastro público"
 on public.users
 for insert
@@ -28,7 +31,8 @@ to public
 with check (true);
 
 -- Permite login (SELECT) para verificar credenciais
--- Nota de Segurança: Idealmente, o backend usaria a chave 'service_role' para isso.
+-- ATENÇÃO: Em produção, usar chave 'service_role' no backend é mais seguro.
+-- Como estamos usando a chave pública, precisamos permitir leitura.
 create policy "Permitir leitura pública"
 on public.users
 for select
@@ -51,6 +55,8 @@ create table if not exists public.threads (
 alter table public.threads enable row level security;
 
 -- 6. Políticas de Acesso para Threads
+drop policy if exists "Permitir acesso total a threads" on public.threads;
+
 -- Permite leitura e escrita pública (necessário se usar chave pública no backend)
 create policy "Permitir acesso total a threads"
 on public.threads
@@ -64,5 +70,4 @@ with check (true);
 -- ==============================================================================
 
 -- 7. Adiciona coluna 'provider' na tabela users se não existir
--- Execute isso se você já criou a tabela antes e está recebendo erro de coluna ausente
 alter table public.users add column if not exists provider text default 'email';
