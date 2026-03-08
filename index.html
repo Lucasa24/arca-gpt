@@ -1032,10 +1032,16 @@
     <form id="authForm" onsubmit="handleAuth(event)">
       <div style="font-size: 0.9rem; color: #888; margin-bottom: 10px;">IDENTIFIQUE-SE</div>
       <input type="email" id="authEmail" class="auth-input" placeholder="E-mail" required>
-      <input type="password" id="authPass" class="auth-input" placeholder="Senha" required>
+      <div style="position: relative; width: 100%;">
+        <input type="password" id="authPass" class="auth-input" placeholder="Senha" required style="padding-right: 40px;">
+        <span id="togglePassBtn" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; user-select: none;" title="Mostrar senha">👁️</span>
+      </div>
+      
+      <div id="forgotPassLink" class="auth-toggle" onclick="handleForgotPassword()" style="text-align: right; margin-top: 5px; font-size: 0.75rem; display: block;">Esqueci a senha</div>
+
       <button type="submit" class="portal-btn primary" style="width:100%; margin-top: 10px;">CONFIRMAR</button>
       
-      <div class="auth-toggle" onclick="toggleAuthMode()">Não tem conta? Crie uma agora.</div>
+      <div id="authModeToggle" class="auth-toggle" onclick="toggleAuthMode()">Não tem conta? Crie uma agora.</div>
       <div class="auth-toggle" onclick="hideAuthForm()" style="margin-top: 20px;">← Voltar</div>
     </form>
   </div>
@@ -2674,16 +2680,43 @@ div.innerHTML = DOMPurify.sanitize(html, {
     async function checkUrlHashForAuth() {
       const hash = window.location.hash;
       if (hash && hash.includes('access_token')) {
-        // Extrair token
-        const params = new URLSearchParams(hash.substring(1)); // remove #
+        const params = new URLSearchParams(hash.substring(1));
         const accessToken = params.get('access_token');
+        const type = params.get('type');
         
         if (!accessToken) return;
 
         // Limpar hash da URL visualmente
         window.history.replaceState(null, null, window.location.pathname);
 
-        // Feedback visual simples (pode ser melhorado)
+        // --- FLUXO DE RECUPERAÇÃO DE SENHA ---
+        if (type === 'recovery') {
+          const newPass = prompt("Ritual de Renovação: Digite sua NOVA senha para a Arca:");
+          if (!newPass || newPass.length < 6) {
+            alert("A senha deve ter pelo menos 6 caracteres.");
+            return;
+          }
+
+          try {
+            const res = await fetch('/api/auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update_password', access_token: accessToken, password: newPass })
+            });
+            const data = await res.json();
+            if (data.success) {
+              alert(data.message);
+              showAuthPortal(); // Volta para o login
+            } else {
+              alert("Erro ao atualizar: " + data.error);
+            }
+          } catch (err) {
+            alert("Erro de conexão: " + err.message);
+          }
+          return;
+        }
+
+        // --- FLUXO DE LOGIN NORMAL (Google/Magic) ---
         const portal = document.getElementById('authPortal');
         if (portal) {
            const title = portal.querySelector('.portal-title');
@@ -2762,16 +2795,60 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
     function toggleAuthMode() {
       const btn = document.querySelector('#authForm button[type="submit"]');
-      const toggle = document.querySelector('.auth-toggle');
+      const toggle = document.getElementById('authModeToggle');
+      const forgotLink = document.getElementById('forgotPassLink');
       
       if (authMode === 'login') {
         authMode = 'signup';
         btn.textContent = 'CRIAR CONTA';
         toggle.textContent = 'Já tem conta? Faça login.';
+        if (forgotLink) forgotLink.style.display = 'none';
       } else {
         authMode = 'login';
         btn.textContent = 'ENTRAR';
         toggle.textContent = 'Não tem conta? Crie uma agora.';
+        if (forgotLink) forgotLink.style.display = 'block';
+      }
+    }
+
+    function togglePasswordVisibility() {
+      const passInput = document.getElementById('authPass');
+      const toggleBtn = document.getElementById('togglePassBtn');
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleBtn.textContent = '🔒';
+        toggleBtn.title = "Ocultar senha";
+      } else {
+        passInput.type = 'password';
+        toggleBtn.textContent = '👁️';
+        toggleBtn.title = "Mostrar senha";
+      }
+    }
+
+    async function handleForgotPassword() {
+      const email = document.getElementById('authEmail').value;
+      if (!email) {
+        alert("Por favor, digite seu e-mail para receber o link de recuperação.");
+        document.getElementById('authEmail').focus();
+        return;
+      }
+
+      if (!confirm(`Deseja enviar um link de recuperação para ${email}?`)) return;
+
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reset_password', email })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(data.message);
+        } else {
+          alert("Erro: " + data.error);
+        }
+      } catch (err) {
+        alert("Erro ao enviar e-mail: " + err.message);
       }
     }
 
