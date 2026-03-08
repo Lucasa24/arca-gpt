@@ -2,6 +2,45 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// --- SISTEMA DE E-MAIL HÍBRIDO (SUPABASE / RESEND) ---
+async function sendWelcomeEmail(email) {
+  try {
+    // 1. Prioridade: Resend (Se a chave estiver na Vercel)
+    if (process.env.RESEND_API_KEY) {
+      console.log("[ARCA MAIL] Tentando via Resend...");
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+        },
+        body: JSON.stringify({
+          from: 'Arca <onboarding@resend.dev>', // Mudar para seu domínio quando tiver
+          to: [email],
+          subject: 'Bem-vindo à Arca',
+          html: '<strong>Você agora faz parte da Arca.</strong><p>O ritual começou. Acesse sua conta para continuar.</p>'
+        })
+      });
+      if (res.ok) return { success: true, provider: 'resend' };
+    }
+
+    // 2. Fallback: Supabase Auth (Se configurado)
+    if (supabase) {
+      console.log("[ARCA MAIL] Tentando via Supabase Auth...");
+      // O Supabase envia e-mail de confirmação automaticamente se configurado no painel
+      // Aqui apenas disparamos um link de "magic link" ou reset para testar o SMTP
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: 'https://arca-gpt.vercel.app/' }
+      });
+      if (!error) return { success: true, provider: 'supabase' };
+    }
+  } catch (e) {
+    console.warn("[ARCA MAIL] Falha ao enviar e-mail:", e.message);
+  }
+  return { success: false };
+}
+
 // Tenta carregar Supabase (se instalado e configurado)
 let supabase;
 try {
@@ -122,6 +161,43 @@ module.exports = async function handler(req, res) {
       return res.end(JSON.stringify({ url: data.url }));
     }
 
+    if (action === 'reset_password') {
+      if (!supabase) throw new Error("Supabase indisponível.");
+      if (!email) throw new Error("E-mail é obrigatório.");
+
+      // Detecta a origem para o link de redirecionamento
+      const origin = req.headers.origin || "https://arca-gpt.vercel.app";
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/#type=recovery`,
+      });
+
+      if (error) throw error;
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ 
+        success: true, 
+        message: "E-mail de recuperação enviado! Verifique sua caixa de entrada." 
+      }));
+    }
+
+    if (action === 'update_password') {
+      if (!supabase) throw new Error("Supabase indisponível.");
+      if (!access_token || !password) throw new Error("Token e nova senha são obrigatórios.");
+
+      // O Supabase permite atualizar o usuário autenticado via token
+      const { data, error } = await supabase.auth.updateUser({ password }, {
+        accessToken: access_token
+      });
+
+      if (error) throw error;
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ 
+        success: true, 
+        message: "Senha atualizada com sucesso! Agora você pode entrar." 
+      }));
+    }
+
     if (action === 'verify_token') {
       if (!supabase) throw new Error("Supabase indisponível.");
       if (!access_token) throw new Error("Token ausente.");
@@ -177,6 +253,9 @@ module.exports = async function handler(req, res) {
       };
 
       const savedUser = await createUser(newUser);
+
+      // Dispara e-mail de boas-vindas (em background, sem travar o cadastro)
+      sendWelcomeEmail(email).catch(e => console.error("[ARCA] Erro e-mail cadastro:", e.message));
 
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ 
