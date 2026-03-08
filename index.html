@@ -1101,22 +1101,31 @@
         <div id="loadingBar"></div>
       </div>
 
-      <p class="footer-note"><a href="#" onclick="showResetModal(); return false;">Resetar</a> • Memória persistente ativa</p>
+      <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer Login</a> • Memória persistente ativa</p>
     </div>
   </main>
 
-  <!-- Botão reset colado no canto inferior direito -->
-  <button id="cornerReset" type="button" aria-label="Resetar conversa" onclick="showResetModal()">▫</button>
+  <!-- Botão de acesso ao portal (login) no canto inferior direito -->
+  <button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="showAuthPortal()">🗝</button>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
   <script>
-    // Definição da função showAuthPortal para evitar ReferenceError
+    // Exibe o portal de autenticação
     function showAuthPortal() {
-        // Implementação futura de autenticação
-        console.log("Portal de autenticação invocado.");
-        // Por enquanto apenas exibe o modal de reset como placeholder ou nada
-        alert("O portal de autenticação será aberto em breve.");
+        const portal = document.getElementById('authPortal');
+        if (portal) {
+            portal.style.display = 'flex';
+            portal.classList.remove('hidden');
+            
+            // Garante que mostre as opções iniciais e esconda o form de login direto
+            const authForm = document.getElementById('authForm');
+            const portalOptions = document.getElementById('portalOptions');
+            if (authForm) authForm.style.display = 'none';
+            if (portalOptions) portalOptions.style.display = 'flex';
+        } else {
+            console.error("Portal de autenticação não encontrado no DOM.");
+        }
     }
 
     marked.setOptions({
