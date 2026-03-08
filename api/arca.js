@@ -81,9 +81,9 @@ async function handler(req, res) {
     
     // --- MIGRAÇÃO PARA RESPONSES API (BETA) ---
     // Cole o ID do seu prompt aqui (começa com pmpt_)
-    // [TEMPORÁRIO] Forçamos NULL para ignorar o Prompt ID que está com erro no Dashboard (Tools inválidas).
-    // Assim usamos o modo MANUAL (Chat Completions) que é estável.
-    const PROMPT_ID = null; // process.env.ARCA_PROMPT_ID || null; 
+    // [OPCIONAL] Se configurado, usa a Responses API (Prompt Management)
+    // Se nulo, usa o modo MANUAL (Chat Completions) que é estável e segue apenas o memory.js
+    const PROMPT_ID = process.env.ARCA_PROMPT_ID || null; 
 
     let endpoint = "https://api.openai.com/v1/responses";
     let requestBody;
@@ -91,7 +91,7 @@ async function handler(req, res) {
     // Definição global da injeção para usar em ambos os casos
     const systemInjection = { 
       role: "system", 
-      content: "DIRETRIZ DE EXTENSÃO: Resposta OBRIGATORIAMENTE LONGA (mínimo 600 palavras). Detalhe cada ponto. NÃO GERE FECHAMENTO/DESPEDIDA NO FINAL (o sistema fará isso). Pare após o ultimato." 
+      content: "DIRETRIZ DE EXTENSÃO: Resposta com densidade ajustada à complexidade. NÃO GERE FECHAMENTO/DESPEDIDA NO FINAL (o sistema fará isso). Pare após o ultimato." 
     };
 
     if (PROMPT_ID) {
@@ -159,10 +159,10 @@ async function handler(req, res) {
       endpoint = "https://api.openai.com/v1/chat/completions";
       
       // INJEÇÃO NO FALLBACK TAMBÉM!
-      // Se Responses API falhar, garantimos que o fallback TAMBÉM tenha a instrução de "longa resposta".
+      // Se Responses API falhar, garantimos que o fallback TAMBÉM tenha a instrução de "sem fechamento".
       const systemInjectionFallback = { 
         role: "system", 
-        content: "DIRETRIZ DE EMERGÊNCIA: Resposta OBRIGATORIAMENTE LONGA. Detalhe cada ponto. NÃO GERE FECHAMENTO. Pare após o ultimato." 
+        content: "DIRETRIZ DE EMERGÊNCIA: Resposta com densidade ajustada. NÃO GERE FECHAMENTO. Pare após o ultimato." 
       };
       
       requestBody = {
