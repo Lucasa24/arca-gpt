@@ -176,7 +176,8 @@ module.exports = async function handler(req, res) {
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ 
         success: true, 
-        message: "E-mail de recuperação enviado! Verifique sua caixa de entrada." 
+        message: "E-mail de recuperação enviado! Verifique sua caixa de entrada.",
+        ritual_message: "O ritual de renovação foi enviado às sombras do seu e-mail. Encontre a chave e retorne."
       }));
     }
 
