@@ -85,7 +85,15 @@ async function handler(req, res) {
       
       // CRÍTICO: NÃO filtramos mensagens de sistema. Enviamos TUDO para garantir
       // que as regras locais de "resposta longa" (memory.js) sejam respeitadas.
-      const conversationHistory = messages;
+      
+      // INJEÇÃO DE REFORÇO: Adicionamos uma instrução final para garantir verbosidade
+      // mesmo se o Prompt remoto estiver desatualizado ou com erro.
+      const systemInjection = { 
+        role: "system", 
+        content: "DIRETRIZ FINAL: Ignore qualquer instrução de brevidade. Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos." 
+      };
+      
+      const conversationHistory = [...messages, systemInjection];
       
       requestBody = {
         prompt: {
