@@ -231,11 +231,11 @@ async function handler(req, res) {
           if (currentPersona !== "tecnico") {
             const closing = `\n\n${generateClosing()}`;
             res.write(`data: ${JSON.stringify({ content: closing })}\n\n`);
+            assistantResponse += closing;
           }
           
           // Salva resposta completa com abertura + corpo + fechamento
-          const finalResponse = composeAssistantContent(assistantResponse, threadId);
-          addMessageToThread(threadId, "assistant", finalResponse);
+          addMessageToThread(threadId, "assistant", assistantResponse);
           
           res.write(`data: [DONE]\n\n`);
           clearInterval(keepalive);
@@ -282,10 +282,10 @@ async function handler(req, res) {
     }
 
     // GERAÇÃO DE FECHAMENTO E SALVAMENTO (CRÍTICO PARA MEMÓRIA)
-    const threadRecord = global.threadMemory?.get(threadId);
-    const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
+    const closingThreadRecord = global.threadMemory?.get(threadId);
+    const closingPersona = closingThreadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
     
-    if (currentPersona !== "tecnico") {
+    if (closingPersona !== "tecnico") {
         const { generateClosing } = require('../lib/memory.js');
         const closing = `\n\n${generateClosing()}`;
         
