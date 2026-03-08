@@ -79,19 +79,21 @@ async function handler(req, res) {
     let requestBody;
 
     if (PROMPT_ID) {
-      // MODO PROMPT GERENCIADO (O que você criou na tela)
-      // Filtramos as mensagens de sistema para não duplicar com as do prompt
+      // MODO PROMPT GERENCIADO (PROMPT MANAGEMENT API)
+      // Correção: Ao usar prompt.id, NÃO devemos enviar model, temperature, etc.
+      // O Prompt ID já encapsula toda a configuração.
+      
+      // Filtra mensagens de sistema para não sujar o contexto do prompt gerenciado
       const conversationHistory = messages.filter(m => m.role !== 'system');
       
       requestBody = {
         prompt: {
-          id: PROMPT_ID,
-          version: "2"
+          id: PROMPT_ID
         },
-        input: conversationHistory, // Passamos apenas a conversa
+        input: conversationHistory, // Responses API usa 'input' para o histórico
         stream: true
       };
-      console.log(`[ARCA] Usando Prompt ID: ${PROMPT_ID}`);
+      console.log(`[ARCA] Usando Prompt ID: ${PROMPT_ID} (Configurações da UI ativas)`);
     } else {
       // MODO MANUAL (Antigo)
       requestBody = {
