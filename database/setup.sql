@@ -9,7 +9,8 @@ create table if not exists public.users (
   email text unique not null,
   password text not null, -- Nota: Em produção, hash deve ser aplicado.
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  is_pro boolean default false
+  is_pro boolean default false,
+  provider text default 'email' -- 'email' ou 'google'
 );
 
 -- 2. Ativa a Segurança de Nível de Linha (O Guardião)
@@ -57,3 +58,11 @@ for all
 to public
 using (true)
 with check (true);
+
+-- ==============================================================================
+-- 🆕 ATUALIZAÇÃO: COLUNA PROVIDER (LOGIN SOCIAL)
+-- ==============================================================================
+
+-- 7. Adiciona coluna 'provider' na tabela users se não existir
+-- Execute isso se você já criou a tabela antes e está recebendo erro de coluna ausente
+alter table public.users add column if not exists provider text default 'email';
