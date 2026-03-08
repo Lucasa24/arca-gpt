@@ -1,4 +1,4 @@
-const { getThreadMessages, addMessageToThread, composeAssistantContent, generateClosing } = require('../lib/memory.js');
+const { getThreadMessages, addMessageToThread, setThreadPersona, composeAssistantContent, generateClosing } = require('../lib/memory.js');
 const { fetch } = require('undici');
 
 // arca.js — fora do handler (executa no cold start da função)
@@ -42,6 +42,14 @@ async function handler(req, res) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify({ error: "OPENAI_API_KEY ausente" }));
+    }
+
+    // [NOVO] Atualiza a persona com base no modo enviado pelo frontend
+    // Isso garante que se o usuário clicar no botão "Ritual", o backend saiba.
+    const mode = req.body?.mode; // ritual | tecnico
+    if (mode && (mode === 'ritual' || mode === 'tecnico')) {
+      console.log(`[ARCA] Atualizando persona para: ${mode}`);
+      await setThreadPersona(threadId, mode);
     }
 
     // >>> A PARTIR DAQUI é SSE <<<
