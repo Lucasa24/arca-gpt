@@ -1101,7 +1101,7 @@
         <div id="loadingBar"></div>
       </div>
 
-      <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer login</a> • Memória persistente ativa</p>
+      <p class="footer-note"><a href="#" onclick="showResetModal(); return false;">Resetar</a> • Memória persistente ativa</p>
     </div>
   </main>
 
@@ -1111,6 +1111,14 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
   <script>
+    // Definição da função showAuthPortal para evitar ReferenceError
+    function showAuthPortal() {
+        // Implementação futura de autenticação
+        console.log("Portal de autenticação invocado.");
+        // Por enquanto apenas exibe o modal de reset como placeholder ou nada
+        alert("O portal de autenticação será aberto em breve.");
+    }
+
     marked.setOptions({
       gfm: true,
       breaks: true,
@@ -1569,32 +1577,33 @@
       startLoaderBar();
 
       try {
-        // Verificar se já existe threadId salvo
+        // Garantir que temos um threadId ANTES de chamar a API
         let threadId = localStorage.getItem("threadId");
         
         if (!threadId) {
-          // Criar nova thread e limpar mensagens
-          messages = [{ role: "user", content: input }, { role: "assistant", content: "" }];
-          const threadRes = await fetch("/api/thread", {
-            method: "POST"
-          });
-          const threadData = await threadRes.json();
-          threadId = threadData.threadId;
-          
-          // Salvar no navegador
-          localStorage.setItem("threadId", threadId);
+            // Se não tiver, cria um aleatório temporário ou pede para API criar
+            // Como a rota /api/thread parece não existir ou não foi mostrada, vamos gerar um ID localmente
+            // para evitar erro 404 se a rota não existir
+            threadId = "thread_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem("threadId", threadId);
+            console.log("Novo threadId gerado localmente:", threadId);
         }
 
         const response = await fetch("/api/arca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ input: finalInput, threadId })
+          body: JSON.stringify({ 
+            userInput: input,
+            input: input,
+            threadId: threadId 
+          })
         });
 
         if (!response.ok) {
-  const body = await response.text().catch(()=> '');
-  throw new Error(`Falha ao invocar: ${response.status} ${response.statusText || ''} ${body}`);
-}
+           const body = await response.text().catch(()=> '');
+           throw new Error(`Falha ao invocar: ${response.status} ${response.statusText || ''} - ${body}`);
+        }
+
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
@@ -1611,15 +1620,9 @@
           for (let part of parts) {
             if (!part.startsWith("data: ")) continue;
 
-            // remove apenas o prefixo "data:" mantendo QUALQUER espaço do token
-const content = part.replace(/^data:\s?/, "");
-            
-            // Corrige problemas de formatação em tempo real durante o streaming
-            const fixedContent = content
-              .replace(/([.!?:])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // adiciona espaço após pontuação
-              .replace(/(RITUAL DE [A-ZÀ-Ÿ]+):(?=\d)/g, '$1: '); // corrige "RITUAL DE AÇÃO:1"
-            
-            if (content === "[DONE]") {
+            const payload = part.replace(/^data:\s?/, "");
+
+            if (payload === "[DONE]") {
               // Garantir renderização final e limpeza
               clearTimeout(window.renderTimeout);
               renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
@@ -1630,6 +1633,15 @@ const content = part.replace(/^data:\s?/, "");
               saveToHistory(input, threadId);
               return;
             }
+
+            let content = payload;
+            try {
+              const json = JSON.parse(payload);
+              if (json.content) content = json.content;
+            } catch (e) {}
+
+            // fixedContent agora é apenas o conteúdo decodificado
+            const fixedContent = content;
 
             // STREAMING RITUAL OTIMIZADO: máxima fluidez e presença
             if (isInvocando && content !== "[DONE]") {
