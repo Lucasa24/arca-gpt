@@ -83,8 +83,9 @@ async function handler(req, res) {
       // Correção: Ao usar prompt.id, NÃO devemos enviar model, temperature, etc.
       // O Prompt ID já encapsula toda a configuração.
       
-      // Filtra mensagens de sistema para não sujar o contexto do prompt gerenciado
-      const conversationHistory = messages.filter(m => m.role !== 'system');
+      // CRÍTICO: NÃO filtramos mensagens de sistema. Enviamos TUDO para garantir
+      // que as regras locais de "resposta longa" (memory.js) sejam respeitadas.
+      const conversationHistory = messages;
       
       requestBody = {
         prompt: {
@@ -93,19 +94,23 @@ async function handler(req, res) {
         input: conversationHistory, // Responses API usa 'input' para o histórico
         stream: true
       };
-      console.log(`[ARCA] Usando Prompt ID: ${PROMPT_ID} (Configurações da UI ativas)`);
+      console.log(`[ARCA] Usando Prompt ID: ${PROMPT_ID} (Configurações da UI ativas + Regras Locais)`);
     } else {
       // MODO MANUAL (Antigo)
+      endpoint = "https://api.openai.com/v1/chat/completions";
       requestBody = {
         model: userModel,
-        input: messages,
+        messages: messages,
         stream: true,
         temperature: 0.85,
         max_tokens: 16000,
+        top_p: 1.0,
+        frequency_penalty: 0.0,
+        presence_penalty: 0.3
       };
     }
 
-    console.log(`[ARCA] Tentando API Responses...`);
+    console.log(`[ARCA] Iniciando requisição para OpenAI...`);
 
     let finalRes = await fetch(endpoint, {
       method: "POST",
