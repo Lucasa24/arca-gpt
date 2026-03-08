@@ -2437,21 +2437,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         setTimeout(() => { btnTxt.classList.remove('ok','err'); btnTxt.innerHTML = iconSVG('text'); }, 1200);
       });
 
-      // Botão: copiar MARKDOWN (cru)
-      const btnMd = document.createElement('button');
-      btnMd.className = 'msg-btn icon';
-      btnMd.type = 'button';
-      btnMd.setAttribute('aria-label', 'Copiar Markdown');
-      btnMd.title = 'Copiar Markdown';
-      btnMd.innerHTML = iconSVG('md');
-      btnMd.addEventListener('click', async () => {
-        const ok = await clipboardWrite(rawMarkdown || '');
-        setIcon(btnMd, ok ? 'ok' : 'err');
-        setTimeout(() => { btnMd.classList.remove('ok','err'); btnMd.innerHTML = iconSVG('md'); }, 1200);
-      });
-
       bar.appendChild(btnTxt);
-      bar.appendChild(btnMd);
       const btnSpeak = document.createElement('button');
       btnSpeak.className = 'msg-btn icon';
       btnSpeak.type = 'button';
