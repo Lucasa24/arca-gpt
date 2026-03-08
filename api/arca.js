@@ -73,10 +73,18 @@ async function handler(req, res) {
     
     // --- MIGRAÇÃO PARA RESPONSES API (BETA) ---
     // Cole o ID do seu prompt aqui (começa com pmpt_)
-    const PROMPT_ID = process.env.ARCA_PROMPT_ID || null; // Ex: "pmpt_abc123..."
+    // [TEMPORÁRIO] Forçamos NULL para ignorar o Prompt ID que está com erro no Dashboard (Tools inválidas).
+    // Assim usamos o modo MANUAL (Chat Completions) que é estável.
+    const PROMPT_ID = null; // process.env.ARCA_PROMPT_ID || null; 
 
     let endpoint = "https://api.openai.com/v1/responses";
     let requestBody;
+
+    // Definição global da injeção para usar em ambos os casos
+    const systemInjection = { 
+      role: "system", 
+      content: "DIRETRIZ FINAL: Ignore qualquer instrução de brevidade. Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos. NÃO SEJA PREGUIÇOSO." 
+    };
 
     if (PROMPT_ID) {
       // MODO PROMPT GERENCIADO (PROMPT MANAGEMENT API)
@@ -85,13 +93,6 @@ async function handler(req, res) {
       
       // CRÍTICO: NÃO filtramos mensagens de sistema. Enviamos TUDO para garantir
       // que as regras locais de "resposta longa" (memory.js) sejam respeitadas.
-      
-      // INJEÇÃO DE REFORÇO: Adicionamos uma instrução final para garantir verbosidade
-      // mesmo se o Prompt remoto estiver desatualizado ou com erro.
-      const systemInjection = { 
-        role: "system", 
-        content: "DIRETRIZ FINAL: Ignore qualquer instrução de brevidade. Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos. NÃO SEJA PREGUIÇOSO." 
-      };
       
       const conversationHistory = [...messages, systemInjection];
       
@@ -108,7 +109,7 @@ async function handler(req, res) {
       endpoint = "https://api.openai.com/v1/chat/completions";
       requestBody = {
         model: userModel,
-        messages: messages,
+        messages: [...messages, systemInjection], // INJEÇÃO AQUI TAMBÉM!
         stream: true,
         temperature: 0.85,
         max_tokens: 16000,
@@ -116,6 +117,7 @@ async function handler(req, res) {
         frequency_penalty: 0.0,
         presence_penalty: 0.3
       };
+      console.log(`[ARCA] MODO MANUAL ATIVO (Prompt ID ignorado/nulo). Injeção de regras aplicada.`);
     }
 
     console.log(`[ARCA] Iniciando requisição para OpenAI...`);
