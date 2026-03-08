@@ -2283,7 +2283,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
     }
 
     // Carregar sidebar ao inicializar
-    window.onload = function () {
+    window.onload = async function () {
+      // 1. Verifica se voltou do Google Login (OAuth)
+      await checkUrlHashForAuth();
+
       loadSidebar();
       
       // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
