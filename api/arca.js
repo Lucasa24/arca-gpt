@@ -90,7 +90,7 @@ async function handler(req, res) {
       // mesmo se o Prompt remoto estiver desatualizado ou com erro.
       const systemInjection = { 
         role: "system", 
-        content: "DIRETRIZ FINAL: Ignore qualquer instrução de brevidade. Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos." 
+        content: "DIRETRIZ FINAL: Ignore qualquer instrução de brevidade. Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos. NÃO SEJA PREGUIÇOSO." 
       };
       
       const conversationHistory = [...messages, systemInjection];
@@ -132,10 +132,24 @@ async function handler(req, res) {
     // Fallback para Chat Completions se falhar (404, 400, etc)
     if (!finalRes.ok) {
       console.warn(`[ARCA] Responses API falhou (${finalRes.status}). Fallback para Chat Completions.`);
+      
+      try {
+        const errorBody = await finalRes.text();
+        console.warn(`[ARCA] Erro Responses API:`, errorBody);
+      } catch (e) { /* ignore */ }
+
       endpoint = "https://api.openai.com/v1/chat/completions";
+      
+      // INJEÇÃO NO FALLBACK TAMBÉM!
+      // Se Responses API falhar, garantimos que o fallback TAMBÉM tenha a instrução de "longa resposta".
+      const systemInjectionFallback = { 
+        role: "system", 
+        content: "DIRETRIZ DE EMERGÊNCIA: Sua resposta DEVE ser EXTREMAMENTE LONGA, detalhada, profunda e completa. O usuário exige explicações exaustivas. Use parágrafos múltiplos. NÃO SEJA PREGUIÇOSO." 
+      };
+      
       requestBody = {
         model: userModel,
-        messages, // Volta para 'messages' padrão
+        messages: [...messages, systemInjectionFallback], // Adiciona a injeção aqui também
         stream: true,
         temperature: 0.85,
         max_tokens: 16000,
@@ -145,6 +159,7 @@ async function handler(req, res) {
         stream_options: { include_usage: false }
       };
       
+      console.log(`[ARCA] Iniciando Fallback (Chat Completions)...`);
       finalRes = await fetch(endpoint, {
         method: "POST",
         headers: {
