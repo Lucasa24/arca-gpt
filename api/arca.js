@@ -120,14 +120,22 @@ async function handler(req, res) {
 
     console.log(`[ARCA] Iniciando requisição para OpenAI...`);
 
-    let finalRes = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${api_key}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestBody)
-    });
+    let finalRes;
+    try {
+      finalRes = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${api_key}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+    } catch (err) {
+      console.error("[ARCA] ERRO FATAL no fetch inicial:", err);
+      res.write(`data: ${JSON.stringify({ content: `⚠️ Erro de Conexão: ${err.message}` })}\n\n`);
+      res.write(`data: [DONE]\n\n`);
+      return res.end();
+    }
 
     // Fallback para Chat Completions se falhar (404, 400, etc)
     if (!finalRes.ok) {
@@ -160,14 +168,21 @@ async function handler(req, res) {
       };
       
       console.log(`[ARCA] Iniciando Fallback (Chat Completions)...`);
-      finalRes = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${api_key}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody)
-      });
+      try {
+        finalRes = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${api_key}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestBody)
+        });
+      } catch (err2) {
+        console.error("[ARCA] ERRO FATAL no fetch de Fallback:", err2);
+        res.write(`data: ${JSON.stringify({ content: `⚠️ Erro de Conexão no Fallback: ${err2.message}` })}\n\n`);
+        res.write(`data: [DONE]\n\n`);
+        return res.end();
+      }
     }
 
     if (!finalRes.ok) {
