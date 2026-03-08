@@ -25,6 +25,7 @@ async function handler(req, res) {
 
     const userInput = req.body?.userInput || req.body?.input;
     const threadId = req.body?.threadId;
+    const userId = req.body?.userId; // ID do usuário logado (email ou uuid)
     const api_key = process.env.OPENAI_API_KEY;
     console.log(`[ARCA][DEBUG] userInput: "${userInput}" (length: ${userInput?.length || 0})`);
 
@@ -60,7 +61,7 @@ async function handler(req, res) {
     // (opcional) ping keepalive
     const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
 
-    await addMessageToThread(threadId, "user", userInput);
+    await addMessageToThread(threadId, "user", userInput, userId);
     const messages = await getThreadMessages(threadId);
     
     // Log das mensagens de sistema para verificação
@@ -298,7 +299,7 @@ async function handler(req, res) {
 
     // SALVA NO HISTÓRICO (Fundamental para o modelo lembrar do que disse)
     if (assistantResponse && assistantResponse.trim()) {
-        await addMessageToThread(threadId, "assistant", assistantResponse);
+        await addMessageToThread(threadId, "assistant", assistantResponse, userId);
         console.log(`[ARCA] Resposta salva na thread ${threadId} (len: ${assistantResponse.length})`);
     }
 
