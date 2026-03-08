@@ -982,6 +982,46 @@
       .fixed-footer .input-group > button { transform: translateY(-3px); }
     }
 
+    @keyframes glow-pulse {
+      0% { box-shadow: 0 0 5px rgba(0, 191, 255, 0.2); border-color: #444; }
+      50% { box-shadow: 0 0 15px rgba(0, 191, 255, 0.6); border-color: #00bfff; }
+      100% { box-shadow: 0 0 5px rgba(0, 191, 255, 0.2); border-color: #444; }
+    }
+
+    @keyframes rotate-ritual {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .arca-plus-btn {
+      background-color: #1a1a1a !important;
+      min-width: 40px !important;
+      width: 40px !important;
+      height: 55px !important;
+      border: 1px solid #444 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      transition: all 0.3s ease !important;
+      position: relative !important;
+      overflow: hidden !important;
+      animation: glow-pulse 3s infinite ease-in-out !important;
+    }
+
+    .arca-plus-btn:hover {
+      background-color: #222 !important;
+      transform: scale(1.05) !important;
+    }
+
+    .arca-plus-btn svg {
+      width: 20px;
+      height: 20px;
+      color: #00bfff;
+      filter: drop-shadow(0 0 5px rgba(0, 191, 255, 0.8));
+      animation: rotate-ritual 4s infinite linear !important;
+    }
+
     /* Botão reset colado no canto inferior direito da página */
     #cornerReset {
       position: fixed;
@@ -1096,7 +1136,12 @@
           </div>
         </div>
         <button onclick="sendMessage()">Invocar</button>
-        <button onclick="document.getElementById('imageInput').click()" style="background-color: #4a4a4a; min-width: 30px; width: 30px; height: 55px; font-size: 0.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #777; box-shadow: 0 0 5px rgba(255,255,255,0.2);" title="Anexar imagem para análise visual">✛</button>
+        <button class="arca-plus-btn" onclick="document.getElementById('imageInput').click()" title="Anexar imagem para análise visual">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
         
 
       </div>
