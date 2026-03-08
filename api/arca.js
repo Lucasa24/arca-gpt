@@ -52,8 +52,8 @@ async function handler(req, res) {
     // (opcional) ping keepalive
     const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
 
-    addMessageToThread(threadId, "user", userInput);
-    const messages = getThreadMessages(threadId);
+    await addMessageToThread(threadId, "user", userInput);
+    const messages = await getThreadMessages(threadId);
     
     // Log das mensagens de sistema para verificação
     const systemMessages = messages.filter(m => m.role==='system');
@@ -72,16 +72,36 @@ async function handler(req, res) {
     const userModel = "gpt-4o";
     
     // --- MIGRAÇÃO PARA RESPONSES API (BETA) ---
-    // Documentação: https://developers.openai.com/api/docs/guides/migrate-to-responses
-    
+    // Cole o ID do seu prompt aqui (começa com pmpt_)
+    const PROMPT_ID = process.env.ARCA_PROMPT_ID || null; // Ex: "pmpt_abc123..."
+
     let endpoint = "https://api.openai.com/v1/responses";
-    let requestBody = {
-      model: userModel,
-      input: messages, // Responses API usa 'input' (pode ser lista de mensagens)
-      stream: true,
-      temperature: 0.85, // Parâmetros de controle
-      max_tokens: 16000, // Garante respostas longas
-    };
+    let requestBody;
+
+    if (PROMPT_ID) {
+      // MODO PROMPT GERENCIADO (O que você criou na tela)
+      // Filtramos as mensagens de sistema para não duplicar com as do prompt
+      const conversationHistory = messages.filter(m => m.role !== 'system');
+      
+      requestBody = {
+        prompt: {
+          id: PROMPT_ID,
+          version: "2"
+        },
+        input: conversationHistory, // Passamos apenas a conversa
+        stream: true
+      };
+      console.log(`[ARCA] Usando Prompt ID: ${PROMPT_ID}`);
+    } else {
+      // MODO MANUAL (Antigo)
+      requestBody = {
+        model: userModel,
+        input: messages,
+        stream: true,
+        temperature: 0.85,
+        max_tokens: 16000,
+      };
+    }
 
     console.log(`[ARCA] Tentando API Responses...`);
 
