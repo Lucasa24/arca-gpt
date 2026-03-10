@@ -1097,7 +1097,8 @@
       height: 40px; /* Aumentado proporcionalmente */
       color: #00bfff;
       filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.8));
-      animation: rotate-ritual 8s infinite linear !important;
+      animation: none !important;
+      transform-origin: 50% 50%;
     }
 
     /* Botão reset colado no canto inferior direito da página */
@@ -1335,6 +1336,62 @@
       // com limite máximo definido pelo CSS (max-height: 200px)
       textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
     }
+
+    (function initWheelSteering() {
+      const btn = document.querySelector('.arca-plus-btn');
+      if (!btn) return;
+      const svg = btn.querySelector('svg');
+      if (!svg) return;
+
+      let raf = 0;
+      let target = 0;
+      let current = 0;
+      let active = false;
+
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      const setTarget = (deg) => {
+        target = clamp(deg, -120, 120);
+        if (!raf) raf = requestAnimationFrame(tick);
+      };
+
+      const tick = () => {
+        raf = 0;
+        current = current + (target - current) * 0.28;
+        svg.style.transform = `rotate(${current}deg)`;
+        if (Math.abs(target - current) > 0.15) raf = requestAnimationFrame(tick);
+      };
+
+      const updateFromPointer = (e) => {
+        const rect = btn.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const dx = e.clientX - cx;
+        const norm = clamp(dx / (rect.width / 2), -1, 1);
+        setTarget(norm * 120);
+      };
+
+      btn.addEventListener('pointerenter', () => { active = true; });
+      btn.addEventListener('pointerleave', () => { active = false; setTarget(0); });
+      btn.addEventListener('pointermove', (e) => {
+        if (!active && e.pointerType === 'mouse') return;
+        updateFromPointer(e);
+      });
+      btn.addEventListener('pointerdown', (e) => {
+        active = true;
+        if (btn.setPointerCapture) btn.setPointerCapture(e.pointerId);
+        updateFromPointer(e);
+      });
+      const end = (e) => {
+        if (btn.releasePointerCapture) {
+          try { btn.releasePointerCapture(e.pointerId); } catch {}
+        }
+        if (e.pointerType !== 'mouse') {
+          active = false;
+          setTarget(0);
+        }
+      };
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointercancel', end);
+    })();
     
     // Função para gerar ID único de thread
     function generateThreadId() {
