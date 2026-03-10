@@ -1933,6 +1933,7 @@
           body: JSON.stringify({ 
             userInput: input,
             input: input,
+            mode: (localStorage.getItem('arcaPersonaMode') || 'ritual'),
             threadId: threadId,
             userId: userId // Envia o ID do usuário para vincular a thread
           })
