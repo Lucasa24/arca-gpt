@@ -817,8 +817,8 @@
       background: #1a1a1a;
       color: #f5f5f5;
       border: 1px solid #333;
-      /* Reserva espaço para os botões de modo no canto inferior direito */
-       padding: 0.75rem 7rem 0.75rem 0.75rem;
+      /* Aumentado padding-right para garantir que o texto não passe por baixo dos botões no PC */
+      padding: 0.75rem 8rem 0.75rem 0.75rem;
       font-size: 0.75rem;
       resize: none;
       min-height: 55px;
@@ -1038,23 +1038,32 @@
       }
       .mode-buttons .mode-btn {
         height: 12px;
-        min-width: 30px;
-        font-size: 0.5rem;
-        padding: 0 4px;
+        min-width: 12px; /* Reduzido significativamente */
+        width: auto;
+        font-size: 0.45rem;
+        padding: 0 3px;
       }
     }
     @media (max-width: 600px) {
       .input-group { align-items: center; }
       .textarea-container { position: relative; }
       textarea {
-        padding: 0.5rem 0.5rem 1.4rem; /* Abre espaço para os botões menores */
+        padding: 0.5rem 0.5rem 1.6rem; /* Aumentado padding inferior para proteger texto */
       }
     }
     @media (max-width: 400px) {
       .input-group { align-items: center; }
       .mode-buttons { right: 4px !important; bottom: 4px !important; top: auto !important; transform: none !important; }
+      .mode-buttons .mode-btn {
+        min-width: 10px;
+        font-size: 0.4rem;
+        padding: 0 2px;
+      }
       .arca-plus-btn { width: 32px !important; }
       .arca-plus-btn svg { width: 24px; height: 24px; }
+      textarea {
+        padding: 0.4rem 0.4rem 1.4rem; /* Aumentado padding inferior para proteger texto */
+      }
     }
 
     @keyframes glow-pulse {
