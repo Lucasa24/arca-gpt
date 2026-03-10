@@ -788,7 +788,7 @@
       left: 220px; /* Alinhado com o espaço da sidebar */
       right: 0;
       background: #0e0e0e;
-      padding: 8px 1rem 2px; /* Padding inferior minimizado */
+      padding: 10px 1rem; /* Padding equilibrado */
       border-top: 1px solid #333;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
       font-size: 0.85rem;
@@ -805,9 +805,9 @@
     .input-group {
       display: flex;
       flex-direction: row;
-      align-items: flex-end; /* Alinha todos os itens na base */
-      gap: 5px; /* Pequeno espaço entre os elementos */
-      max-width: 700px;
+      align-items: center; /* Centraliza verticalmente */
+      gap: 8px; /* Espaço entre os elementos */
+      max-width: 800px; /* Um pouco mais largo para acomodar tudo */
       width: 100%;
       margin: 0 auto;
     }
@@ -1022,60 +1022,39 @@
       box-shadow: 0 0 5px rgba(179,0,0,0.5);
     }
 
-    .mobile-actions {
-      display: none; /* Escondido por padrão */
-    }
-
-    /* Ajustes de alinhamento no celular: botões à direita sempre alinhados na base */
+    /* Ajustes de alinhamento no celular: botões à direita sempre alinhados no centro */
     @media (max-width: 768px) {
-      .fixed-footer .input-group { align-items: flex-end; }
-      .arca-plus-btn { width: 40px !important; }
-      .arca-plus-btn svg { width: 30px; height: 30px; }
-      
-      .fixed-footer {
-        flex-direction: column;
-      }
-      
-      .mobile-actions {
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        padding-top: 5px;
-      }
+      .input-group { align-items: center; }
+      .arca-plus-btn { width: 36px !important; }
+      .arca-plus-btn svg { width: 28px; height: 28px; }
       
       .mode-buttons {
-        position: static;
-        transform: none;
-        pointer-events: auto;
-      }
-    }
-    @media (max-width: 600px) {
-      .fixed-footer .input-group { align-items: flex-end; }
-      .textarea-container { position: relative; }
-      /* Mobile: ancorar os botões de modo no canto inferior direito da área de entrada */
-      .mode-buttons { 
-        right: 6px !important; 
-        bottom: 6px !important; 
-        top: auto !important; 
-        transform: none !important; 
+        right: 6px !important;
+        bottom: 6px !important;
+        top: auto !important;
+        transform: none !important;
         padding: 1px;
         gap: 2px;
       }
       .mode-buttons .mode-btn {
-        height: 10px;
-        min-width: 28px;
-        font-size: 0.45rem;
-        padding: 0 3px;
+        height: 12px;
+        min-width: 30px;
+        font-size: 0.5rem;
+        padding: 0 4px;
       }
-      .arca-plus-btn { width: 35px !important; }
-      .arca-plus-btn svg { width: 28px; height: 28px; }
+    }
+    @media (max-width: 600px) {
+      .input-group { align-items: center; }
+      .textarea-container { position: relative; }
       textarea {
-        padding: 0.5rem 0.5rem 1.2rem; /* Abre espaço para os botões menores */
+        padding: 0.5rem 0.5rem 1.4rem; /* Abre espaço para os botões menores */
       }
     }
     @media (max-width: 400px) {
-      .fixed-footer .input-group { align-items: flex-end; }
-      .mode-buttons { right: 6px !important; bottom: 6px !important; top: auto !important; transform: none !important; }
+      .input-group { align-items: center; }
+      .mode-buttons { right: 4px !important; bottom: 4px !important; top: auto !important; transform: none !important; }
+      .arca-plus-btn { width: 32px !important; }
+      .arca-plus-btn svg { width: 24px; height: 24px; }
     }
 
     @keyframes glow-pulse {
@@ -1092,8 +1071,8 @@
     .arca-plus-btn {
       background: transparent !important;
       min-width: 0 !important;
-      width: 50px !important;
-      height: 55px !important;
+      width: 36px !important;
+      height: 36px !important;
       border: none !important;
       display: inline-flex !important;
       align-items: center !important;
@@ -1110,10 +1089,10 @@
     }
 
     .arca-plus-btn svg {
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
       color: #00bfff;
-      filter: drop-shadow(0 0 10px rgba(0, 191, 255, 1));
+      filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.8));
       animation: rotate-ritual 8s infinite linear !important;
     }
 
@@ -1150,25 +1129,26 @@
     .invocar-btn {
       background: linear-gradient(180deg, #b30000, #800000);
       border: 1px solid #ff4d4d;
-      border-bottom: 3px solid #4d0000;
+      border-bottom: 2px solid #4d0000;
       color: #fff;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       cursor: pointer;
-      letter-spacing: 1.5px;
-      padding: 0.5rem 1rem;
-      min-height: 44px; /* Altura mínima reduzida para mobile */
-      height: auto;
-      min-width: 100px;
+      letter-spacing: 1px;
+      padding: 0 1rem;
+      height: 36px; /* Altura reduzida e centralizada */
+      min-width: 80px;
       clip-path: polygon(0% 15%, 15% 0%, 85% 0%, 100% 15%, 100% 100%, 0% 100%);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: all 0.2s ease;
       animation: float-ark 4s ease-in-out infinite;
       text-shadow: 0 0 5px rgba(0,0,0,0.7);
-      align-self: stretch;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .invocar-btn:hover {
-      transform: scale(1.02);
-      box-shadow: 0 5px 15px rgba(255, 77, 77, 0.3);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
     }
   </style>
 </head>
@@ -1252,6 +1232,10 @@
       <div class="input-group">
         <div class="textarea-container" style="position: relative; flex: 1;">
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
+          <div class="mode-buttons">
+            <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
+            <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
+          </div>
         </div>
         <button onclick="sendMessage()" class="invocar-btn">Invocar</button>
         <button class="arca-plus-btn" onclick="document.getElementById('imageInput').click()" title="Anexar imagem para análise visual">
@@ -1261,12 +1245,6 @@
              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
            </svg>
          </button>
-      </div>
-      <div class="mobile-actions">
-        <div class="mode-buttons">
-          <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
-          <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
-        </div>
       </div>
         
 
@@ -1280,7 +1258,7 @@
         <div id="loadingBar"></div>
       </div>
 
-      <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer Login</a> • Memória persistente ativa</p>
+      <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer Login</a> • </p>
     </div>
   </main>
 
