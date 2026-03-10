@@ -1125,15 +1125,17 @@
       #cornerReset { 
         right: 4px; 
         bottom: 4px; 
-        width: 12px; /* Bem menor */
-        height: 12px; /* Bem menor */
-        min-width: 12px; 
-        font-size: 8px; /* Fonte mínima */
-        border-radius: 50%; /* Redondo */
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 14px !important; /* Tamanho fixo */
+        height: 14px !important; /* Altura igual para círculo perfeito */
+        min-width: 14px !important; 
+        min-height: 14px !important;
+        font-size: 8px; /* Ícone pequeno */
+        border-radius: 50% !important; /* Força círculo perfeito */
+        padding: 0 !important;
+        display: grid;
+        place-items: center;
+        line-height: 1;
+        overflow: hidden; /* Corta qualquer excesso */
       }
     }
 
