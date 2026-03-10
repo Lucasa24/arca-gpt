@@ -846,38 +846,114 @@
     .mode-buttons-container {
       display: flex;
       justify-content: center;
-      margin-top: 4px; /* Margem reduzida */
       width: 100%;
+      margin-top: 4px;
+      padding-bottom: 2px;
     }
 
-    .mode-buttons {
-      display: flex;
-      gap: 6px; /* Espaço entre botões reduzido */
-      padding: 2px; /* Padding reduzido */
-      pointer-events: auto;
-    }
-
-    .mode-buttons .mode-btn {
-      background: #333;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 2px 8px; /* Padding interno reduzido */
-      font-size: 0.6rem; /* Fonte miniaturizada */
-      cursor: pointer;
-      opacity: 0.7;
-      transition: all 0.2s ease;
-      height: 18px; /* Altura reduzida */
-      min-width: 40px; /* Largura mínima reduzida */
+    .mode-peteca {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
+      min-height: 14px;
     }
 
-    .mode-buttons .mode-btn.active {
-      background: #b30000;
+    .mode-peteca .mode-peteca-btn {
+      width: 14px;
+      height: 14px;
+      min-width: 14px;
+      min-height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.16), rgba(255,255,255,0.06) 35%, rgba(0,0,0,0.18) 70%);
+      padding: 0;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      opacity: 0.75;
+      box-shadow: 0 0 10px rgba(0,0,0,0.35);
+      transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease;
+      letter-spacing: 0;
+    }
+
+    .mode-peteca .mode-peteca-btn:hover {
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), rgba(255,255,255,0.08) 35%, rgba(0,0,0,0.18) 70%);
+      transform: scale(1.08);
       opacity: 1;
-      box-shadow: 0 0 8px rgba(179,0,0,0.4);
+      border-color: rgba(255,255,255,0.32);
+    }
+
+    .mode-peteca .mode-peteca-btn:active { transform: scale(0.98); }
+
+    .mode-peteca .mode-peteca-btn::after {
+      content: '';
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.55);
+      box-shadow: 0 0 6px rgba(255,255,255,0.25);
+    }
+
+    .mode-peteca-menu {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(6px) scale(0.98);
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      gap: 6px;
+      padding: 3px 4px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 6px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.45);
+      transition: opacity 0.14s ease, transform 0.14s ease;
+      z-index: 120;
+      white-space: nowrap;
+    }
+
+    .mode-peteca.open .mode-peteca-menu {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .mode-peteca:hover .mode-peteca-menu {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+        pointer-events: auto;
+      }
+    }
+
+    .mode-peteca-menu .mode-btn {
+      background: rgba(51,51,51,0.85);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 4px;
+      padding: 0 6px;
+      font-size: 0.6rem;
+      cursor: pointer;
+      opacity: 0.85;
+      transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+      height: 14px;
+      min-width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .mode-peteca-menu .mode-btn.active {
+      background: rgba(179,0,0,0.92);
+      opacity: 1;
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 0 10px rgba(179,0,0,0.25);
     }
 
     button {
@@ -1042,6 +1118,8 @@
         align-items: center;
         justify-content: center;
       }
+      .mode-peteca-btn { width: 14px; height: 14px; min-width: 14px; min-height: 14px; }
+      .mode-peteca-menu .mode-btn { height: 14px; min-width: 36px; font-size: 0.6rem; padding: 0 6px; }
     }
     @media (max-width: 600px) {
       .input-group { align-items: center; }
@@ -1266,9 +1344,12 @@
          </button>
       </div>
       <div class="mode-buttons-container">
-        <div class="mode-buttons">
-          <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
-          <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
+        <div class="mode-peteca" id="modePeteca">
+          <button type="button" class="mode-peteca-btn" id="modePetecaBtn" aria-label="Alternar modos" aria-expanded="false"></button>
+          <div class="mode-peteca-menu" id="modePetecaMenu">
+            <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
+            <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
+          </div>
         </div>
       </div>
       <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
@@ -1391,6 +1472,37 @@
       };
       btn.addEventListener('pointerup', end);
       btn.addEventListener('pointercancel', end);
+    })();
+
+    (function initModePeteca() {
+      const wrap = document.getElementById('modePeteca');
+      const btn = document.getElementById('modePetecaBtn');
+      const menu = document.getElementById('modePetecaMenu');
+      if (!wrap || !btn || !menu) return;
+
+      const setOpen = (v) => {
+        wrap.classList.toggle('open', v);
+        btn.setAttribute('aria-expanded', v ? 'true' : 'false');
+      };
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(!wrap.classList.contains('open'));
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) setOpen(false);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setOpen(false);
+      });
+
+      menu.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t && t.closest && t.closest('button')) setOpen(false);
+      });
     })();
     
     // Função para gerar ID único de thread
@@ -3144,7 +3256,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
       if (userInput) {
         // Aplicar ao carregar a página
         autoResizeTextarea();
-        positionModeButtons();
         
         // Aplicar quando o usuário digita
         userInput.addEventListener('input', autoResizeTextarea);
@@ -3152,15 +3263,15 @@ div.innerHTML = DOMPurify.sanitize(html, {
         // Aplicar quando o usuário cola texto
         userInput.addEventListener('paste', function() {
           // Pequeno delay para garantir que o conteúdo colado seja processado
-          setTimeout(() => { autoResizeTextarea(); positionModeButtons(); }, 10);
+          setTimeout(() => { autoResizeTextarea(); }, 10);
         });
       }
       
       // Atualizar posicionamento em mudanças de tamanho/rotação (mobile)
-      window.addEventListener('resize', positionModeButtons);
-      window.addEventListener('orientationchange', () => setTimeout(positionModeButtons, 60));
+      window.addEventListener('resize', autoResizeTextarea);
+      window.addEventListener('orientationchange', () => setTimeout(autoResizeTextarea, 60));
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', positionModeButtons);
+        window.visualViewport.addEventListener('resize', autoResizeTextarea);
       }
     });
     
