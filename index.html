@@ -1037,32 +1037,32 @@
         gap: 2px;
       }
       .mode-buttons .mode-btn {
-        height: 10px; /* Comprimento vertical mínimo */
-        min-width: 25px; /* Largura mínima */
-        font-size: 0.4rem;
-        padding: 0 2px;
+        height: 6px; /* Comprimento vertical absoluto no celular */
+        min-width: 15px; /* Comprimento horizontal absoluto no celular */
+        font-size: 0.3rem;
+        padding: 0 1px;
       }
     }
     @media (max-width: 600px) {
       .input-group { align-items: center; }
       .textarea-container { position: relative; }
       textarea {
-        padding: 0.5rem 0.5rem 1.2rem; /* Ajustado para os novos botões menores */
+        padding: 0.5rem 0.5rem 0.8rem; /* Ajustado para botões quase invisíveis */
       }
     }
     @media (max-width: 400px) {
       .input-group { align-items: center; }
-      .mode-buttons { right: 4px !important; bottom: 4px !important; top: auto !important; transform: none !important; }
+      .mode-buttons { right: 2px !important; bottom: 2px !important; top: auto !important; transform: none !important; }
       .mode-buttons .mode-btn {
-        height: 8px; /* Comprimento vertical extremo */
-        min-width: 20px;
-        font-size: 0.35rem;
-        padding: 0 1px;
+        height: 5px; /* Limite da percepção humana */
+        min-width: 12px;
+        font-size: 0.25rem;
+        padding: 0;
       }
       .arca-plus-btn { width: 32px !important; }
       .arca-plus-btn svg { width: 24px; height: 24px; }
       textarea {
-        padding: 0.4rem 0.4rem 1rem; /* Ajustado para os novos botões menores */
+        padding: 0.4rem 0.4rem 0.6rem; /* Ajustado para botões quase invisíveis */
       }
     }
 
