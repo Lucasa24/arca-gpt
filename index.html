@@ -1163,6 +1163,17 @@
       position: relative !important;
       overflow: visible !important;
       align-self: center; /* Garante alinhamento vertical no flex container */
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .arca-plus-btn:focus,
+    .arca-plus-btn:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
     }
 
     .arca-plus-btn:hover {
