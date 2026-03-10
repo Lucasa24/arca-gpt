@@ -1022,11 +1022,32 @@
       box-shadow: 0 0 5px rgba(179,0,0,0.5);
     }
 
+    .mobile-actions {
+      display: none; /* Escondido por padrão */
+    }
+
     /* Ajustes de alinhamento no celular: botões à direita sempre alinhados na base */
     @media (max-width: 768px) {
       .fixed-footer .input-group { align-items: flex-end; }
       .arca-plus-btn { width: 40px !important; }
       .arca-plus-btn svg { width: 30px; height: 30px; }
+      
+      .fixed-footer {
+        flex-direction: column;
+      }
+      
+      .mobile-actions {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        padding-top: 5px;
+      }
+      
+      .mode-buttons {
+        position: static;
+        transform: none;
+        pointer-events: auto;
+      }
     }
     @media (max-width: 600px) {
       .fixed-footer .input-group { align-items: flex-end; }
@@ -1229,14 +1250,8 @@
 
     <div class="fixed-footer">
       <div class="input-group">
-        <input type="file" id="imageInput" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
-        
         <div class="textarea-container" style="position: relative; flex: 1;">
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
-          <div class="mode-buttons">
-            <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
-            <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
-          </div>
         </div>
         <button onclick="sendMessage()" class="invocar-btn">Invocar</button>
         <button class="arca-plus-btn" onclick="document.getElementById('imageInput').click()" title="Anexar imagem para análise visual">
@@ -1246,6 +1261,13 @@
              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
            </svg>
          </button>
+      </div>
+      <div class="mobile-actions">
+        <div class="mode-buttons">
+          <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
+          <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
+        </div>
+      </div>
         
 
       </div>
