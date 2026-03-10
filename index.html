@@ -788,7 +788,7 @@
       left: 220px; /* Alinhado com o espaço da sidebar */
       right: 0;
       background: #0e0e0e;
-      padding: 10px 1rem; /* Padding equilibrado */
+      padding: 6px 1rem; /* Padding reduzido para um footer slim */
       border-top: 1px solid #333;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
       font-size: 0.85rem;
@@ -846,14 +846,14 @@
     .mode-buttons-container {
       display: flex;
       justify-content: center;
-      margin-top: 8px;
+      margin-top: 4px; /* Margem reduzida */
       width: 100%;
     }
 
     .mode-buttons {
       display: flex;
-      gap: 10px;
-      padding: 4px;
+      gap: 6px; /* Espaço entre botões reduzido */
+      padding: 2px; /* Padding reduzido */
       pointer-events: auto;
     }
 
@@ -861,14 +861,14 @@
       background: #333;
       color: white;
       border: none;
-      border-radius: 4px;
-      padding: 4px 12px; /* Padding ajustado */
-      font-size: 0.7rem; /* Fonte sutil */
+      border-radius: 3px;
+      padding: 2px 8px; /* Padding interno reduzido */
+      font-size: 0.6rem; /* Fonte miniaturizada */
       cursor: pointer;
       opacity: 0.7;
       transition: all 0.2s ease;
-      height: 24px; /* Altura slim */
-      min-width: 50px; /* Largura otimizada */
+      height: 18px; /* Altura reduzida */
+      min-width: 40px; /* Largura mínima reduzida */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -981,7 +981,7 @@
       }
       
       .fixed-footer {
-        padding: 0.5rem 0.75rem;
+        padding: 4px 0.75rem;
       }
       
       button {
@@ -1029,13 +1029,13 @@
       .arca-plus-btn svg { width: 28px; height: 28px; }
       
       .mode-buttons-container {
-        margin-top: 5px;
+        margin-top: 3px;
       }
       .mode-buttons .mode-btn {
-        height: 22px !important;
-        min-width: 40px !important;
-        font-size: 0.6rem !important;
-        padding: 0 6px !important;
+        height: 16px !important;
+        min-width: 35px !important;
+        font-size: 0.5rem !important;
+        padding: 0 4px !important;
       }
     }
     @media (max-width: 600px) {
@@ -1044,8 +1044,9 @@
     @media (max-width: 400px) {
       .input-group { align-items: center; }
       .mode-buttons .mode-btn {
-        height: 20px !important;
-        font-size: 0.55rem !important;
+        height: 14px !important;
+        min-width: 30px !important;
+        font-size: 0.45rem !important;
       }
       .arca-plus-btn { width: 32px !important; }
       .arca-plus-btn svg { width: 24px; height: 24px; }
