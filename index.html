@@ -950,7 +950,7 @@
       textarea {
         font-size: 0.7rem;
         min-height: 44px; /* Mais slim e alinhado */
-        padding: 0.5rem 0.5rem 1.6rem; /* Reduzido padding inferior com botões menores */
+        padding: 0.5rem 0.5rem 1.2rem; /* Espaço mínimo para botões super slim */
       }
     }
     
@@ -972,7 +972,7 @@
 
       textarea {
         min-height: 40px;
-        padding: 0.4rem 0.4rem 1.4rem; /* Reduzido padding inferior com botões menores */
+        padding: 0.4rem 0.4rem 1rem; /* Espaço mínimo para botões super slim */
       }
     }
 
@@ -1171,9 +1171,9 @@
         
         <div class="textarea-container" style="position: relative; flex: 1;">
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
-          <div class="mode-buttons" style="position: absolute; top: 50%; transform: translateY(-50%); right: 8px; display: flex; gap: 4px; opacity: 1; z-index: 10; background: rgba(0,0,0,0.3); padding: 2px; border-radius: 3px;">
-            <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active" style="background: #b30000; color: white; border: none; border-radius: 2px; padding: 0 4px; font-size: 0.55rem; cursor: pointer; opacity: 1; transition: all 0.2s ease; box-shadow: 0 0 3px rgba(179,0,0,0.5); height: 12px; min-width: 32px; line-height: 12px; display: flex; align-items: center; justify-content: center;">Ritual</button>
-            <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn" style="background: #333; color: white; border: none; border-radius: 2px; padding: 0 4px; font-size: 0.55rem; cursor: pointer; opacity: 0.8; transition: all 0.2s ease; box-shadow: 0 0 3px rgba(0,0,0,0.5); height: 12px; min-width: 32px; line-height: 12px; display: flex; align-items: center; justify-content: center;">Técnico</button>
+          <div class="mode-buttons" style="position: absolute; top: 50%; transform: translateY(-50%); right: 8px; display: flex; gap: 3px; opacity: 1; z-index: 10; background: rgba(0,0,0,0.3); padding: 1px; border-radius: 2px;">
+            <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active" style="background: #b30000; color: white; border: none; border-radius: 2px; padding: 0 3px; font-size: 0.45rem; cursor: pointer; opacity: 1; transition: all 0.2s ease; box-shadow: 0 0 2px rgba(179,0,0,0.5); height: 10px; min-width: 28px; line-height: 10px; display: flex; align-items: center; justify-content: center;">Ritual</button>
+            <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn" style="background: #333; color: white; border: none; border-radius: 2px; padding: 0 3px; font-size: 0.45rem; cursor: pointer; opacity: 0.8; transition: all 0.2s ease; box-shadow: 0 0 2px rgba(0,0,0,0.5); height: 10px; min-width: 28px; line-height: 10px; display: flex; align-items: center; justify-content: center;">Técnico</button>
           </div>
         </div>
         <button onclick="sendMessage()" class="invocar-btn">Invocar</button>
