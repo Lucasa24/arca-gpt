@@ -1041,6 +1041,8 @@
     }
     @media (max-width: 600px) {
       .input-group { align-items: center; }
+      /* Ajuste fino para alinhar o botão invocar mais à direita no mobile */
+      .invocar-btn { margin-left: 4px; }
     }
     @media (max-width: 400px) {
       .input-group { align-items: center; }
@@ -1051,6 +1053,7 @@
       }
       .arca-plus-btn { width: 32px !important; }
       .arca-plus-btn svg { width: 24px; height: 24px; }
+      .invocar-btn { margin-left: 2px; padding: 0 0.8rem; }
     }
 
     @keyframes glow-pulse {
@@ -1119,7 +1122,19 @@
       opacity: 1;
     }
     @media (max-width: 600px) {
-      #cornerReset { right: 6px; bottom: 6px; width: 20px; height: 20px; min-width: 20px; font-size: 11px; }
+      #cornerReset { 
+        right: 4px; 
+        bottom: 4px; 
+        width: 12px; /* Bem menor */
+        height: 12px; /* Bem menor */
+        min-width: 12px; 
+        font-size: 8px; /* Fonte mínima */
+        border-radius: 50%; /* Redondo */
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     }
 
     @keyframes float-ark {
