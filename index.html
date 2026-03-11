@@ -922,14 +922,6 @@
       pointer-events: auto;
     }
 
-    @media (hover: hover) and (pointer: fine) {
-      .mode-peteca:hover .mode-peteca-menu {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1);
-        pointer-events: auto;
-      }
-    }
-
     .mode-peteca-menu .mode-btn {
       background: rgba(51,51,51,0.85);
       color: #fff;
@@ -1496,9 +1488,15 @@
         btn.setAttribute('aria-expanded', v ? 'true' : 'false');
       };
 
+      btn.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse') setOpen(true);
+      });
+
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        const finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (finePointer) return setOpen(true);
         setOpen(!wrap.classList.contains('open'));
       });
 
