@@ -695,35 +695,44 @@
 
     /* Ícones pequenos e clicáveis */
     #response .msg .msg-btn.icon {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       padding: 0;
       display: grid;
       place-items: center;
-      border-radius: 6px;
-      background: rgba(255,255,255,0.06);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px 16px 12px 16px;
+      background: transparent;
+      color: #00bfff;
+      border: 1px solid rgba(0,191,255,0.22);
+      box-shadow: none;
+      opacity: 0.85;
+      transition: background 0.15s ease, opacity 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
     }
-    #response .msg .msg-btn.icon:hover { background: rgba(255,255,255,0.12); }
-    #response .msg .msg-btn.icon svg { width: 13px; height: 13px; fill: currentColor; }
+    #response .msg .msg-btn.icon:hover { background: rgba(0,191,255,0.10); opacity: 1; transform: translateY(-1px); border-color: rgba(0,191,255,0.35); }
+    #response .msg .msg-btn.icon:active { transform: translateY(0); opacity: 0.9; }
+    #response .msg .msg-btn.icon svg { width: 12px; height: 12px; fill: currentColor; filter: drop-shadow(0 0 4px rgba(0,191,255,0.35)); }
 
     /* feedback ok/erro (mantém o teu visual) */
     #response .msg .msg-btn.icon.ok {
-      color: #4ecdc4; border-color: rgba(78,205,196,0.5); background: rgba(78,205,196,0.12);
+      color: #4ecdc4; border-color: rgba(78,205,196,0.55); background: rgba(78,205,196,0.10);
     }
     #response .msg .msg-btn.icon.err {
-      color: #ff6b6b; border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.12);
+      color: #ff6b6b; border-color: rgba(255,107,107,0.55); background: rgba(255,107,107,0.10);
     }
 
     /* Acessibilidade */
-    #response .msg .msg-btn:focus-visible { outline: 2px solid #4ecdc4; outline-offset: 2px; }
+    #response .msg .msg-btn:focus-visible { outline: 2px solid rgba(0,191,255,0.55); outline-offset: 2px; }
 
     /* Mobile – um pouco mais compacto */
     @media (max-width: 600px) {
       #response .msg .msg-toolbar { gap: 6px; margin-top: 6px; }
-      #response .msg .msg-btn.icon { width: 20px; height: 20px; }
-      #response .msg .msg-btn.icon svg { width: 12px; height: 12px; }
+      #response .msg .msg-btn.icon { width: 18px; height: 18px; }
+      #response .msg .msg-btn.icon svg { width: 11px; height: 11px; }
     }
 
     /* Badge da linguagem e botão copiar nos blocos de código */
