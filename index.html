@@ -2548,9 +2548,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
     }
 
     function closeModal() {
-      document.getElementById("resetModal").style.display = "none";
-      document.getElementById("loginModal").style.display = "none";
-      document.getElementById("newTravessiaModal").style.display = "none";
+      const ids = ["resetModal", "loginModal", "newTravessiaModal"];
+      ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+      });
+      const input = document.getElementById("travessiaName");
+      if (input) input.value = "";
     }
     
     function confirmNewTravessia() {
