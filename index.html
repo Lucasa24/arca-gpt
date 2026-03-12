@@ -795,6 +795,17 @@
       margin-left: 2px;
     }
 
+    .invocando-hint {
+      font-size: 0.72rem;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: rgba(0,191,255,0.75);
+      margin: 0 0 0.35rem 0;
+      opacity: 0.9;
+      user-select: none;
+      pointer-events: none;
+    }
+
     @keyframes blink {
       0%, 50% { opacity: 1; }
       51%, 100% { opacity: 0; }
@@ -1495,6 +1506,7 @@
   <script>
     let messages = [];
     let isInvocando = false;
+    let invocandoHintActive = false;
     let loaderInterval = null;
     let progress = 0;
     let userLoggedIn = false;
@@ -2081,7 +2093,8 @@
       // Adicionar mensagem do usuário e mensagem "Invocando..."
       typewriterReset();
       messages.push({ role: "user", content: input }); // Mantém o input original na interface
-      messages.push({ role: "assistant", content: "Invocando..." });
+      messages.push({ role: "assistant", content: "" });
+      invocandoHintActive = true;
       renderMessagesWithLiveMarkdown(); // já mostra as duas
       
       // INICIA O RITUAL DA BARRA
@@ -2145,6 +2158,7 @@
               // Garantir renderização final e limpeza
               clearTimeout(window.renderTimeout);
               stopLoaderBar();
+              invocandoHintActive = false;
               renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
               
               document.getElementById("userInput").value = "";
@@ -2166,8 +2180,7 @@
             // STREAMING RITUAL OTIMIZADO: máxima fluidez e presença
             if (isInvocando && content !== "[DONE]") {
               const idx = messages.length - 1;
-              if (messages[idx].content === "Invocando..." || messages[idx].content === "") {
-                // Remove "Invocando..." e inicia resposta real
+              if (messages[idx].content === "") {
                 messages[idx].content = fixedContent;
                 renderMessagesWithLiveMarkdown(true); // true = streaming ativo
                 
@@ -2314,7 +2327,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           }
           
           const html = marked.parse(content);
-          div.innerHTML = DOMPurify.sanitize(html, {
+          const safeHtml = DOMPurify.sanitize(html, {
             ALLOWED_TAGS: [
               'p','strong','em','ul','ol','li',
               'h1','h2','h3','h4','h5','h6',
@@ -2322,6 +2335,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
             ],
             ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
           });
+          const prefix = (isStreaming && isLastAssistantMessage && invocandoHintActive) ? "<div class='invocando-hint'>Invocando...</div>" : "";
+          div.innerHTML = prefix + safeHtml;
           enhanceCodeBlocks(div);
           hardenLinks(div);
           attachMessageToolbar(div, raw);
