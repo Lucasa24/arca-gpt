@@ -1619,6 +1619,83 @@
       }
       messages[idx].content += chunk;
     }
+
+    const typewriterState = {
+      enabled: true,
+      raf: 0,
+      threadId: null,
+      idx: -1,
+      shown: 0,
+      target: "",
+      isStreaming: false,
+      lastTs: 0
+    };
+
+    function typewriterReset() {
+      if (typewriterState.raf) cancelAnimationFrame(typewriterState.raf);
+      typewriterState.raf = 0;
+      typewriterState.threadId = null;
+      typewriterState.idx = -1;
+      typewriterState.shown = 0;
+      typewriterState.target = "";
+      typewriterState.isStreaming = false;
+      typewriterState.lastTs = 0;
+    }
+
+    function typewriterSafeSlice(md, n) {
+      let s = (md || "").slice(0, Math.max(0, n | 0));
+      const fences = (s.match(/```/g) || []).length;
+      if (fences % 2 === 1) s += "\n```";
+      return s;
+    }
+
+    function typewriterSetTarget(threadId, idx, target, isStreaming) {
+      if (!typewriterState.enabled) {
+        renderMessagesWithLiveMarkdown(!!isStreaming);
+        return;
+      }
+
+      if (typewriterState.threadId !== threadId || typewriterState.idx !== idx) {
+        typewriterState.threadId = threadId;
+        typewriterState.idx = idx;
+        typewriterState.shown = 0;
+        typewriterState.lastTs = 0;
+      }
+
+      typewriterState.target = target || "";
+      typewriterState.isStreaming = !!isStreaming;
+      typewriterState.shown = typewriterState.target.length;
+
+      if (typewriterState.raf) cancelAnimationFrame(typewriterState.raf);
+      typewriterState.raf = 0;
+      renderMessagesWithLiveMarkdown(typewriterState.isStreaming);
+    }
+
+    function typewriterFinish() {
+      if (!typewriterState.enabled) return;
+      typewriterState.shown = (typewriterState.target || "").length;
+      typewriterState.isStreaming = false;
+      renderMessagesWithLiveMarkdown(false);
+      typewriterReset();
+    }
+
+    function typewriterTick(ts) {
+      typewriterState.raf = 0;
+
+      const cps = (window.innerWidth <= 768) ? 70 : 110;
+      const dt = typewriterState.lastTs ? (ts - typewriterState.lastTs) : 16;
+      typewriterState.lastTs = ts;
+      const inc = Math.max(1, Math.round((dt * cps) / 1000));
+
+      const targetLen = (typewriterState.target || "").length;
+      typewriterState.shown = Math.min(targetLen, typewriterState.shown + inc);
+
+      renderMessagesWithLiveMarkdown(typewriterState.isStreaming);
+
+      if (typewriterState.shown < targetLen) {
+        typewriterState.raf = requestAnimationFrame(typewriterTick);
+      }
+    }
     
     // Barra linear progressiva, nunca para nem oscila, só finaliza em 100% quando "invocando..." some.
     function startLoaderBar() {
@@ -2002,6 +2079,7 @@
 
       // Fluxo normal sem imagem
       // Adicionar mensagem do usuário e mensagem "Invocando..."
+      typewriterReset();
       messages.push({ role: "user", content: input }); // Mantém o input original na interface
       messages.push({ role: "assistant", content: "Invocando..." });
       renderMessagesWithLiveMarkdown(); // já mostra as duas
@@ -2066,7 +2144,7 @@
             if (payload === "[DONE]") {
               // Garantir renderização final e limpeza
               clearTimeout(window.renderTimeout);
-              renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
+              typewriterFinish();
               
               document.getElementById("userInput").value = "";
               // Resetar o tamanho do textarea para o padrão
@@ -2090,7 +2168,7 @@
               if (messages[idx].content === "Invocando...") {
                 // Remove "Invocando..." e inicia resposta real
                 messages[idx].content = fixedContent;
-                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+                typewriterSetTarget(threadId, idx, messages[idx].content, true);
                 
                 // Remove barra de loading no primeiro token real
                 window.requestAnimationFrame(() => {
@@ -2099,12 +2177,7 @@
               } else {
                 // Acumula tokens com fluidez natural
                 safeAppend(idx, fixedContent);
-                
-                // Renderização otimizada: debounce inteligente para performance
-                clearTimeout(window.renderTimeout);
-                window.renderTimeout = setTimeout(() => {
-                  renderMessagesWithLiveMarkdown(true); // true = streaming ativo
-                }, 16); // 60fps para máxima suavidade
+                typewriterSetTarget(threadId, idx, messages[idx].content, true);
               }
               
               // 💾 AUTO-SAVE: Salvar progresso durante streaming
@@ -2115,11 +2188,7 @@
             } else {
               // Streaming normal fora do estado de invocação
               safeAppend(messages.length - 1, fixedContent);
-              
-              clearTimeout(window.renderTimeout);
-              window.renderTimeout = setTimeout(() => {
-                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
-              }, 16);
+              typewriterSetTarget(threadId, messages.length - 1, messages[messages.length - 1].content, true);
             }
           }
         }
@@ -2218,6 +2287,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
           
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // preserve o MD cru para copiar depois
+          if (typewriterState.enabled && typewriterState.idx === index && msg.role === "assistant") {
+            content = typewriterSafeSlice(content || "", Math.min(typewriterState.shown, (content || "").length));
+          }
           
           // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
