@@ -2217,6 +2217,8 @@
         }
       } catch (err) {
         stopLoaderBar();
+        invocandoHintActive = false;
+        renderMessagesWithLiveMarkdown(false);
         responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
       }
     }
@@ -2302,7 +2304,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
           
           // Aplicar animação de streaming na última mensagem do assistente
           const isLastAssistantMessage = index === messages.length - 1 && msg.role === "assistant";
-          if (isStreaming && isLastAssistantMessage) {
+          const showInvocandoHint = invocandoHintActive && isLastAssistantMessage;
+          if ((isStreaming || showInvocandoHint) && isLastAssistantMessage) {
             div.classList.add("streaming-active");
           }
           
@@ -2335,7 +2338,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
             ],
             ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
           });
-          const prefix = (isStreaming && isLastAssistantMessage && invocandoHintActive) ? "<div class='invocando-hint'>Invocando...</div>" : "";
+          const prefix = showInvocandoHint ? "<div class='invocando-hint'>Invocando...</div>" : "";
           div.innerHTML = prefix + safeHtml;
           enhanceCodeBlocks(div);
           hardenLinks(div);
