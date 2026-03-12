@@ -6,7 +6,19 @@ module.exports = async function handler(req, res) {
     return res.end();
   }
 
-  const { threadId } = req.body || {};
+  let body = req.body;
+  if (!body) {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(Buffer.from(chunk));
+    const raw = Buffer.concat(chunks).toString('utf8');
+    try { body = raw ? JSON.parse(raw) : {}; } catch { body = {}; }
+  }
+  const { threadId } = body || {};
+  if (!threadId) {
+    res.setHeader('Content-Type', 'application/json');
+    res.statusCode = 400;
+    return res.end(JSON.stringify({ error: "threadId ausente" }));
+  }
 
   try {
     const messages = getThreadMessages(threadId);
