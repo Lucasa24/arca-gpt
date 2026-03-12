@@ -1621,7 +1621,7 @@
     }
 
     const typewriterState = {
-      enabled: true,
+      enabled: false,
       raf: 0,
       threadId: null,
       idx: -1,
@@ -2106,15 +2106,6 @@
           userId = userData.email;
         }
 
-        clearTimeout(window.invocandoMinTimeout);
-        window.invocandoMinTimeout = setTimeout(() => {
-          const idx = messages.length - 1;
-          if (messages[idx] && messages[idx].role === "assistant" && messages[idx].content === "Invocando...") {
-            messages[idx].content = "";
-            typewriterSetTarget(threadId, idx, messages[idx].content, true);
-          }
-        }, 280);
-
         const response = await fetch("/api/arca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2152,9 +2143,9 @@
 
             if (payload === "[DONE]") {
               // Garantir renderização final e limpeza
-              clearTimeout(window.invocandoMinTimeout);
               clearTimeout(window.renderTimeout);
-              typewriterFinish();
+              stopLoaderBar();
+              renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
               
               document.getElementById("userInput").value = "";
               // Resetar o tamanho do textarea para o padrão
@@ -2177,9 +2168,8 @@
               const idx = messages.length - 1;
               if (messages[idx].content === "Invocando..." || messages[idx].content === "") {
                 // Remove "Invocando..." e inicia resposta real
-                clearTimeout(window.invocandoMinTimeout);
                 messages[idx].content = fixedContent;
-                typewriterSetTarget(threadId, idx, messages[idx].content, true);
+                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
                 
                 // Remove barra de loading no primeiro token real
                 window.requestAnimationFrame(() => {
@@ -2188,7 +2178,12 @@
               } else {
                 // Acumula tokens com fluidez natural
                 safeAppend(idx, fixedContent);
-                typewriterSetTarget(threadId, idx, messages[idx].content, true);
+                
+                // Renderização otimizada: debounce inteligente para performance
+                clearTimeout(window.renderTimeout);
+                window.renderTimeout = setTimeout(() => {
+                  renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+                }, 16); // 60fps para máxima suavidade
               }
               
               // 💾 AUTO-SAVE: Salvar progresso durante streaming
@@ -2199,7 +2194,11 @@
             } else {
               // Streaming normal fora do estado de invocação
               safeAppend(messages.length - 1, fixedContent);
-              typewriterSetTarget(threadId, messages.length - 1, messages[messages.length - 1].content, true);
+              
+              clearTimeout(window.renderTimeout);
+              window.renderTimeout = setTimeout(() => {
+                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+              }, 16);
             }
           }
         }
