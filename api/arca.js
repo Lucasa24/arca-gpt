@@ -1,335 +1,3551 @@
-const { getThreadMessages, addMessageToThread, setThreadPersona, composeAssistantContent, generateClosing } = require('../lib/memory.js');
-const { fetch } = require('undici');
-
-// arca.js — fora do handler (executa no cold start da função)
-if (!global.__ARCA_PERSONA_LOGGED__) {
-  console.log('👤 ARCA_PERSONA:', process.env.ARCA_PERSONA || '(unset)');
-  global.__ARCA_PERSONA_LOGGED__ = true;
-}
-
-// 🔐 Verificação de segurança no boot
-console.log('🔑 OPENAI_API_KEY configurada:', !!process.env.OPENAI_API_KEY);
-if (!process.env.OPENAI_API_KEY) {
-  console.warn('⚠️ OPENAI_API_KEY não encontrada! Configure no .env ou Vercel.');
-}
-
-async function handler(req, res) {
-  try {
-    const t0 = Date.now();
-    console.log('[ARCA] threadId=%s persona=%s', req.body?.threadId, process.env.ARCA_PERSONA || '(unset)');
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: "Método não permitido" }));
+    body {
+      background-color: #0e0e0e;
+      color: #f5f5f5;
+      font-family: 'Georgia', serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
     }
 
-    const userInput = req.body?.userInput || req.body?.input;
-    const threadId = req.body?.threadId;
-    const userId = req.body?.userId; // ID do usuário logado (email ou uuid)
-    const api_key = process.env.OPENAI_API_KEY;
-    console.log(`[ARCA][DEBUG] userInput: "${userInput}" (length: ${userInput?.length || 0})`);
-
-    if (!userInput || !userInput.trim()) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: "Nada foi invocado." }));
+    /* --- PORTAL DE ENTRADA (LOGIN) --- */
+    #authPortal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      transition: opacity 0.8s ease;
     }
-    if (!threadId) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: "threadId ausente" }));
+    #authPortal.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
-    if (!api_key) {
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: "OPENAI_API_KEY ausente" }));
+    .portal-logo {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+      animation: pulse 3s infinite;
+    }
+    .portal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      color: #aaa;
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .portal-options {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .portal-btn {
+      padding: 15px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #fff;
+      font-family: 'Georgia', serif;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .portal-btn:hover {
+      border-color: #fff;
+      background: rgba(255,255,255,0.05);
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    }
+    .portal-btn.primary {
+      border-color: #555;
+      background: rgba(255,255,255,0.02);
+    }
+    .portal-btn.guest {
+      border-color: #222;
+      color: #666;
+      font-size: 0.8rem;
+    }
+    .portal-btn.guest:hover {
+      color: #aaa;
+      border-color: #444;
     }
 
-    // [NOVO] Atualiza a persona com base no modo enviado pelo frontend
-    // Isso garante que se o usuário clicar no botão "Ritual", o backend saiba.
-    const mode = req.body?.mode; // ritual | tecnico
-    if (mode && (mode === 'ritual' || mode === 'tecnico')) {
-      console.log(`[ARCA] Atualizando persona para: ${mode}`);
-      await setThreadPersona(threadId, mode);
+    /* Formulário de Login */
+    #authForm {
+      display: none; /* Escondido por padrão */
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+      max-width: 320px;
+      animation: fadeIn 0.5s ease;
     }
-
-    // >>> A PARTIR DAQUI é SSE <<<
-    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    if (res.flushHeaders) res.flushHeaders();
-    res.write(`: ping\n\n`);
-    console.log('[ARCA][TTFT] sse_open_ms=%d', Date.now() - t0);
-
-    // (opcional) ping keepalive
-    const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
-
-    await addMessageToThread(threadId, "user", userInput, userId);
-    const messages = await getThreadMessages(threadId);
+    .auth-input {
+      background: #111;
+      border: 1px solid #333;
+      padding: 12px;
+      color: #fff;
+      font-family: monospace;
+      width: 100%;
+      outline: none;
+    }
+    .auth-input:focus {
+      border-color: #666;
+    }
+    .auth-toggle {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 10px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .auth-toggle:hover { color: #888; }
     
-    // Log das mensagens de sistema para verificação
-    const systemMessages = messages.filter(m => m.role==='system');
-    console.log('[ARCA][systems] Total:', systemMessages.length);
-    systemMessages.forEach((msg, i) => {
-      console.log(`[ARCA][system-${i+1}]`, msg.content.slice(0,80) + '...');
+    @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+
+    /* --- ANIMAÇÃO ARCA & DIAMANTE --- */
+    .blue-diamond-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .blue-diamond {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 191, 255, 0.1);
+      border: 2px solid #00bfff;
+      transform: rotate(45deg);
+      box-shadow: 0 0 15px #00bfff, inset 0 0 10px #00bfff;
+      animation: diamond-spin 10s linear infinite reverse; /* Sentido anti-horário (esquerda) */
+      z-index: 2;
+    }
+    
+    @keyframes diamond-spin {
+      0% { transform: rotate(45deg); }
+      100% { transform: rotate(-315deg); }
+    }
+
+    .ark-symbol {
+      position: absolute;
+      bottom: 20px; /* Ajuste para ficar dentro/abaixo do diamante */
+      font-size: 2rem;
+      color: #f5f5f5;
+      z-index: 3;
+      animation: ark-float 3s ease-in-out infinite;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+    }
+
+    @keyframes ark-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .water-base {
+      position: absolute;
+      bottom: 10px;
+      width: 60px;
+      height: 10px;
+      border-top: 2px solid rgba(0, 191, 255, 0.5);
+      border-radius: 50%;
+      animation: water-flow 2s ease-in-out infinite alternate;
+      z-index: 1;
+    }
+
+    @keyframes water-flow {
+      0% { transform: scaleX(1); opacity: 0.5; }
+      100% { transform: scaleX(1.2); opacity: 0.8; }
+    }
+
+    .arca-anim {
+      display: inline-block;
+      animation: ark-float 3s ease-in-out infinite;
+      color: #00bfff;
+      text-shadow: 0 0 5px rgba(0, 191, 255, 0.5);
+    }
+
+    /* --- FIM DO PORTAL --- */
+
+    #mainContent {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      transition: margin-left 0.3s ease, width 0.3s ease;
+      margin-left: 220px;
+      padding: 22px 1rem 300px;
+      width: calc(100% - 220px);
+      position: relative;
+      background: #1c1c1c;
+      border-left: 4px solid #b30000;
+    }
+
+    #mainContent.sidebar-hidden {
+      margin-left: 0;
+      width: 100%;
+    }
+
+    #mainContent .invoc {
+      align-self: center;
+      margin: 0;
+      text-align: center;
+      width: 100%;
+    }
+
+    #chatSidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 220px;
+      background: #111;
+      border-right: 1px solid #333;
+      padding: 1rem;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      z-index: 200;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+    }
+
+    #chatSidebar.hidden {
+      transform: translateX(-100%);
+    }
+
+    #chatSidebar h3 {
+      color: #f5f5f5;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      text-align: center;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.5rem;
+      position: relative;
+    }
+
+    #closeSidebar {
+      position: absolute;
+      top: -5px;
+      right: 0;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    #closeSidebar:hover {
+      background-color: rgba(179, 0, 0, 0.2);
+      color: #ff6b6b;
+    }
+
+    #chatSidebar button {
+      display: block;
+      width: 100%;
+      background: none;
+      color: #f5f5f5;
+      text-align: left;
+      border: none;
+      padding: 0.5rem;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background-color 0.2s;
+    }
+
+    #chatSidebar button:hover {
+      background-color: #222;
+    }
+
+    #chatSidebar .new-session {
+      background-color: #b30000 !important;
+      color: white;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #chatSidebar .new-session:hover {
+      background-color: #ff1a1a !important;
+    }
+
+    #toggleSidebar {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 999;
+      width: 14px;
+      height: 13px;
+      border-top-left-radius: 0;
+      border-top-right-radius: 9999px;
+      border-bottom-right-radius: 9999px;
+      border-bottom-left-radius: 0;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(179, 0, 0, 0.14);
+      color: #fff;
+      font-size: 10px;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.30);
+      transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Ocultar o botão de menu enquanto a sidebar estiver aberta */
+    #toggleSidebar.sidebar-open {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Botão de menu permanece visível mesmo com sidebar aberta */
+
+    #toggleSidebar:hover {
+      background: rgba(179, 0, 0, 0.26);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    #toggleSidebar:active {
+      transform: scale(0.98);
+    }
+
+    #toggleSidebar:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
+
+    /* Botão de ações ao lado do botão de sidebar */
+    #sidebarActions {
+      display: block;
+      position: fixed;
+      top: 12px;
+      left: 58px;
+      z-index: 999;
+      width: 36px;
+      height: 33px;
+      border-radius: 9999px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(179, 0, 0, 0.14);
+      color: #fff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
+    }
+    #sidebarActions:hover {
+      background: rgba(179, 0, 0, 0.26);
+      border-color: rgba(255,255,255,0.22);
+    }
+    #sidebarActions:active { transform: scale(0.98); }
+    #sidebarActions:focus-visible { outline: 2px solid #ff1a1a; outline-offset: 3px; }
+
+    .actions-menu {
+      position: fixed;
+      top: 52px;
+      left: 12px;
+      background: rgba(28,28,28,0.98);
+      border: 1px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      min-width: 200px;
+      z-index: 1001;
+      display: none;
+      overflow: hidden;
+    }
+    .actions-menu .action-item {
+      display: block;
+      width: 100%;
+      background: none;
+      color: #f5f5f5;
+      text-align: left;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: background-color 0.2s;
+    }
+    .actions-menu .action-item:hover { background-color: #222; }
+    .actions-menu .action-item.danger { color: #ff6b6b; }
+
+    /* Removido comportamento de ocultação do botão de ações */
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+    }
+
+    .modal-content {
+      background-color: #1c1c1c;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #333;
+      width: 300px;
+      text-align: center;
+      border-radius: 5px;
+      box-shadow: 0 0 20px rgba(179, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #b30000, #ff6b6b, #b30000);
+    }
+    
+    .modal-content h3 {
+      color: #ff6b6b;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+    
+    /* Estilos para o formulário de login */
+    #loginForm input[type="email"],
+    #loginForm input[type="tel"] {
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    
+    #loginForm input[type="email"]:focus,
+    #loginForm input[type="tel"]:focus {
+      border-color: #b30000;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(179, 0, 0, 0.2);
+    }
+    
+    #loginForm input[type="checkbox"] {
+      accent-color: #b30000;
+    }
+    
+    /* Animação para o campo de WhatsApp */
+    #whatsappField {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      opacity: 0;
+    }
+    
+    #whatsappField.visible {
+      max-height: 100px;
+      opacity: 1;
+      margin-bottom: 20px;
+    }
+
+    .modal-buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .modal-buttons button {
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .confirm-btn {
+      background-color: #b30000;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #666;
+      color: white;
+    }
+    .main-title {
+      font-size: clamp(1.05rem, 3.2vw, 1.6rem);
+      text-align: center;
+      margin: 0 0 0.6rem 0;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      width: 100%;
+    }
+
+    #response {
+      margin-top: 0.75rem;
+      white-space: normal;
+      background: transparent;
+      padding: 0;
+      border-left: 0;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+      text-align: justify;
+      line-height: 1.8;
+      letter-spacing: 0.5px;
+      max-height: none;
+      overflow: visible;
+      width: 100%;
+      box-sizing: border-box;
+      max-width: none;
+    }
+    
+    #response div {
+      white-space: break-spaces;
+    }
+    
+    #response p {
+      margin-bottom: 1rem;
+    }
+
+    /* Estilos para formatação markdown */
+    strong, b {
+      font-weight: bold !important;
+      font-style: normal !important;
+      color: #ff6b6b !important;
+    }
+
+    em, i {
+      font-weight: normal !important;
+      font-style: italic !important;
+      color: #4ecdc4 !important;
+    }
+
+    strong em, b i, em strong, i b {
+      font-weight: bold !important;
+      font-style: italic !important;
+      color: #ffffff !important;
+    }
+
+    /* Estilos para cabeçalhos dentro das respostas */
+    #response h1 {
+      font-size: 1.8rem !important;
+      font-weight: bold !important;
+      color: #ff6b6b !important;
+      margin: 1.5rem 0 1rem 0 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+      border-bottom: 2px solid #b30000 !important;
+      padding-bottom: 0.5rem !important;
+    }
+
+    #response h2 {
+      font-size: 1.5rem !important;
+      font-weight: bold !important;
+      color: #4ecdc4 !important;
+      margin: 1.25rem 0 0.75rem 0 !important;
+      letter-spacing: 0.5px !important;
+    }
+
+    #response h3 {
+      font-size: 1.3rem !important;
+      font-weight: bold !important;
+      color: #ffffff !important;
+      margin: 1rem 0 0.5rem 0 !important;
+    }
+
+    #response h4 {
+      font-size: 1.1rem !important;
+      font-weight: bold !important;
+      color: #cccccc !important;
+      margin: 0.75rem 0 0.5rem 0 !important;
+    }
+
+    #response h5, #response h6 {
+      font-size: 1rem !important;
+      font-weight: bold !important;
+      color: #999999 !important;
+      margin: 0.5rem 0 0.25rem 0 !important;
+    }
+
+    /* Estilos para listas dentro das respostas */
+    #response ul, #response ol {
+      margin: 1rem 0 !important;
+      padding-left: 1.5rem !important;
+      color: #f5f5f5 !important;
+    }
+
+    #response li {
+      margin: 0.5rem 0 !important;
+      line-height: 1.6 !important;
+    }
+
+    #response ul li {
+      list-style-type: disc !important;
+    }
+
+    #response ol li {
+      list-style-type: decimal !important;
+    }
+
+    /* Estilos para citações dentro das respostas */
+    #response blockquote {
+      margin: 1.5rem 0 !important;
+      padding: 1rem 1.5rem !important;
+      border-left: 4px solid #4ecdc4 !important;
+      background: rgba(78, 205, 196, 0.1) !important;
+      font-style: italic !important;
+      color: #e0e0e0 !important;
+    }
+
+    /* Estilos para código dentro das respostas */
+    #response code {
+      background: #2a2a2a !important;
+      color: #4ecdc4 !important;
+      padding: 0.2rem 0.4rem !important;
+      border-radius: 3px !important;
+      font-family: 'Courier New', monospace !important;
+      font-size: 0.9rem !important;
+    }
+
+    #response pre {
+      background: #1a1a1a !important;
+      color: #f5f5f5 !important;
+      padding: 1rem !important;
+      border-radius: 5px !important;
+      border-left: 4px solid #ff6b6b !important;
+      overflow-x: auto !important;
+      margin: 1rem 0 !important;
+      font-family: 'Courier New', monospace !important;
+      line-height: 1.4 !important;
+    }
+
+    #response pre code {
+      background: transparent !important;
+      padding: 0 !important;
+      color: inherit !important;
+    }
+
+    /* Links dentro da resposta */
+    #response a {
+      color: #4ecdc4 !important;
+      text-decoration: none !important;
+      border-bottom: 1px dashed rgba(78,205,196,0.6);
+    }
+    #response a:hover {
+      color: #ffffff !important;
+      border-bottom-color: #ffffff !important;
+    }
+
+    /* Linha horizontal */
+    #response hr {
+      border: 0;
+      border-top: 1px solid #333;
+      margin: 1.25rem 0;
+    }
+
+    /* --- Toolbar ABAIXO da mensagem --- */
+    #response .msg {
+      position: relative;
+      padding-right: 0 !important;              /* não reserva espaço lateral */
+    }
+
+    #response .msg .msg-toolbar {
+      position: static !important;              /* deixa de ser absoluta */
+      top: auto;                                /* por garantia */
+      right: auto;                              /* por garantia */
+      display: flex;
+      justify-content: flex-end;                /* alinha à direita */
+      gap: 6px;
+      margin-top: 8px;                          /* separa do texto */
+      opacity: 1 !important;                    /* sempre visível (bom para mobile) */
+      z-index: auto;
+      padding-right: 10px;                      /* recuo para não colar na borda */
+      box-sizing: border-box;
+    }
+
+    /* Ícones pequenos e clicáveis */
+    #response .msg .msg-btn.icon {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 10px 14px 10px 14px;
+      background: transparent;
+      color: #00bfff;
+      border: 0;
+      box-shadow: none;
+      opacity: 0.85;
+      transition: background 0.15s ease, opacity 0.15s ease, transform 0.12s ease;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    #response .msg .msg-btn.icon:hover { background: rgba(0,191,255,0.10); opacity: 1; transform: translateY(-1px); }
+    #response .msg .msg-btn.icon:active { transform: translateY(0); opacity: 0.9; }
+    #response .msg .msg-btn.icon svg { width: 10px; height: 10px; fill: currentColor; filter: drop-shadow(0 0 3px rgba(0,191,255,0.35)); }
+
+    /* feedback ok/erro (mantém o teu visual) */
+    #response .msg .msg-btn.icon.ok {
+      color: #4ecdc4; background: rgba(78,205,196,0.10);
+    }
+    #response .msg .msg-btn.icon.err {
+      color: #ff6b6b; background: rgba(255,107,107,0.10);
+    }
+
+    /* Acessibilidade */
+    #response .msg .msg-btn:focus-visible { outline: 2px solid rgba(0,191,255,0.55); outline-offset: 2px; }
+
+    /* Mobile – um pouco mais compacto */
+    @media (max-width: 600px) {
+      #response .msg .msg-toolbar { gap: 5px; margin-top: 6px; padding-right: 8px; }
+      #response .msg .msg-btn.icon { width: 14px; height: 14px; }
+      #response .msg .msg-btn.icon svg { width: 9px; height: 9px; }
+    }
+
+    /* Badge da linguagem e botão copiar nos blocos de código */
+    #response pre {
+      position: relative;
+      padding-top: 2.2rem !important;
+    }
+
+    #response pre .code-badge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 90px;
+      background: rgba(179, 0, 0, 0.18);
+      border-bottom: 1px solid rgba(179, 0, 0, 0.35);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.6rem;
+      color: #ff6b6b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+    }
+
+    #response pre .copy-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 0;
+      border-left: 1px solid rgba(179, 0, 0, 0.35);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+    }
+    #response pre .copy-btn:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* Animação sutil para indicar streaming ativo */
+    .streaming-active {
+      position: relative;
+    }
+
+    .streaming-active::after {
+      content: '▋';
+      color: #b30000;
+      animation: blink 1s infinite;
+      margin-left: 2px;
+    }
+
+    .invocando-hint {
+      font-size: 0.72rem;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: rgba(0,191,255,0.75);
+      margin: 0 0 0.35rem 0;
+      opacity: 0.9;
+      user-select: none;
+      pointer-events: none;
+    }
+    
+    .msg-content { min-height: 1em; }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .fixed-footer {
+      position: fixed;
+      bottom: 0;
+      left: 220px; /* Alinhado com o espaço da sidebar */
+      right: 0;
+      background: #0e0e0e;
+      padding: 6px 1rem; /* Padding reduzido para um footer slim */
+      border-top: 1px solid #333;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+      font-size: 0.85rem;
+      width: calc(100% - 220px);
+      z-index: 100;
+      transition: left 0.3s ease, width 0.3s ease;
+    }
+
+    #mainContent.sidebar-hidden .fixed-footer {
+      left: 0;
+      width: 100%;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: row;
+      align-items: center; /* Centraliza verticalmente */
+      gap: 8px; /* Espaço entre os elementos */
+      max-width: 800px; /* Um pouco mais largo para acomodar tudo */
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .textarea-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    textarea {
+      flex: 1;
+      background: transparent !important;
+      color: #f5f5f5;
+      border: none !important;
+      padding: 0.75rem !important;
+      font-size: 0.75rem;
+      resize: none;
+      min-height: 55px;
+      max-height: 200px;
+      font-family: 'Georgia', serif;
+      width: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      transform: translateZ(0);
+      transition: height 0.2s ease;
+    }
+
+    .mode-buttons-container {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-top: 4px;
+      padding-bottom: 2px;
+    }
+
+    .mode-peteca {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 14px;
+    }
+
+    .mode-peteca .mode-peteca-btn {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      min-height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,191,255,0.22);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.06), rgba(0,0,0,0) 55%);
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+      display: grid;
+      place-items: center;
+      opacity: 0.9;
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.08), 0 0 10px rgba(0,191,255,0.12);
+      transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+      letter-spacing: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+      backdrop-filter: blur(6px) saturate(140%);
+      -webkit-backdrop-filter: blur(6px) saturate(140%);
+    }
+
+    .mode-peteca .mode-peteca-btn:focus,
+    .mode-peteca .mode-peteca-btn:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
+
+    .mode-peteca .mode-peteca-btn:hover {
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.10), rgba(0,0,0,0) 58%);
+      transform: scale(1.06);
+      opacity: 1;
+      border-color: rgba(0,191,255,0.40);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.14), 0 0 14px rgba(0,191,255,0.22);
+    }
+
+    .mode-peteca .mode-peteca-btn:active { transform: scale(0.98); }
+
+    .mode-peteca .mode-peteca-btn[aria-expanded="true"] {
+      border-color: rgba(0,191,255,0.55);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.18), 0 0 18px rgba(0,191,255,0.28);
+      opacity: 1;
+    }
+
+    .mode-peteca .mode-peteca-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background:
+        conic-gradient(from 210deg,
+          rgba(0,191,255,0.00) 0deg,
+          rgba(0,191,255,0.55) 18deg,
+          rgba(0,191,255,0.10) 56deg,
+          rgba(0,191,255,0.55) 92deg,
+          rgba(0,191,255,0.00) 130deg,
+          rgba(0,191,255,0.55) 164deg,
+          rgba(0,191,255,0.00) 210deg,
+          rgba(0,191,255,0.55) 250deg,
+          rgba(0,191,255,0.00) 360deg);
+      -webkit-mask: radial-gradient(circle, transparent 52%, #000 56%);
+      mask: radial-gradient(circle, transparent 52%, #000 56%);
+      filter: drop-shadow(0 0 6px rgba(0,191,255,0.25));
+    }
+
+    .mode-peteca .mode-peteca-btn::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 5px;
+      height: 5px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.9), rgba(0,191,255,0.7) 45%, rgba(0,191,255,0.05) 70%);
+      box-shadow: 0 0 10px rgba(0,191,255,0.25);
+    }
+
+    .mode-peteca-menu {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(6px) scale(0.98);
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      gap: 6px;
+      padding: 3px 4px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 6px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.45);
+      transition: opacity 0.14s ease, transform 0.14s ease;
+      z-index: 120;
+      white-space: nowrap;
+    }
+
+    .mode-peteca.open .mode-peteca-menu {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .mode-peteca-menu .mode-btn {
+      background: rgba(51,51,51,0.85);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 4px;
+      padding: 0 6px;
+      font-size: 0.6rem;
+      cursor: pointer;
+      opacity: 0.85;
+      transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+      height: 14px;
+      min-width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .mode-peteca-menu .mode-btn.active {
+      background: rgba(179,0,0,0.92);
+      opacity: 1;
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 0 10px rgba(179,0,0,0.25);
+    }
+
+    button {
+      background-color: #b30000;
+      color: #fff;
+      border: none;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 1px;
+      padding: 0.5rem 1rem;
+      height: 55px;
+      min-width: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background-color: #ff1a1a;
+    }
+
+    #loader {
+      height: 4px;
+      margin-top: 0.25rem;
+    }
+
+    #loadingBar {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(0,191,255,0.35), #00bfff, rgba(78,205,196,0.9));
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+    }
+
+    .footer-note {
+      font-size: 0.55rem;
+      color: #555;
+      margin-top: 2px; /* Margem superior minimizada */
+      text-align: center;
+      opacity: 0.7;
+    }
+    /* Media Queries para responsividade */
+    @media (min-width: 769px) {
+      body {
+        padding: 0;
+      }
+      
+      #mainContent {
+        padding: 32px 2rem 300px;
+      }
+      
+      #mainContent.sidebar-hidden {
+        margin: 0 auto;
+        padding: 32px 2rem 300px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        display: block;
+        padding: 0;
+      }
+      
+      #mainContent {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 20px 0.75rem 250px;
+        align-items: stretch;
+        background: #1c1c1c;
+        border-left: 4px solid #b30000;
+      }
+
+      #response {
+        background: transparent;
+        border-left: 0;
+        padding: 0;
+        margin-top: 0.9rem;
+        max-width: none;
+        max-height: none;
+        overflow: visible;
+      }
+      
+      .fixed-footer {
+        left: 0 !important;
+        width: 100% !important;
+      }
+      
+      #chatSidebar {
+        transform: translateX(-100%) !important;
+        width: 80%;
+        max-width: 260px;
+        z-index: 998;
+      }
+      
+      #chatSidebar.open {
+        transform: translateX(0) !important;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      #mainContent {
+        padding: 20px 0.75rem 250px;
+      }
+      
+      .main-title {
+        font-size: clamp(0.95rem, 3.8vw, 1.35rem);
+        margin-bottom: 0.6rem;
+      }
+      
+      #response {
+        padding: 0;
+        margin-top: 0.9rem;
+        background: transparent;
+        border-left: 0;
+        max-width: none;
+        max-height: none;
+        overflow: visible;
+      }
+      
+      .fixed-footer {
+        padding: 4px 0.75rem;
+      }
+      
+      button {
+        padding: 0.5rem 0.75rem;
+        min-width: 70px;
+        min-height: 44px; /* Mais slim */
+      }
+      
+      textarea {
+        font-size: 0.7rem;
+        min-height: 44px; /* Mais slim e alinhado */
+        padding: 0.5rem 0.5rem 1rem; /* Espaço mínimo para botões super, super slim */
+      }
+    }
+    
+    @media (max-width: 400px) {
+      #mainContent {
+        padding: 15px 0.5rem 220px;
+      }
+      
+      .input-group {
+        gap: 0.3rem;
+      }
+      
+      button {
+        padding: 0.4rem 0.6rem;
+        min-width: 60px;
+        min-height: 40px; /* Mais slim ainda */
+        font-size: 0.7rem;
+      }
+
+      textarea {
+        min-height: 40px;
+        padding: 0.4rem 0.4rem !important; 
+      }
+      
+      .arca-plus-btn { width: 30px !important; }
+      .arca-plus-btn svg { width: 24px; height: 24px; }
+    }
+
+    /* Ajustes de alinhamento no celular: botões à direita sempre alinhados no centro */
+    @media (max-width: 768px) {
+      .input-group { align-items: center; }
+      .arca-plus-btn { width: 36px !important; }
+      .arca-plus-btn svg { width: 28px; height: 28px; }
+      
+      .mode-buttons-container {
+        margin-top: 3px;
+      }
+      .mode-buttons .mode-btn {
+        height: 12px !important; /* Altura mínima para o texto */
+        min-width: 35px !important; /* Largura ajustada */
+        font-size: 0.55rem !important; /* Texto visível */
+        padding: 0 4px !important; /* Padding lateral mínimo */
+        border-radius: 2px !important;
+        line-height: 1 !important; /* Remove espaço vertical extra */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mode-peteca-btn { width: 14px; height: 14px; min-width: 14px; min-height: 14px; }
+      .mode-peteca-menu .mode-btn { height: 14px; min-width: 36px; font-size: 0.6rem; padding: 0 6px; }
+    }
+    @media (max-width: 600px) {
+      .input-group { align-items: center; }
+      /* Ajuste fino para alinhar o botão invocar mais à direita no mobile */
+      .invocar-btn { margin-left: 4px; }
+      .arca-plus-btn { margin-left: 10px !important; }
+    }
+    @media (max-width: 400px) {
+      .input-group { align-items: center; }
+      .mode-buttons .mode-btn {
+        height: 10px !important; /* Ainda mais compacto em telas pequenas */
+        font-size: 0.5rem !important; /* Texto legível */
+      }
+      .arca-plus-btn { width: 32px !important; margin-left: 8px !important; }
+      .arca-plus-btn svg { width: 24px; height: 24px; }
+      .invocar-btn { margin-left: 2px; padding: 0 0.8rem; }
+    }
+
+    @keyframes glow-pulse {
+      0% { box-shadow: 0 0 5px rgba(0, 191, 255, 0.2); border-color: #444; }
+      50% { box-shadow: 0 0 15px rgba(0, 191, 255, 0.6); border-color: #00bfff; }
+      100% { box-shadow: 0 0 5px rgba(0, 191, 255, 0.2); border-color: #444; }
+    }
+
+    @keyframes rotate-ritual {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .arca-plus-btn {
+      background: transparent !important;
+      min-width: 0 !important;
+      width: 50px !important; /* Aumentado para 50px no PC */
+      height: 50px !important; /* Aumentado para 50px no PC */
+      border: none !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      transition: all 0.3s ease !important;
+      position: relative !important;
+      overflow: visible !important;
+      align-self: center; /* Garante alinhamento vertical no flex container */
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .arca-plus-btn:focus,
+    .arca-plus-btn:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    .arca-plus-btn:hover {
+      background: transparent !important;
+      transform: scale(1.15) !important;
+    }
+
+    .arca-plus-btn svg {
+      width: 40px; /* Aumentado proporcionalmente */
+      height: 40px; /* Aumentado proporcionalmente */
+      color: #00bfff;
+      filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.8));
+      animation: none !important;
+      transform-origin: 50% 50%;
+    }
+
+    /* Botão reset colado no canto inferior direito da página */
+    #cornerReset {
+      position: fixed;
+      right: 4px;
+      bottom: 4px;
+      width: 18px; /* Reduzido */
+      height: 18px; /* Reduzido */
+      min-width: 18px; /* Reduzido */
+      padding: 0;
+      border-radius: 3px;
+      background: #444; /* Cor mais discreta */
+      color: #ccc;
+      border: 1px solid #555;
+      font-size: 10px; /* Fonte menor */
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      box-shadow: none;
+      z-index: 150;
+      opacity: 0.6;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    #cornerReset:focus,
+    #cornerReset:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
+    #cornerReset:hover { 
+      background: #555; 
+      opacity: 1;
+    }
+    @media (max-width: 600px) {
+      #cornerReset { 
+        right: 2px; 
+        bottom: 2px; 
+        width: 12px !important; /* Ainda menor, menos interferência */
+        height: 12px !important; /* Círculo perfeito */
+        min-width: 12px !important; 
+        min-height: 12px !important;
+        font-size: 8px; /* Ícone pequeno */
+        border-radius: 50% !important; /* Força círculo perfeito */
+        padding: 0 !important;
+        display: grid;
+        place-items: center;
+        line-height: 1;
+        overflow: hidden; /* Corta qualquer excesso */
+      }
+    }
+
+    @keyframes float-ark {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.02); filter: brightness(1.2); }
+    }
+
+    .invocar-btn {
+      background: linear-gradient(180deg, #b30000, #800000);
+      border: 1px solid #ff4d4d;
+      border-bottom: 2px solid #4d0000;
+      color: #fff;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 1px;
+      padding: 0 1rem;
+      height: 36px; /* Altura reduzida e centralizada */
+      min-width: 80px;
+      clip-path: polygon(0% 15%, 15% 0%, 85% 0%, 100% 15%, 100% 100%, 0% 100%);
+      transition: all 0.2s ease;
+      animation: float-ark 4s ease-in-out infinite;
+      text-shadow: 0 0 5px rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .invocar-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PORTAL DE ENTRADA -->
+  <div id="authPortal">
+    <!-- LOGO ANIMADO: Diamante + Arca + Água -->
+    <div class="blue-diamond-container">
+      <div class="blue-diamond"></div>
+      <div class="ark-symbol">𓊝</div>
+      <div class="water-base"></div>
+    </div>
+    <div class="portal-title">A ARCA</div>
+    
+    <div class="portal-options" id="portalOptions">
+      <button class="portal-btn primary" onclick="showAuthForm()">Entrar na Arca</button>
+      <button class="portal-btn google" onclick="loginWithGoogle()" style="display:flex; align-items:center; justify-content:center; gap:10px; border-color: #4285F4; background: rgba(66, 133, 244, 0.1);">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27c3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12.5S6.42 23 12.1 23c5.83 0 8.84-4.15 8.84-8.83c0-.86-.1-1.78-.15-2.08z"/></svg>
+        Entrar com Google
+      </button>
+      <button class="portal-btn guest" onclick="enterAsGuest()">Acessar como Visitante</button>
+    </div>
+
+    <form id="authForm" onsubmit="handleAuth(event)">
+      <div style="font-size: 0.9rem; color: #888; margin-bottom: 10px;">IDENTIFIQUE-SE</div>
+      <input type="email" id="authEmail" class="auth-input" placeholder="E-mail" required>
+      <div style="position: relative; width: 100%;">
+        <input type="password" id="authPass" class="auth-input" placeholder="Senha" required style="padding-right: 40px;">
+        <span id="togglePassBtn" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; user-select: none; display: flex; align-items: center; justify-content: center;" title="Mostrar senha">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(255,107,107,0.5)); pointer-events: none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+      </div>
+      
+      <div id="forgotPassLink" class="auth-toggle" onclick="handleForgotPassword()" style="text-align: right; margin-top: 5px; font-size: 0.75rem; display: block;">Esqueci a senha</div>
+
+      <button type="submit" class="portal-btn primary" style="width:100%; margin-top: 10px;">CONFIRMAR</button>
+      
+      <div id="authModeToggle" class="auth-toggle" onclick="toggleAuthMode()">Não tem conta? Crie uma agora.</div>
+      <div class="auth-toggle" onclick="hideAuthForm()" style="margin-top: 20px;">← Voltar</div>
+    </form>
+  </div>
+  <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
+  <div id="chatSidebar"></div>
+  <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
+  
+  <!-- Modal de Login REMOVIDO -->
+  
+  <div id="resetModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Confirmação de Reset</h3>
+      <p>Tem certeza que deseja resetar e perder toda a conversa atual?</p>
+      <div class="modal-buttons">
+        <button class="confirm-btn" onclick="confirmReset()">Sim, Resetar</button>
+        <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal de Nomeação de Travessia -->
+  <div id="newTravessiaModal" class="modal">
+    <div class="modal-content">
+      <h3>⎈ Nova Travessia</h3>
+      <p>Nomeie sua jornada para iniciar a travessia:</p>
+      <div style="margin: 20px 0;">
+        <input type="text" id="travessiaName" placeholder="Nome da Travessia" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #f5f5f5; border-radius: 3px;">
+      </div>
+      <div class="modal-buttons">
+        <button class="confirm-btn" onclick="confirmNewTravessia()">Iniciar Jornada</button>
+        <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <main id="mainContent">
+    <h1 class="main-title">A Arca <span class="arca-anim">𓊝</span></h1>
+    <div id="response"></div>
+
+    <div class="fixed-footer">
+      <div class="input-group">
+        <div class="textarea-container" style="flex: 1;">
+          <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
+        </div>
+        <button onclick="sendMessage()" class="invocar-btn">Invocar</button>
+        <button class="arca-plus-btn" onclick="document.getElementById('imageInput').click()" title="Anexar imagem para análise visual">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+             <circle cx="12" cy="12" r="9"></circle>
+             <path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"></path>
+             <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+           </svg>
+         </button>
+      </div>
+      <div class="mode-buttons-container">
+        <div class="mode-peteca" id="modePeteca">
+          <button type="button" class="mode-peteca-btn" id="modePetecaBtn" aria-label="Alternar modos" aria-expanded="false"></button>
+          <div class="mode-peteca-menu" id="modePetecaMenu">
+            <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
+            <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
+          </div>
+        </div>
+      </div>
+      <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
+          <!-- Imagens serão adicionadas dinamicamente aqui -->
+          <button onclick="removeImage()" style="background-color: #b30000; padding: 5px 10px; font-size: 0.6rem; display: block; margin: 10px auto 0;">Remover Todas</button>
+        </div>
+
+      <div id="loader" style="display:none;">
+        <div id="loadingBar"></div>
+      </div>
+
+      <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer Login</a> • </p>
+    </div>
+  </main>
+
+  <!-- Botão de acesso ao portal (login) no canto inferior direito -->
+  <button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="showAuthPortal()">🗝</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+  <script>
+    // Exibe o portal de autenticação
+    function showAuthPortal() {
+        const portal = document.getElementById('authPortal');
+        if (portal) {
+            portal.style.display = 'flex';
+            portal.classList.remove('hidden');
+            
+            // Garante que mostre as opções iniciais e esconda o form de login direto
+            const authForm = document.getElementById('authForm');
+            const portalOptions = document.getElementById('portalOptions');
+            if (authForm) authForm.style.display = 'none';
+            if (portalOptions) portalOptions.style.display = 'flex';
+        } else {
+            console.error("Portal de autenticação não encontrado no DOM.");
+        }
+    }
+
+    marked.setOptions({
+      gfm: true,
+      breaks: true,
+      mangle: false,
+      headerIds: false,
+      langPrefix: 'language-' // preserva a classe de linguagem em <code>
     });
+  </script>
+
+  <script>
+    let messages = [];
+    let isInvocando = false;
+    let invocandoHintActive = false;
+    let streamingMsgIndex = -1;
+    let streamingContentEl = null;
+    let loaderInterval = null;
+    let progress = 0;
+    let userLoggedIn = false;
+    let userData = null;
     
-    // Log da persona atual para esta thread
-    const threadRecord = global.threadMemory?.get(threadId);
-    console.log('[ARCA][persona]', threadRecord?.currentPersona || 'default');
+    // Função para auto-expandir o textarea conforme o conteúdo
+    function autoResizeTextarea() {
+      const textarea = document.getElementById('userInput');
+      if (!textarea) return;
+      
+      // Resetar a altura para calcular corretamente
+      textarea.style.height = 'auto';
+      
+      // Definir a nova altura baseada no conteúdo (scrollHeight)
+      // com limite máximo definido pelo CSS (max-height: 200px)
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    }
 
-    // MODELO PADRÃO: GPT-4o (Inteligência Máxima)
-    // Decisão estratégica: Como temos poucos usuários, priorizamos a QUALIDADE ABSOLUTA.
-    // O custo é maior, mas a experiência é incomparável.
-    const userModel = "gpt-4o";
+    (function initWheelSteering() {
+      const btn = document.querySelector('.arca-plus-btn');
+      if (!btn) return;
+      const svg = btn.querySelector('svg');
+      if (!svg) return;
+
+      let raf = 0;
+      let target = 0;
+      let current = 0;
+      let active = false;
+
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      const setTarget = (deg) => {
+        target = clamp(deg, -120, 120);
+        if (!raf) raf = requestAnimationFrame(tick);
+      };
+
+      const tick = () => {
+        raf = 0;
+        current = current + (target - current) * 0.28;
+        svg.style.transform = `rotate(${current}deg)`;
+        if (Math.abs(target - current) > 0.15) raf = requestAnimationFrame(tick);
+      };
+
+      const updateFromPointer = (e) => {
+        const rect = btn.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const dx = e.clientX - cx;
+        const norm = clamp(dx / (rect.width / 2), -1, 1);
+        setTarget(norm * 120);
+      };
+
+      btn.addEventListener('pointerenter', () => { active = true; });
+      btn.addEventListener('pointerleave', () => { active = false; setTarget(0); });
+      btn.addEventListener('pointermove', (e) => {
+        if (!active && e.pointerType === 'mouse') return;
+        updateFromPointer(e);
+      });
+      btn.addEventListener('pointerdown', (e) => {
+        active = true;
+        if (btn.setPointerCapture) btn.setPointerCapture(e.pointerId);
+        updateFromPointer(e);
+      });
+      const end = (e) => {
+        if (btn.releasePointerCapture) {
+          try { btn.releasePointerCapture(e.pointerId); } catch {}
+        }
+        if (e.pointerType !== 'mouse') {
+          active = false;
+          setTarget(0);
+        }
+      };
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointercancel', end);
+    })();
+
+    (function initModePeteca() {
+      const wrap = document.getElementById('modePeteca');
+      const btn = document.getElementById('modePetecaBtn');
+      const menu = document.getElementById('modePetecaMenu');
+      if (!wrap || !btn || !menu) return;
+
+      const setOpen = (v) => {
+        wrap.classList.toggle('open', v);
+        btn.setAttribute('aria-expanded', v ? 'true' : 'false');
+      };
+
+      btn.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse') setOpen(true);
+      });
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (finePointer) return setOpen(true);
+        setOpen(!wrap.classList.contains('open'));
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) setOpen(false);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setOpen(false);
+      });
+
+      menu.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t && t.closest && t.closest('button')) setOpen(false);
+      });
+    })();
     
-    // --- MIGRAÇÃO PARA RESPONSES API (BETA) ---
-    // Cole o ID do seu prompt aqui (começa com pmpt_)
-    // [OPCIONAL] Se configurado, usa a Responses API (Prompt Management)
-    // Se nulo, usa o modo MANUAL (Chat Completions) que é estável e segue apenas o memory.js
-    const PROMPT_ID = process.env.ARCA_PROMPT_ID || null; 
+    // Função para gerar ID único de thread
+    function generateThreadId() {
+      return 'thread_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // Função para garantir espaçamento correto no streaming
+    function safeAppend(idx, chunk) {
+      const prev = messages[idx].content || "";
+      if (prev && /[.!?]$/.test(prev) && chunk && !/^\s/.test(chunk)) {
+        chunk = " " + chunk; // injeta espaço se o token veio colado após pontuação
+      }
+      messages[idx].content += chunk;
+    }
 
-    let endpoint = "https://api.openai.com/v1/responses";
-    let requestBody;
+    function primeStreamingUI() {
+      renderMessagesWithLiveMarkdown(true);
+      const responseDiv = document.getElementById("response");
+      streamingMsgIndex = messages.length - 1;
+      const msgEl = responseDiv && responseDiv.children ? responseDiv.children[streamingMsgIndex] : null;
+      streamingContentEl = msgEl ? msgEl.querySelector('.msg-content') : null;
+    }
 
-    // Definição global da injeção para usar em ambos os casos
-    const systemInjection = { 
-      role: "system", 
-      content: "DIRETRIZ DE EXTENSÃO: Resposta com densidade ajustada à complexidade. NÃO GERE FECHAMENTO/DESPEDIDA NO FINAL (o sistema fará isso). Pare após o ultimato." 
+    function updateStreamingUI() {
+      if (!streamingContentEl) return;
+      const msg = messages[streamingMsgIndex];
+      streamingContentEl.textContent = (msg && msg.content) ? msg.content : "";
+      try { window.scrollTo(0, document.body.scrollHeight); } catch {}
+    }
+
+    const typewriterState = {
+      enabled: false,
+      raf: 0,
+      threadId: null,
+      idx: -1,
+      shown: 0,
+      target: "",
+      isStreaming: false,
+      lastTs: 0
     };
 
-    if (PROMPT_ID) {
-      // MODO PROMPT GERENCIADO (PROMPT MANAGEMENT API)
-      // Correção: Ao usar prompt.id, NÃO devemos enviar model, temperature, etc.
-      // O Prompt ID já encapsula toda a configuração.
-      
-      // CRÍTICO: NÃO filtramos mensagens de sistema. Enviamos TUDO para garantir
-      // que as regras locais de "resposta longa" (memory.js) sejam respeitadas.
-      
-      const conversationHistory = [...messages, systemInjection];
-      
-      requestBody = {
-        prompt: {
-          id: PROMPT_ID
-        },
-        input: conversationHistory, // Responses API usa 'input' para o histórico
-        stream: true
-      };
-      console.log(`[ARCA] Usando Prompt ID: ${PROMPT_ID} (Configurações da UI ativas + Regras Locais)`);
-    } else {
-      // MODO MANUAL (Antigo)
-      endpoint = "https://api.openai.com/v1/chat/completions";
-      requestBody = {
-        model: userModel,
-        messages: [...messages, systemInjection], // INJEÇÃO AQUI TAMBÉM!
-        stream: true,
-        temperature: 0.85,
-        max_tokens: 16000,
-        top_p: 1.0,
-        frequency_penalty: 0.0,
-        presence_penalty: 0.3
-      };
-      console.log(`[ARCA] MODO MANUAL ATIVO (Prompt ID ignorado/nulo). Injeção de regras aplicada.`);
+    function typewriterReset() {
+      if (typewriterState.raf) cancelAnimationFrame(typewriterState.raf);
+      typewriterState.raf = 0;
+      typewriterState.threadId = null;
+      typewriterState.idx = -1;
+      typewriterState.shown = 0;
+      typewriterState.target = "";
+      typewriterState.isStreaming = false;
+      typewriterState.lastTs = 0;
     }
 
-    console.log(`[ARCA] Iniciando requisição para OpenAI...`);
-    const tOpenAI = Date.now();
-    let ttftLogged = false;
-
-    let finalRes;
-    try {
-      finalRes = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${api_key}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody)
-      });
-    } catch (err) {
-      console.error("[ARCA] ERRO FATAL no fetch inicial:", err);
-      res.write(`data: ${JSON.stringify({ content: `⚠️ Erro de Conexão: ${err.message}` })}\n\n`);
-      res.write(`data: [DONE]\n\n`);
-      return res.end();
+    function typewriterSafeSlice(md, n) {
+      let s = (md || "").slice(0, Math.max(0, n | 0));
+      const fences = (s.match(/```/g) || []).length;
+      if (fences % 2 === 1) s += "\n```";
+      return s;
     }
-    console.log('[ARCA][TTFT] openai_headers_ms=%d', Date.now() - tOpenAI);
 
-    // Fallback para Chat Completions se falhar (404, 400, etc)
-    if (!finalRes.ok) {
-      console.warn(`[ARCA] Responses API falhou (${finalRes.status}). Fallback para Chat Completions.`);
-      
-      try {
-        const errorBody = await finalRes.text();
-        console.warn(`[ARCA] Erro Responses API:`, errorBody);
-      } catch (e) { /* ignore */ }
+    function typewriterSetTarget(threadId, idx, target, isStreaming) {
+      if (!typewriterState.enabled) {
+        renderMessagesWithLiveMarkdown(!!isStreaming);
+        return;
+      }
 
-      endpoint = "https://api.openai.com/v1/chat/completions";
+      if (typewriterState.threadId !== threadId || typewriterState.idx !== idx) {
+        typewriterState.threadId = threadId;
+        typewriterState.idx = idx;
+        typewriterState.shown = 0;
+        typewriterState.lastTs = 0;
+      }
+
+      typewriterState.target = target || "";
+      typewriterState.isStreaming = !!isStreaming;
+      typewriterState.shown = typewriterState.target.length;
+
+      if (typewriterState.raf) cancelAnimationFrame(typewriterState.raf);
+      typewriterState.raf = 0;
+      renderMessagesWithLiveMarkdown(typewriterState.isStreaming);
+    }
+
+    function typewriterFinish() {
+      if (!typewriterState.enabled) return;
+      typewriterState.shown = (typewriterState.target || "").length;
+      typewriterState.isStreaming = false;
+      renderMessagesWithLiveMarkdown(false);
+      typewriterReset();
+    }
+
+    function typewriterTick(ts) {
+      typewriterState.raf = 0;
+
+      const cps = (window.innerWidth <= 768) ? 70 : 110;
+      const dt = typewriterState.lastTs ? (ts - typewriterState.lastTs) : 16;
+      typewriterState.lastTs = ts;
+      const inc = Math.max(1, Math.round((dt * cps) / 1000));
+
+      const targetLen = (typewriterState.target || "").length;
+      typewriterState.shown = Math.min(targetLen, typewriterState.shown + inc);
+
+      renderMessagesWithLiveMarkdown(typewriterState.isStreaming);
+
+      if (typewriterState.shown < targetLen) {
+        typewriterState.raf = requestAnimationFrame(typewriterTick);
+      }
+    }
+    
+    // Barra linear progressiva, nunca para nem oscila, só finaliza em 100% quando "invocando..." some.
+    function startLoaderBar() {
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+      loader.style.display = "block";
+      loadingBar.style.width = "0%";
+      progress = 0;
+      isInvocando = true;
+    
+      const DURATION = 18000; // tempo até 99% em milissegundos (18s)
+      const intervalDuration = 18; // ms
+      const MAX = 99;
+      const step = (MAX / (DURATION / intervalDuration));
+    
+      if (loaderInterval) clearInterval(loaderInterval);
+    
+      loaderInterval = setInterval(() => {
+        if (!isInvocando) return; // NÃO mexer se já pediu pra parar
+    
+        if (progress < MAX) {
+          progress += step;
+        } else {
+          // Ficou em 99%, não passa disso até "invocando..." sumir de fato
+          progress = MAX;
+        }
+        loadingBar.style.width = progress + "%";
+      }, intervalDuration);
+    }
+    
+    // Chame APENAS quando "invocando..." despachar:
+    function stopLoaderBar() {
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+      isInvocando = false;
+    
+      // ANIMA rápido até 100, encerra, some
+      loadingBar.style.width = "100%";
+      setTimeout(() => { loader.style.display = "none"; }, 220);
+      if (loaderInterval) clearInterval(loaderInterval);
+    }
+    
+    // Variável global para armazenar as imagens anexadas
+    let attachedImages = [];
+    
+    // Função para manipular upload de múltiplas imagens
+    function handleImageUpload(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
       
-      // INJEÇÃO NO FALLBACK TAMBÉM!
-      // Se Responses API falhar, garantimos que o fallback TAMBÉM tenha a instrução de "sem fechamento".
-      const systemInjectionFallback = { 
-        role: "system", 
-        content: "DIRETRIZ DE EMERGÊNCIA: Resposta com densidade ajustada. NÃO GERE FECHAMENTO. Pare após o ultimato." 
-      };
+      // Limitar a 5 imagens por mensagem
+      if (attachedImages.length + files.length > 5) {
+        alert('⚠️ Máximo de 5 imagens por mensagem.');
+        return;
+      }
       
-      requestBody = {
-        model: userModel,
-        messages: [...messages, systemInjectionFallback], // Adiciona a injeção aqui também
-        stream: true,
-        temperature: 0.85,
-        max_tokens: 16000,
-        top_p: 1.0,
-        frequency_penalty: 0.0,
-        presence_penalty: 0.3,
-        stream_options: { include_usage: false }
-      };
-      
-      console.log(`[ARCA] Iniciando Fallback (Chat Completions)...`);
-      try {
-        finalRes = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${api_key}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(requestBody)
+      // Processar cada arquivo
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Verificar se é uma imagem
+        if (!file.type.startsWith('image/')) {
+          alert(`⚠️ Arquivo ${file.name} não é uma imagem válida.`);
+          continue;
+        }
+        
+        // Verificar tamanho (máximo 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`⚠️ Imagem ${file.name} muito grande. Máximo 10MB.`);
+          continue;
+        }
+        
+        // Gerar ID único para esta imagem
+        const imageId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // Armazenar arquivo para envio posterior
+        attachedImages.push({
+          id: imageId,
+          file: file
         });
-      } catch (err2) {
-        console.error("[ARCA] ERRO FATAL no fetch de Fallback:", err2);
-        res.write(`data: ${JSON.stringify({ content: `⚠️ Erro de Conexão no Fallback: ${err2.message}` })}\n\n`);
-        res.write(`data: [DONE]\n\n`);
-        return res.end();
+        
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          // Criar container para preview se não existir
+          const previewDiv = document.getElementById('imagePreview');
+          previewDiv.style.display = 'block';
+          
+          // Criar container para esta imagem específica
+          const imageContainer = document.createElement('div');
+          imageContainer.id = 'container_' + imageId;
+          imageContainer.className = 'image-container';
+          imageContainer.style.display = 'inline-block';
+          imageContainer.style.margin = '5px';
+          imageContainer.style.position = 'relative';
+          
+          // Criar elemento de imagem
+          const imgElement = document.createElement('img');
+          imgElement.src = e.target.result;
+          imgElement.style.maxWidth = '150px';
+          imgElement.style.maxHeight = '100px';
+          imgElement.style.border = '1px solid #333';
+          imgElement.style.borderRadius = '5px';
+          
+          // Criar botão de remoção para esta imagem específica
+          const removeBtn = document.createElement('button');
+          removeBtn.innerHTML = '✕';
+          removeBtn.style.backgroundColor = '#b30000';
+          removeBtn.style.color = 'white';
+          removeBtn.style.border = 'none';
+          removeBtn.style.borderRadius = '50%';
+          removeBtn.style.width = '22px';
+          removeBtn.style.height = '22px';
+          removeBtn.style.fontSize = '0.6rem';
+          removeBtn.style.position = 'absolute';
+          removeBtn.style.top = '-8px';
+          removeBtn.style.right = '-8px';
+          removeBtn.style.cursor = 'pointer';
+          removeBtn.style.display = 'flex';
+          removeBtn.style.alignItems = 'center';
+          removeBtn.style.justifyContent = 'center';
+          removeBtn.onclick = function() { removeSpecificImage(imageId); };
+          
+          // Adicionar elementos ao container
+          imageContainer.appendChild(imgElement);
+          imageContainer.appendChild(removeBtn);
+          
+          // Adicionar container ao preview
+          previewDiv.appendChild(imageContainer);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    // Função para remover imagem específica
+    function removeSpecificImage(imageId) {
+      // Remover do array de imagens
+      attachedImages = attachedImages.filter(img => img.id !== imageId);
+      
+      // Remover elemento visual
+      const container = document.getElementById('container_' + imageId);
+      if (container) {
+        container.remove();
+      }
+      
+      // Esconder o preview se não houver mais imagens
+      if (attachedImages.length === 0) {
+        document.getElementById('imagePreview').style.display = 'none';
+      }
+    }
+    
+    // Função para remover todas as imagens anexadas
+    function removeImage() {
+      attachedImages = [];
+      const previewDiv = document.getElementById('imagePreview');
+      previewDiv.innerHTML = '';
+      previewDiv.style.display = 'none';
+      document.getElementById('imageInput').value = '';
+    }
+    
+    // Função para redimensionar imagem antes de enviar
+    function redimensionarImagem(file) {
+      return new Promise((resolve, reject) => {
+        // Tamanho máximo para qualquer dimensão da imagem
+        const MAX_DIMENSION = 1200;
+        
+        const img = new Image();
+        img.onload = function() {
+          // Verificar se a imagem precisa ser redimensionada
+          let width = img.width;
+          let height = img.height;
+          
+          // Se a imagem for menor que o limite, não redimensionar
+          if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
+            URL.revokeObjectURL(img.src); // Liberar memória
+            resolve(file); // Retornar o arquivo original
+            return;
+          }
+          
+          // Calcular novas dimensões mantendo proporção
+          if (width > height) {
+            height = Math.round(height * (MAX_DIMENSION / width));
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round(width * (MAX_DIMENSION / height));
+            height = MAX_DIMENSION;
+          }
+          
+          // Criar canvas para redimensionar
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Desenhar imagem redimensionada
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Converter para blob com qualidade reduzida para JPEG
+          canvas.toBlob((blob) => {
+            if (blob) {
+              // Criar novo arquivo com o mesmo nome
+              const newFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: file.lastModified
+              });
+              resolve(newFile);
+            } else {
+              resolve(file); // Fallback para o arquivo original
+            }
+            URL.revokeObjectURL(img.src); // Liberar memória
+          }, 'image/jpeg', 0.85); // 85% de qualidade
+        };
+        
+        img.onerror = function() {
+          URL.revokeObjectURL(img.src);
+          reject(new Error('Erro ao carregar imagem para redimensionamento'));
+        };
+        
+        img.src = URL.createObjectURL(file);
+      });
+    }
+    
+    // Função para enviar imagem para análise
+    async function enviarImagem(file, prompt) {
+      try {
+        // Redimensionar imagem antes de processar
+        const otimizedFile = await redimensionarImagem(file);
+        
+        // Função auxiliar para converter ArrayBuffer para base64 sem estouro de pilha
+        function arrayBufferToBase64(buffer) {
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          const chunkSize = 1024; // Tamanho do chunk para processamento seguro
+          
+          // Processar bytes em pequenos chunks para evitar estouro de pilha
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            const slice = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+            let binaryChunk = '';
+            for (let j = 0; j < slice.length; j++) {
+              binaryChunk += String.fromCharCode(slice[j]);
+            }
+            binary += binaryChunk;
+          }
+          
+          return btoa(binary);
+        }
+        
+        const buf = await otimizedFile.arrayBuffer();
+        const b64 = arrayBufferToBase64(buf);
+        
+        const resp = await fetch("/api/vision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, imageB64: b64, mime: otimizedFile.type })
+        });
+        
+        if (!resp.ok) {
+          throw new Error(`Erro na análise: ${resp.status}`);
+        }
+        
+        const { text } = await resp.json();
+        return text;
+      } catch (error) {
+        console.error('Erro ao enviar imagem:', error);
+        throw error;
+      }
+    }
+    
+    // Função para processar múltiplas imagens sequencialmente
+    async function processarMultiplasImagens(imagens, prompt) {
+      let resultadoCompleto = "";
+      let contadorImagens = 0;
+      
+      for (const img of imagens) {
+        contadorImagens++;
+        try {
+          // Adicionar contador à prompt para diferenciar as imagens
+          const promptComContador = imagens.length > 1 
+            ? `${prompt} [Imagem ${contadorImagens}/${imagens.length}]` 
+            : prompt;
+            
+          const resultado = await enviarImagem(img.file, promptComContador);
+          
+          // Adicionar separador entre resultados de imagens diferentes
+          if (resultadoCompleto) {
+            resultadoCompleto += "\n\n---\n\n";
+          }
+          
+          // Adicionar cabeçalho para cada imagem se houver múltiplas
+          if (imagens.length > 1) {
+            resultadoCompleto += `**Análise da Imagem ${contadorImagens}/${imagens.length}:**\n\n`;
+          }
+          
+          resultadoCompleto += resultado;
+        } catch (error) {
+          resultadoCompleto += `\n\nErro ao processar imagem ${contadorImagens}: ${error.message}`;
+        }
+      }
+      
+      return resultadoCompleto;
+    }
+    
+    async function sendMessage() {
+      const input = document.getElementById("userInput").value.trim();
+      const responseDiv = document.getElementById("response");
+      const loader = document.getElementById("loader");
+      const loadingBar = document.getElementById("loadingBar");
+
+      if (!input && attachedImages.length === 0) {
+        responseDiv.innerHTML = "⚠️ Nada foi invocado.";
+        return;
+      }
+
+      // Reset do status INVOCANDO
+      isInvocando = true;
+
+      // Verificar o modo atual e adicionar prefixo se necessário
+      const currentMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
+      let finalInput = input;
+      
+      // Adicionar prefixo apenas se não for análise de imagem
+      if (attachedImages.length === 0) {
+        if (currentMode === 'tecnico') {
+          finalInput = "Modo técnico: " + input;
+        } else if (currentMode === 'ritual') {
+          finalInput = "Modo ritual: " + input;
+        }
+      }
+      
+      // Se há imagens anexadas, usar API de vision
+      if (attachedImages.length > 0) {
+        try {
+          const visionPrompt = input || "Analise a imagem e dê um diagnóstico executável.";
+          const prefixedPrompt = `**ESPELHO VISUAL**: ${visionPrompt}`;
+          
+          // Adicionar mensagem do usuário com indicação de imagem(ns)
+          const imagemTexto = attachedImages.length === 1 
+            ? "✛ *Imagem anexada para análise*" 
+            : `✛ *${attachedImages.length} imagens anexadas para análise*`;
+          
+          messages.push({ role: "user", content: `${input}\n\n${imagemTexto}` });
+          messages.push({ role: "assistant", content: "Invocando..." });
+          renderMessagesWithLiveMarkdown();
+          
+          // INICIA O RITUAL DA BARRA
+          startLoaderBar();
+          
+          // Analisar imagens
+          const visionResult = await processarMultiplasImagens(attachedImages, prefixedPrompt);
+          
+          // Limpar imagem após uso
+          removeImage();
+          
+          // Atualizar última mensagem com resultado
+          messages[messages.length - 1].content = visionResult;
+          renderMessagesWithLiveMarkdown();
+          
+          // Salvar no histórico
+          const threadId = localStorage.getItem("threadId") || generateThreadId();
+          if (!localStorage.getItem("threadId")) {
+            localStorage.setItem("threadId", threadId);
+          }
+          saveToHistory(input || "Análise de imagem", threadId);
+          
+          // Finalizar barra
+          stopLoaderBar();
+          
+          // Limpar input e redimensionar textarea
+          document.getElementById("userInput").value = "";
+          autoResizeTextarea();
+          return;
+          
+        } catch (error) {
+          console.error('Erro na análise de imagem:', error);
+          messages[messages.length - 1].content = `⚠️ Erro na análise da imagem: ${error.message}`;
+          renderMessagesWithLiveMarkdown();
+          stopLoaderBar();
+          return;
+        }
+      }
+
+      // Fluxo normal sem imagem
+      // Adicionar mensagem do usuário e mensagem "Invocando..."
+      typewriterReset();
+      messages.push({ role: "user", content: input }); // Mantém o input original na interface
+      messages.push({ role: "assistant", content: "" });
+      invocandoHintActive = true;
+      primeStreamingUI();
+      
+      // INICIA O RITUAL DA BARRA
+      startLoaderBar();
+
+      try {
+        // Garantir que temos um threadId ANTES de chamar a API
+        let threadId = localStorage.getItem("threadId");
+        
+        if (!threadId) {
+            // Se não tiver, cria um aleatório temporário ou pede para API criar
+            // Como a rota /api/thread parece não existir ou não foi mostrada, vamos gerar um ID localmente
+            // para evitar erro 404 se a rota não existir
+            threadId = "thread_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem("threadId", threadId);
+            console.log("Novo threadId gerado localmente:", threadId);
+        }
+
+        // Obter userId se logado
+        let userId = null;
+        if (userLoggedIn && userData && userData.email) {
+          userId = userData.email;
+        }
+
+        const response = await fetch("/api/arca", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            userInput: input,
+            input: input,
+            mode: (localStorage.getItem('arcaPersonaMode') || 'ritual'),
+            threadId: threadId,
+            userId: userId // Envia o ID do usuário para vincular a thread
+          })
+        });
+
+        if (!response.ok) {
+           const body = await response.text().catch(()=> '');
+           throw new Error(`Falha ao invocar: ${response.status} ${response.statusText || ''} - ${body}`);
+        }
+
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop();
+
+          for (let part of parts) {
+            if (!part.startsWith("data: ")) continue;
+
+            const payload = part.replace(/^data:\s?/, "");
+
+            if (payload === "[DONE]") {
+              // Garantir renderização final e limpeza
+              clearTimeout(window.renderTimeout);
+              stopLoaderBar();
+              invocandoHintActive = false;
+              streamingMsgIndex = -1;
+              streamingContentEl = null;
+              renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
+              
+              document.getElementById("userInput").value = "";
+              // Resetar o tamanho do textarea para o padrão
+              document.getElementById("userInput").style.height = "55px";
+              saveToHistory(input, threadId);
+              return;
+            }
+
+            let content = payload;
+            try {
+              const json = JSON.parse(payload);
+              if (json.content) content = json.content;
+            } catch (e) {}
+
+            // fixedContent agora é apenas o conteúdo decodificado
+            const fixedContent = content;
+
+            // STREAMING RITUAL OTIMIZADO: máxima fluidez e presença
+            if (isInvocando && content !== "[DONE]") {
+              const idx = messages.length - 1;
+              if (messages[idx].content === "") {
+                messages[idx].content = fixedContent;
+                updateStreamingUI();
+                
+                // Remove barra de loading no primeiro token real
+                window.requestAnimationFrame(() => {
+                  stopLoaderBar();
+                });
+              } else {
+                // Acumula tokens com fluidez natural
+                safeAppend(idx, fixedContent);
+                updateStreamingUI();
+              }
+              
+              // 💾 AUTO-SAVE: Salvar progresso durante streaming
+              clearTimeout(window.autoSaveTimeout);
+              window.autoSaveTimeout = setTimeout(() => {
+                saveThreadMessages(threadId);
+              }, 1000); // Salva a cada 1 segundo durante streaming
+            } else {
+              // Streaming normal fora do estado de invocação
+              safeAppend(messages.length - 1, fixedContent);
+              updateStreamingUI();
+            }
+          }
+        }
+      } catch (err) {
+        stopLoaderBar();
+        invocandoHintActive = false;
+        streamingMsgIndex = -1;
+        streamingContentEl = null;
+        renderMessagesWithLiveMarkdown(false);
+        responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
       }
     }
 
-    if (!finalRes.ok) {
-      clearInterval(keepalive);
-      res.statusCode = finalRes.status;
-      res.write(`data: ${JSON.stringify({ content: `⚠️ OpenAI Error: ${finalRes.status} ${finalRes.statusText}` })}\n\n`);
-      res.write(`data: [DONE]\n\n`);
-      return res.end();
+    function renderMessages() {
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerHTML = "";
+
+      messages.forEach(msg => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
+        
+        if (msg.role === "user") {
+          div.style.fontStyle = "italic";
+          div.style.color = "#ccc";
+          div.style.backgroundColor = "#1a1a1a";
+          div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          attachMessageToolbar(div, raw);
+        } else {
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
+          
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          
+          // Forçar parágrafos se não houver \n\n no conteúdo
+          let content = msg.content; // não mate espaços de borda
+          
+          // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
+            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+          }
+          
+          const html = marked.parse(content);
+div.innerHTML = DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: [
+    'p','strong','em','ul','ol','li',
+    'h1','h2','h3','h4','h5','h6',
+    'br','code','pre','blockquote','hr','a'
+  ],
+  ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
+});
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
+          attachMessageToolbar(div, raw);
+        }
+        
+        responseDiv.appendChild(div);
+      });
+
+      responseDiv.scrollTop = responseDiv.scrollHeight;
     }
 
-    const reader = finalRes.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
-    let assistantResponse = "";
+    function renderMessagesWithLiveMarkdown(isStreaming = false) {
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerHTML = "";
 
-    // Primeira chunk: envia abertura variável
-    let openingSent = false;
-    
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (payload === "[DONE]") {
-          // Verifica a persona atual para esta thread
-          const threadRecord = global.threadMemory?.get(threadId);
-          const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
+      messages.forEach((msg, index) => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1rem";
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "5px";
+        div.classList.add('msg'); // habilita CSS da toolbar
+        
+        if (msg.role === "user") {
+          div.style.fontStyle = "italic";
+          div.style.color = "#ccc";
+          div.style.backgroundColor = "#1a1a1a";
+          div.style.borderLeft = "3px solid #666";
+          const raw = msg.content; // markdown cru (antes de ajustes)
+          div.innerHTML = "<div class='msg-content'></div>";
+          const contentEl = div.querySelector('.msg-content');
+          const strong = document.createElement('strong');
+          strong.textContent = "Você:";
+          contentEl.appendChild(strong);
+          contentEl.appendChild(document.createTextNode(" " + (msg.content || "")));
+          attachMessageToolbar(div, raw);
+        } else {
+          div.style.color = "#f5f5f5";
+          div.style.backgroundColor = "#1c1c1c";
+          div.style.borderLeft = "4px solid #b30000";
           
-          // Adiciona fechamento variável apenas para persona ritual
-          if (currentPersona !== "tecnico") {
-            const closing = `\n\n${generateClosing()}`;
-            res.write(`data: ${JSON.stringify({ content: closing })}\n\n`);
-            assistantResponse += closing;
+          // Aplicar animação de streaming na última mensagem do assistente
+          const isLastAssistantMessage = index === messages.length - 1 && msg.role === "assistant";
+          const showInvocandoHint = invocandoHintActive && isLastAssistantMessage;
+          if ((isStreaming || showInvocandoHint) && isLastAssistantMessage) {
+            div.classList.add("streaming-active");
           }
           
-          // Salva resposta completa com abertura + corpo + fechamento
-          addMessageToThread(threadId, "assistant", assistantResponse);
+          const raw = msg.content; // markdown cru (antes de ajustes)
           
-          res.write(`data: [DONE]\n\n`);
-          clearInterval(keepalive);
-          return res.end();
+          // Forçar parágrafos se não houver \n\n no conteúdo
+          let content = msg.content; // preserve o MD cru para copiar depois
+          if (typewriterState.enabled && typewriterState.idx === index && msg.role === "assistant") {
+            content = typewriterSafeSlice(content || "", Math.min(typewriterState.shown, (content || "").length));
+          }
+          
+          // Evita quebrar markdown quando existir cabeçalhos (#) ou fences (```)
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!looksLikeCodeOrHeadings) {
+            // Corrige palavras coladas após pontuação e dois pontos
+            content = content
+              .replace(/([.!?:])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
+              .replace(/([.!?])\s+/g, '$1\n\n');           // quebra em parágrafos após pontuação
+            
+            // Corrige palavras coladas em frases como "RITUAL DE AÇÃO:1"
+            content = content.replace(/(RITUAL DE [A-ZÀ-Ÿ]+):(?=\d)/g, '$1: ');
+          }
+          div.innerHTML = (showInvocandoHint ? "<div class='invocando-hint'>Invocando...</div>" : "") + "<div class='msg-content'></div>";
+          const contentEl = div.querySelector('.msg-content');
+          if (isStreaming && isLastAssistantMessage) {
+            contentEl.textContent = content || "";
+          } else {
+            const html = marked.parse(content || "");
+            const safeHtml = DOMPurify.sanitize(html, {
+              ALLOWED_TAGS: [
+                'p','strong','em','ul','ol','li',
+                'h1','h2','h3','h4','h5','h6',
+                'br','code','pre','blockquote','hr','a'
+              ],
+              ALLOWED_ATTR: ['class','href','target','rel']
+            });
+            contentEl.innerHTML = safeHtml;
+          }
+          enhanceCodeBlocks(div);
+          hardenLinks(div);
+          attachMessageToolbar(div, raw);
         }
-        try {
-          const parsed = JSON.parse(payload);
-          let chunk = "";
-          
-          // 1. Tenta extrair do formato RESPONSES API
-          if (parsed.type === 'response.output_text.delta') {
-             // Garante que pega o texto seja ele string direta ou objeto com value
-             chunk = (typeof parsed.delta === 'string') ? parsed.delta : (parsed.delta?.value || "");
-          }
-          // 2. Tenta extrair do formato CHAT COMPLETIONS (Legacy)
-          else if (parsed.choices?.[0]?.delta?.content) {
-             chunk = parsed.choices[0].delta.content;
-          }
+        
+        responseDiv.appendChild(div);
+      });
 
-          if (chunk) {
-            if (!ttftLogged) {
-              ttftLogged = true;
-              console.log('[ARCA][TTFT] first_token_ms=%d', Date.now() - tOpenAI);
-            }
-            // Envia abertura na primeira chunk válida (apenas para persona ritual)
-            if (!openingSent) {
-              // Verifica a persona atual para esta thread
-              const threadRecord = global.threadMemory?.get(threadId);
-              const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
-              
-              if (currentPersona !== "tecnico") {
-                const { pickOpening } = require('../lib/memory.js');
-                // Simula uma abertura aleatória para a primeira chunk
-                const opening = pickOpening(null);
-                res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
-                // Adiciona abertura ao buffer da resposta para salvar depois
-                assistantResponse += `_${opening}_\n\n`;
-              }
-              openingSent = true;
+      responseDiv.scrollTop = responseDiv.scrollHeight;
+    }
+
+    function saveToHistory(userInput, threadId) {
+      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      
+      // Verificar se já existe essa sessão no histórico
+      const existingIndex = history.findIndex(session => session.id === threadId);
+      
+      if (existingIndex === -1) {
+        // Nova sessão
+        history.push({
+          id: threadId,
+          title: userInput.slice(0, 60) + (userInput.length > 60 ? "..." : ""),
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // 🔐 PATCH 3: Sanitização antes de salvar
+      const sanitizedHistory = history.map(session => ({
+        id: session.id,
+        title: session.title,
+        timestamp: session.timestamp
+      }));
+      
+      localStorage.setItem("chatHistory", JSON.stringify(sanitizedHistory));
+      
+      // 💾 SALVAR MENSAGENS DA SESSÃO ATUAL
+      saveThreadMessages(threadId);
+      
+      loadSidebar();
+    }
+
+    // 💾 Salvar mensagens completas no localStorage
+    function saveThreadMessages(threadId) {
+      if (!threadId || messages.length === 0) return;
+      
+      // Filtrar apenas mensagens user/assistant (sem system)
+      const userMessages = messages.filter(msg => msg.role !== "system");
+      
+      // Sanitizar conteúdo antes de salvar
+      const sanitizedMessages = userMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content || ""
+      }));
+      
+      localStorage.setItem(`thread_${threadId}`, JSON.stringify(sanitizedMessages));
+    }
+
+    // 📖 Carregar mensagens do localStorage
+    function loadThreadMessagesFromStorage(threadId) {
+      if (!threadId) return [];
+      
+      try {
+        const stored = localStorage.getItem(`thread_${threadId}`);
+        return stored ? JSON.parse(stored) : [];
+      } catch (err) {
+        console.warn('Erro ao carregar mensagens do localStorage:', err);
+        return [];
+      }
+    }
+
+    async function loadThreadMessages(threadId) {
+      try {
+        // 🔄 PRIORIDADE: Carregar do localStorage primeiro
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        
+        if (localMessages.length > 0) {
+          // Mensagens encontradas no localStorage
+          messages = localMessages;
+          renderMessages();
+          return;
+        }
+        
+        // 🌐 FALLBACK: Tentar carregar do servidor se localStorage vazio
+        const res = await fetch("/api/getMessages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ threadId })
+        });
+
+        const data = await res.json();
+
+        if (data.messages && data.messages.length > 0) {
+          messages = data.messages;
+          // Salvar no localStorage para próximas vezes
+          saveThreadMessages(threadId);
+        } else {
+          messages = [];
+        }
+        
+        renderMessages();
+      } catch (err) {
+        // Se falhar, tentar carregar do localStorage como último recurso
+        const localMessages = loadThreadMessagesFromStorage(threadId);
+        if (localMessages.length > 0) {
+          messages = localMessages;
+          renderMessages();
+        } else {
+          document.getElementById("response").innerHTML = "⚠️ Falha ao carregar mensagens.";
+        }
+      }
+    }
+
+    function loadSidebar() {
+      const sidebar = document.getElementById("chatSidebar");
+      const rawHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      const history = rawHistory.filter(s => !s.archived);
+      const currentThreadId = localStorage.getItem("threadId");
+
+      sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar' style='position:absolute; left:0; top:-5px; width:20px; height:20px; min-width:20px; background: rgba(0,191,255,0.10); border: 1px solid rgba(0,191,255,0.28); color:#00bfff; font-size:12px; line-height:18px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color: transparent; outline: none;'><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0 0 4px rgba(0,191,255,0.65)); pointer-events: none;'><path d='M6 6 C9 5,11 9,12 12 C13 15,15 19,18 18'/><path d='M18 6 C15 5,13 9,12 12 C11 15,9 19,6 18'/></svg></button></h3>";
+
+      // Botão Nova Travessia
+      const newBtn = document.createElement("button");
+      newBtn.textContent = "⎈ Nova Travessia";
+      newBtn.className = "new-session";
+      newBtn.onclick = () => {
+        // Abrir modal para nomear a travessia
+        document.getElementById("newTravessiaModal").style.display = "block";
+        document.getElementById("travessiaName").focus();
+      };
+      sidebar.appendChild(newBtn);
+
+      // Histórico de sessões (mais recentes primeiro)
+      history.reverse().forEach(session => {
+        const btn = document.createElement("button");
+        btn.textContent = session.title;
+        // Exibir como ativo (opacidade 1 e negrito) SOMENTE se for a sessão atual E já tiver mensagens
+        let hasMessages = false;
+        try {
+          const stored = localStorage.getItem(`thread_${session.id}`);
+          if (stored) {
+            const msgs = JSON.parse(stored);
+            hasMessages = Array.isArray(msgs) && msgs.length > 0;
+          }
+        } catch (e) {}
+        const isActive = (session.id === currentThreadId) && hasMessages;
+        btn.style.opacity = isActive ? "1" : "0.7";
+        btn.style.fontWeight = isActive ? "bold" : "normal";
+        btn.onclick = () => {
+          localStorage.setItem("threadId", session.id);
+          loadThreadMessages(session.id);
+          document.getElementById("userInput").value = "";
+          loadSidebar();
+          
+          // Fechar sidebar no mobile após clicar em sessão (sem ocultar permanentemente)
+          if (window.innerWidth <= 768) {
+            const sb = document.getElementById("chatSidebar");
+            if (sb) {
+              sb.classList.remove("open"); // fecha via classe
+              sb.style.display = ""; // remove qualquer display:none residual
             }
             
-            assistantResponse += chunk;
-            // Envia como JSON para preservar quebras de linha e caracteres especiais
-            res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+            const toggleBtn = document.getElementById("toggleSidebar");
+            if (toggleBtn) {
+              // Garante que o botão reapareça removendo a classe e forçando reset
+              toggleBtn.classList.remove("sidebar-open");
+              toggleBtn.setAttribute("aria-expanded", "false");
+              // Fallback de segurança visual
+              toggleBtn.style.opacity = "";
+              toggleBtn.style.pointerEvents = "";
+            }
           }
-        } catch { /* ignora pings/linhas quebradas */ }
+        };
+        
+        // Renomear via duplo clique e botão direito (context menu)
+        btn.style.position = "relative";
+        btn.addEventListener("dblclick", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          startInlineRename(btn, session.id, session.title);
+        });
+        btn.addEventListener("contextmenu", (e) => {
+          e.preventDefault(); // evita menu nativo
+          e.stopPropagation();
+          startInlineRename(btn, session.id, session.title);
+        });
+        
+        const dots = document.createElement("span");
+        dots.textContent = "⋯";
+        dots.setAttribute("aria-label", "Ações da sessão");
+        dots.style.position = "absolute";
+        dots.style.right = "8px";
+        dots.style.top = "50%";
+        dots.style.transform = "translateY(-50%)";
+        dots.style.width = "22px";
+        dots.style.height = "22px";
+        dots.style.border = "1px solid rgba(255,255,255,0.14)";
+        dots.style.borderRadius = "9999px";
+        dots.style.background = "rgba(179, 0, 0, 0.14)";
+        dots.style.color = "#fff";
+        dots.style.fontSize = "14px";
+        dots.style.lineHeight = "22px";
+        dots.style.display = "inline-flex";
+        dots.style.alignItems = "center";
+        dots.style.justifyContent = "center";
+        dots.style.cursor = "pointer";
+        dots.style.opacity = "0.85";
+        dots.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+          openItemMenu(e, session.id, btn, session.title);
+        });
+        btn.appendChild(dots);
+        
+        sidebar.appendChild(btn);
+      });
+    }
+
+    // Inline rename para botões do sidebar via duplo clique e clique direito
+    function startInlineRename(btn, sessionId, currentTitle) {
+      try {
+        const sidebar = document.getElementById("chatSidebar");
+
+        // Remove qualquer overlay de renomeação já aberto
+        const existing = sidebar.querySelector(".rename-overlay");
+        if (existing) existing.remove();
+
+        // Calcula posição relativa ao sidebar
+        const sideRect = sidebar.getBoundingClientRect();
+        const rect = btn.getBoundingClientRect();
+
+        const overlay = document.createElement("div");
+        overlay.className = "rename-overlay";
+        overlay.style.position = "absolute";
+        overlay.style.left = (rect.left - sideRect.left + 8) + "px"; // ligeiro deslocamento
+        overlay.style.top = (rect.top - sideRect.top) + "px";
+        overlay.style.width = Math.max(160, rect.width - 16) + "px";
+        overlay.style.background = "#1c1c1c";
+        overlay.style.border = "1px solid #333";
+        overlay.style.borderRadius = "4px";
+        overlay.style.boxShadow = "0 4px 12px rgba(0,0,0,0.35)";
+        overlay.style.padding = "6px";
+        overlay.style.zIndex = "1001";
+        overlay.style.display = "flex";
+        overlay.style.gap = "6px";
+        overlay.style.alignItems = "center";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = currentTitle || "";
+        input.autofocus = true;
+        input.setAttribute("aria-label", "Renomear sessão");
+        input.placeholder = "Novo título...";
+        input.style.flex = "1";
+        input.style.background = "#1a1a1a";
+        input.style.color = "#f5f5f5";
+        input.style.border = "1px solid #333";
+        input.style.padding = "6px 8px";
+        input.style.fontSize = "0.75rem";
+        input.style.borderRadius = "3px";
+
+        // Evita que o clique no overlay selecione a sessão
+        overlay.addEventListener("mousedown", (e) => { e.stopPropagation(); });
+
+        const commit = () => {
+          const newTitle = (input.value || "").trim();
+          if (newTitle && newTitle !== currentTitle) {
+            const fullHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+            const idx = fullHistory.findIndex(s => s.id === sessionId);
+            if (idx !== -1) {
+              fullHistory[idx].title = newTitle;
+              localStorage.setItem("chatHistory", JSON.stringify(fullHistory));
+            }
+          }
+          overlay.remove();
+          loadSidebar();
+        };
+
+        const cancel = () => {
+          overlay.remove();
+          loadSidebar();
+        };
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); commit(); }
+          else if (e.key === "Escape") { e.preventDefault(); cancel(); }
+        });
+
+        input.addEventListener("blur", () => {
+          const newTitle = (input.value || "").trim();
+          if (newTitle && newTitle !== currentTitle) commit(); else cancel();
+        });
+
+        overlay.appendChild(input);
+        sidebar.appendChild(overlay);
+
+        // Foca e seleciona imediatamente
+        requestAnimationFrame(() => { input.focus(); input.select(); });
+      } catch (err) {
+        console.error("Erro ao iniciar renomeação:", err);
       }
     }
 
-    // GERAÇÃO DE FECHAMENTO E SALVAMENTO (CRÍTICO PARA MEMÓRIA)
-    const closingThreadRecord = global.threadMemory?.get(threadId);
-    const closingPersona = closingThreadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
+    function showResetModal() {
+      document.getElementById("resetModal").style.display = "block";
+    }
+
+    function closeModal() {
+      const ids = ["resetModal", "loginModal", "newTravessiaModal"];
+      ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+      });
+      const input = document.getElementById("travessiaName");
+      if (input) input.value = "";
+    }
     
-    if (closingPersona !== "tecnico") {
-        const { generateClosing } = require('../lib/memory.js');
-        const closing = `\n\n${generateClosing()}`;
+    function confirmNewTravessia() {
+      const travessiaName = document.getElementById("travessiaName").value.trim() || "Nova Travessia";
+      
+      // Limpa tudo
+      localStorage.removeItem("threadId");
+      messages = [];
+      document.getElementById("response").innerHTML = "";
+      document.getElementById("userInput").value = "";
+      document.getElementById("userInput").style.height = "55px";
+      
+      // Cria nova thread
+      const newThreadId = generateThreadId();
+      localStorage.setItem("threadId", newThreadId);
+      
+      // Salva no histórico com o nome da travessia REAL
+      saveToHistory(travessiaName, newThreadId);
+      
+      // Inicia mensagens vazias pra essa thread
+      localStorage.setItem(`thread_${newThreadId}`, JSON.stringify([]));
+      
+      // Fecha modal e atualiza UI
+      closeModal();
+      loadSidebar();
+    }
+
+    function confirmReset() {
+      const currentThreadId = localStorage.getItem("threadId");
+      
+      // Remover sessão atual do histórico
+      if (currentThreadId) {
+        const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+        const updatedHistory = history.filter(session => session.id !== currentThreadId);
+        localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
         
-        // Envia fechamento para o cliente
-        res.write(`data: ${JSON.stringify({ content: closing })}\n\n`);
+        // 🗑️ LIMPAR MENSAGENS DA SESSÃO RESETADA
+        localStorage.removeItem(`thread_${currentThreadId}`);
+      }
+      
+      // Resetar thread atual
+      localStorage.removeItem("threadId");
+      messages = []; // Limpar mensagens
+      document.getElementById("response").innerHTML = "🔄 Memória resetada. Nova travessia iniciada.";
+      document.getElementById("userInput").value = "";
+      // Resetar o tamanho do textarea para o padrão
+      document.getElementById("userInput").style.height = "55px";
+      
+      closeModal();
+      loadSidebar();
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("chatSidebar");
+      const main = document.getElementById("mainContent");
+      const btn = document.getElementById("toggleSidebar");
+
+      if (window.innerWidth <= 768) {
+        // Mobile: usa classe 'open'
+        const isOpen = sidebar.classList.contains("open");
+        if (isOpen) {
+          sidebar.classList.remove("open");
+          btn.classList.remove("sidebar-open");
+        } else {
+          sidebar.classList.add("open");
+          btn.classList.add("sidebar-open");
+        }
+        btn.setAttribute("aria-expanded", sidebar.classList.contains("open") ? "true" : "false");
+      } else {
+        // Desktop: usa classe 'hidden' para sidebar e 'sidebar-hidden' para main
+        const isHidden = sidebar.classList.contains("hidden");
+        if (isHidden) {
+          // Mostrar sidebar
+          sidebar.classList.remove("hidden");
+          main.classList.remove("sidebar-hidden");
+          btn.classList.add("sidebar-open");
+        } else {
+          // Esconder sidebar
+          sidebar.classList.add("hidden");
+          main.classList.add("sidebar-hidden");
+          btn.classList.remove("sidebar-open");
+        }
+        btn.setAttribute("aria-expanded", !sidebar.classList.contains("hidden") ? "true" : "false");
+      }
+    }
+
+    function openItemMenu(e, sessionId, btn, title) {
+      const menu = document.getElementById('itemMenu');
+      if (!menu) return;
+      // Toggle se já estiver aberto para o mesmo item
+      if (menu.style.display === 'block' && menu.dataset.anchorId === String(sessionId)) {
+        menu.style.display = 'none';
+        return;
+      }
+      menu.innerHTML = '';
+      const renameBtn = document.createElement('button');
+      renameBtn.type = 'button';
+      renameBtn.className = 'action-item';
+      renameBtn.textContent = 'Renomear';
+      renameBtn.onclick = () => {
+        startInlineRename(btn, sessionId, title);
+        menu.style.display = 'none';
+      };
+      menu.appendChild(renameBtn);
+      const rect = e.currentTarget.getBoundingClientRect();
+      menu.style.display = 'block';
+      const mRect = menu.getBoundingClientRect();
+      let top = rect.top - mRect.height - 8;
+      if (top < 8) {
+        top = rect.bottom + 8;
+      }
+      let left = Math.min(Math.max(rect.left, 8), window.innerWidth - mRect.width - 8);
+      menu.style.top = top + 'px';
+      menu.style.left = left + 'px';
+      menu.dataset.anchorId = String(sessionId);
+    }
+
+    function archiveSidebarButtons() {
+      try {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        if (history.length === 0) { alert('Não há sessões para arquivar.'); return; }
+        if (!confirm('Arquivar todas as sessões do sidebar? Elas continuarão preservadas e poderão ser restauradas futuramente.')) return;
+        const updated = history.map(s => ({ ...s, archived: true }));
+        localStorage.setItem('chatHistory', JSON.stringify(updated));
+        loadSidebar();
+        const menu = document.getElementById('sidebarMenu');
+        if (menu) menu.style.display = 'none';
+      } catch (e) {
+        alert('Falha ao arquivar sessões.');
+      }
+    }
+
+    function deleteSidebarButtons() {
+      try {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        if (history.length === 0) { alert('Não há sessões para excluir.'); return; }
+        if (!confirm('Tem certeza que deseja excluir TODAS as sessões do sidebar e respectivas memórias? Esta ação não pode ser desfeita.')) return;
+        history.forEach(sess => {
+          if (sess && sess.id) {
+            localStorage.removeItem(`thread_${sess.id}`);
+          }
+        });
+        localStorage.removeItem('chatHistory');
+        localStorage.removeItem('threadId');
+        loadSidebar();
+        const menu = document.getElementById('sidebarMenu');
+        if (menu) menu.style.display = 'none';
+        const input = document.getElementById('userInput');
+        if (input) input.value = '';
+        const resp = document.getElementById('response');
+        if (resp) resp.innerHTML = '🗑️ Todas as sessões foram excluídas.';
+      } catch (e) {
+        alert('Falha ao excluir sessões.');
+      }
+    }
+
+    // Carregar sidebar ao inicializar
+    window.onload = async function () {
+      // 1. Verifica se voltou do Google Login (OAuth)
+      await checkUrlHashForAuth();
+
+      loadSidebar();
+      
+      // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
+      const currentThreadId = localStorage.getItem("threadId");
+      if (currentThreadId) {
+        loadThreadMessages(currentThreadId);
+      }
+
+      // Estado inicial: sidebar fechada no desktop, mostrando apenas o menu
+      if (window.innerWidth > 768) {
+        const sidebar = document.getElementById("chatSidebar");
+        const main = document.getElementById("mainContent");
+        const btn = document.getElementById("toggleSidebar");
+        sidebar.classList.add("hidden");
+        main.classList.add("sidebar-hidden");
+        btn.classList.remove("sidebar-open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+      
+      // Verificar status de login
+      checkLoginStatus();
+    };
+
+    // Fechar modal clicando fora dele
+    window.onclick = function(event) {
+      const resetModal = document.getElementById("resetModal");
+      const loginModal = document.getElementById("loginModal");
+      const newTravessiaModal = document.getElementById("newTravessiaModal");
+      
+      if (event.target === resetModal || event.target === loginModal || event.target === newTravessiaModal) {
+        closeModal();
+      }
+
+      const itemMenu = document.getElementById("itemMenu");
+      if (itemMenu && itemMenu.style.display === "block" && !itemMenu.contains(event.target)) {
+        itemMenu.style.display = "none";
+      }
+    }
+
+    function enhanceCodeBlocks(container) {
+      const pres = container.querySelectorAll('pre');
+      pres.forEach(pre => {
+        if (pre.dataset.enhanced === '1') return;
+
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        // Linguagem via class="language-xxx"
+        const cls = (code.getAttribute('class') || '').split(/\s+/);
+        let lang = cls.find(c => c.startsWith('language-'));
+        lang = lang ? lang.replace('language-', '').toUpperCase() : 'TXT';
+
+        // Badge de linguagem
+        const badge = document.createElement('div');
+        badge.className = 'code-badge';
+        badge.textContent = lang;
+
+        // Botão copiar
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.type = 'button';
+        btn.textContent = 'Copiar';
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const raw = code.innerText;
+          try {
+            await navigator.clipboard.writeText(raw);
+            btn.textContent = 'Copiado!';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          } catch {
+            btn.textContent = 'Falhou';
+            setTimeout(() => btn.textContent = 'Copiar', 1200);
+          }
+        });
+
+        pre.appendChild(badge);
+        pre.appendChild(btn);
+        pre.dataset.enhanced = '1';
+      });
+    }
+
+    function hardenLinks(container) {
+      container.querySelectorAll('a[href]').forEach(a => {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      });
+    }
+
+    async function copyText(text, btn) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Copiado!';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      } catch {
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Falhou';
+          setTimeout(() => btn.textContent = old, 1000);
+        }
+      }
+    }
+
+    function iconSVG(kind) {
+      switch (kind) {
+        case 'text': // documento com linhas
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm8 1.5V9h4.5L14 4.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2zm0-8h4v2H8V8z"/></svg>';
+        case 'md':   // chaves {}
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.7 7.3 5 11l3.7 3.7 1.4-1.4L7.8 11l2.3-2.3-1.4-1.4zm6.6 0-1.4 1.4L16.2 11l-2.3 2.3 1.4 1.4L19 11l-3.7-3.7zM10 18l2-12 2 .3-2 12-2-.3z"/></svg>';
+        case 'voice':
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zm-7 8h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.92V21h-4v-3.08A7 7 0 0 1 5 11z"/></svg>';
+        case 'ok':   // check
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+        case 'err':  // X
+          return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>';
+        default:
+          return '';
+      }
+    }
+
+    function setIcon(btn, state) {
+      btn.classList.remove('ok', 'err');
+      if (state === 'ok') btn.classList.add('ok');
+      if (state === 'err') btn.classList.add('err');
+      btn.innerHTML = iconSVG(state);
+    }
+
+    async function clipboardWrite(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function attachMessageToolbar(div, rawMarkdown) {
+      // Evita duplicar
+      if (div.querySelector('.msg-toolbar')) return;
+
+      // Cria toolbar
+      const bar = document.createElement('div');
+      bar.className = 'msg-toolbar';
+
+      // Botão: copiar TEXTO (renderizado)
+      const btnTxt = document.createElement('button');
+      btnTxt.className = 'msg-btn icon';
+      btnTxt.type = 'button';
+      btnTxt.setAttribute('aria-label', 'Copiar texto');
+      btnTxt.title = 'Copiar texto';
+      btnTxt.innerHTML = iconSVG('text');
+      btnTxt.addEventListener('click', async () => {
+        const plain = div.innerText
+          .replace(/^Você:\s*/,'')
+          .replace(/^Invocando\.\.\.\s*/i,'')
+          .trim();
+        const ok = await clipboardWrite(plain);
+        setIcon(btnTxt, ok ? 'ok' : 'err');
+        setTimeout(() => { btnTxt.classList.remove('ok','err'); btnTxt.innerHTML = iconSVG('text'); }, 1200);
+      });
+
+      bar.appendChild(btnTxt);
+      const btnSpeak = document.createElement('button');
+      btnSpeak.className = 'msg-btn icon';
+      btnSpeak.type = 'button';
+      btnSpeak.setAttribute('aria-label', 'Falar mensagem');
+      btnSpeak.title = 'Falar mensagem';
+      btnSpeak.innerHTML = iconSVG('voice');
+      btnSpeak.addEventListener('click', async () => {
+        const plain = div.innerText
+          .replace(/^Você:\s*/,'')
+          .replace(/^Invocando\.\.\.\s*/i,'')
+          .trim();
+        await window.arca.speak(plain, 'alloy', 'mp3');
+      });
+      bar.appendChild(btnSpeak);
+      div.appendChild(bar);
+    }
+
+    // Event listener para ENTER no campo de nome da travessia
+    document.getElementById('travessiaName').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmNewTravessia();
+      }
+    });
+    
+    // Event listener para ENTER invocar e SHIFT+ENTER quebrar linha
+    // No mobile, ENTER não funciona para evitar problemas de UX
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        // Detectar se é dispositivo móvel
+        const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // Adiciona ao buffer para salvar
-        assistantResponse += closing;
+        if (isMobile) {
+          // No mobile, ENTER sempre quebra linha (comportamento padrão)
+          return;
+        }
+        
+        if (e.shiftKey) {
+          // SHIFT+ENTER: permite quebra de linha (comportamento padrão)
+          return;
+        } else {
+          // ENTER: invoca a mensagem (apenas no desktop)
+          e.preventDefault();
+          sendMessage();
+        }
+      }
+    });
+
+    // Função para mostrar o modal de login
+    function showLoginModal() {
+      document.getElementById('loginModal').style.display = 'block';
+    }
+    
+    // Função para validar email
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+    
+    // Função para validar número de WhatsApp
+    function validateWhatsApp(number) {
+      // Remove caracteres não numéricos
+      const cleanNumber = number.replace(/\D/g, '');
+      // Verifica se tem entre 10 e 11 dígitos (com ou sem o 9)
+      return cleanNumber.length >= 10 && cleanNumber.length <= 11;
+    }
+    
+    // Função para formatar número de WhatsApp
+    function formatWhatsApp(number) {
+      const cleanNumber = number.replace(/\D/g, '');
+      if (cleanNumber.length === 11) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 7)}-${cleanNumber.substring(7)}`;
+      } else if (cleanNumber.length === 10) {
+        return `(${cleanNumber.substring(0, 2)}) ${cleanNumber.substring(2, 6)}-${cleanNumber.substring(6)}`;
+      }
+      return number;
+    }
+    
+    // Função para lidar com o login
+    function handleLogin(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('userEmail').value.trim();
+      const whatsappConsent = document.getElementById('whatsappConsent').checked;
+      let whatsapp = '';
+      
+      if (!validateEmail(email)) {
+        alert('Por favor, insira um email válido.');
+        return false;
+      }
+      
+      if (whatsappConsent) {
+        whatsapp = document.getElementById('userWhatsapp').value.trim();
+        if (!validateWhatsApp(whatsapp)) {
+          alert('Por favor, insira um número de WhatsApp válido com DDD.');
+          return false;
+        }
+      }
+      
+      // Armazena os dados do usuário
+      userData = {
+        email: email,
+        whatsapp: whatsappConsent ? formatWhatsApp(whatsapp) : '',
+        consentWhatsapp: whatsappConsent,
+        loginDate: new Date().toISOString()
+      };
+      
+      // Salva no localStorage
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      // Atualiza o estado de login
+      userLoggedIn = true;
+      
+      // Fecha o modal
+      closeModal();
+      
+      // Atualiza a interface para mostrar que o usuário está logado
+      updateLoginStatus();
+      
+      return false;
+    }
+    
+    // Função para atualizar o status de login na interface
+    function updateLoginStatus() {
+      const footerNote = document.querySelector('.footer-note');
+      if (userLoggedIn && userData) {
+        footerNote.innerHTML = `<span style="color: #b30000;">⦿</span> ${userData.email.split('@')[0]} | <a href="#" onclick="handleLogout(); return false;" style="color: #777; text-decoration: underline;">Sair</a>`;
+      } else {
+        const isGuest = localStorage.getItem('isGuest');
+        if (isGuest) {
+            footerNote.innerHTML = `<span style="color: #666;">⦿</span> Visitante | <a href="#" onclick="handleLogout(); return false;" style="color: #777; text-decoration: underline;">Entrar</a>`;
+        } else {
+            footerNote.innerHTML = `<a href="#" onclick="showAuthForm(); return false;">Fazer login</a>`;
+        }
+      }
     }
 
-    // SALVA NO HISTÓRICO (Fundamental para o modelo lembrar do que disse)
-    if (assistantResponse && assistantResponse.trim()) {
-        await addMessageToThread(threadId, "assistant", assistantResponse, userId);
-        console.log(`[ARCA] Resposta salva na thread ${threadId} (len: ${assistantResponse.length})`);
+    function handleLogout() {
+      // Limpa dados de sessão
+      localStorage.removeItem('userData');
+      localStorage.removeItem('isGuest');
+      userLoggedIn = false;
+      userData = null;
+      
+      // Atualiza UI
+      updateLoginStatus();
+      
+      // Mostra o portal novamente
+      const portal = document.getElementById('authPortal');
+      if (portal) {
+        portal.style.display = 'flex';
+        portal.classList.remove('hidden');
+      }
+      
+      // Reseta visualização do portal para opções iniciais
+      document.getElementById('authForm').style.display = 'none';
+      document.getElementById('portalOptions').style.display = 'flex';
+    }
+    
+    // Função para alternar entre os modos ritual e técnico
+    function setPersonaMode(mode) {
+      // Armazena o modo selecionado no localStorage
+      localStorage.setItem('arcaPersonaMode', mode);
+      
+      // Atualiza a aparência dos botões
+      const ritualBtn = document.getElementById('ritualModeBtn');
+      const tecnicoBtn = document.getElementById('tecnicoModeBtn');
+      
+      if (mode === 'ritual') {
+        ritualBtn.classList.add('active');
+        ritualBtn.style.background = '#b30000';
+        ritualBtn.style.opacity = '0.8';
+        
+        tecnicoBtn.classList.remove('active');
+        tecnicoBtn.style.background = '#333';
+        tecnicoBtn.style.opacity = '0.6';
+      } else {
+        tecnicoBtn.classList.add('active');
+        tecnicoBtn.style.background = '#0066cc';
+        tecnicoBtn.style.opacity = '0.8';
+        
+        ritualBtn.classList.remove('active');
+        ritualBtn.style.background = '#333';
+        ritualBtn.style.opacity = '0.6';
+      }
+      
+      // Atualiza o placeholder do textarea de acordo com o modo
+      const userInput = document.getElementById('userInput');
+      if (mode === 'ritual') {
+        userInput.placeholder = 'Escreva com presença. Aqui não há espaço para palavras vazias.';
+      } else {
+        userInput.placeholder = 'Digite sua instrução técnica de forma clara e objetiva.';
+      }
+    }
+    
+    // Função para iniciar login com Google
+    async function loginWithGoogle() {
+      try {
+        const btn = document.querySelector('.portal-btn.google');
+        const originalContent = btn.innerHTML;
+        btn.textContent = 'Conectando...';
+        btn.disabled = true;
+
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_google_url' })
+        });
+        
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Erro ao obter URL de login: ' + (data.error || 'Desconhecido'));
+          btn.innerHTML = originalContent;
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro de conexão ao tentar login com Google.');
+        const btn = document.querySelector('.portal-btn.google');
+        if (btn) btn.disabled = false;
+      }
     }
 
-    clearInterval(keepalive);
-    res.write(`data: [DONE]\n\n`);
-    res.end();
+    // Verifica se voltou do Google com token na URL
+    async function checkUrlHashForAuth() {
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const type = params.get('type');
+        
+        if (!accessToken) return;
 
-  } catch (err) {
-    try {
-      res.write(`data: ${JSON.stringify({ content: `⚠️ A Arca silenciou: ${err.message}` })}\n\n`);
-      res.write(`data: [DONE]\n\n`);
-      res.end();
-    } catch {
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: `Falha ao invocar: ${err.message}` }));
+        // Limpar hash da URL visualmente
+        window.history.replaceState(null, null, window.location.pathname);
+
+        // --- FLUXO DE RECUPERAÇÃO DE SENHA ---
+        if (type === 'recovery') {
+          const newPass = prompt("Ritual de Renovação: Digite sua NOVA senha para a Arca:");
+          if (!newPass || newPass.length < 6) {
+            alert("A senha deve ter pelo menos 6 caracteres.");
+            return;
+          }
+
+          try {
+            const res = await fetch('/api/auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update_password', access_token: accessToken, password: newPass })
+            });
+            const data = await res.json();
+            if (data.success) {
+              alert(data.message);
+              showAuthPortal(); // Volta para o login
+            } else {
+              alert("Erro ao atualizar: " + data.error);
+            }
+          } catch (err) {
+            alert("Erro de conexão: " + err.message);
+          }
+          return;
+        }
+
+        // --- FLUXO DE LOGIN NORMAL (Google/Magic) ---
+        const portal = document.getElementById('authPortal');
+        if (portal) {
+           const title = portal.querySelector('.portal-title');
+           if (title) title.textContent = 'Verificando credenciais...';
+        }
+
+        try {
+           const res = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'verify_token', access_token: accessToken })
+          });
+          
+          const data = await res.json();
+          if (data.success && data.user) {
+            localStorage.setItem('userData', JSON.stringify(data.user));
+            localStorage.removeItem('isGuest');
+            userLoggedIn = true;
+            userData = data.user;
+            updateLoginStatus();
+            if (portal) portal.style.display = 'none';
+          } else {
+            alert('Falha ao verificar login Google: ' + (data.error || 'Erro desconhecido'));
+            if (portal) {
+                const title = portal.querySelector('.portal-title');
+                if (title) title.textContent = 'A ARCA';
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao verificar token Google:', err);
+          if (portal) {
+                const title = portal.querySelector('.portal-title');
+                if (title) title.textContent = 'A ARCA';
+            }
+        }
+      }
     }
-  }
-}
 
-module.exports = handler;
+    // Função para verificar o login ao carregar a página
+    function checkLoginStatus() {
+      const storedUserData = localStorage.getItem('userData');
+      const isGuest = localStorage.getItem('isGuest');
+      
+      if (storedUserData) {
+        userData = JSON.parse(storedUserData);
+        userLoggedIn = true;
+        updateLoginStatus();
+        document.getElementById('authPortal').style.display = 'none';
+      } else if (isGuest) {
+        document.getElementById('authPortal').style.display = 'none';
+      } else {
+        // Se não estiver logado nem for convidado, mostra o PORTAL
+        const portal = document.getElementById('authPortal');
+        if (portal) portal.style.display = 'flex';
+      }
+      
+      // Inicializar o modo da persona ao carregar a página
+      const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
+      setPersonaMode(savedMode);
+    }
 
+    // --- LÓGICA DO NOVO PORTAL (Vercel/Supabase Ready) ---
+
+    let authMode = 'login'; // 'login' ou 'signup'
+
+    function showAuthForm() {
+      document.getElementById('portalOptions').style.display = 'none';
+      document.getElementById('authForm').style.display = 'block';
+      document.getElementById('authEmail').focus();
+    }
+
+    function hideAuthForm() {
+      document.getElementById('authForm').style.display = 'none';
+      document.getElementById('portalOptions').style.display = 'flex';
+    }
+
+    function toggleAuthMode() {
+      const btn = document.querySelector('#authForm button[type="submit"]');
+      const toggle = document.getElementById('authModeToggle');
+      const forgotLink = document.getElementById('forgotPassLink');
+      
+      if (authMode === 'login') {
+        authMode = 'signup';
+        btn.textContent = 'CRIAR CONTA';
+        toggle.textContent = 'Já tem conta? Faça login.';
+        if (forgotLink) forgotLink.style.display = 'none';
+      } else {
+        authMode = 'login';
+        btn.textContent = 'ENTRAR';
+        toggle.textContent = 'Não tem conta? Crie uma agora.';
+        if (forgotLink) forgotLink.style.display = 'block';
+      }
+    }
+
+    function togglePasswordVisibility() {
+      const passInput = document.getElementById('authPass');
+      const toggleBtn = document.getElementById('togglePassBtn');
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(179,0,0,0.5)); pointer-events: none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+        toggleBtn.title = "Ocultar senha";
+      } else {
+        passInput.type = 'password';
+        toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(255,107,107,0.5)); pointer-events: none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        toggleBtn.title = "Mostrar senha";
+      }
+    }
+
+    async function handleForgotPassword() {
+      const email = document.getElementById('authEmail').value;
+      if (!email) {
+        alert("Por favor, digite seu e-mail para receber o link de recuperação.");
+        document.getElementById('authEmail').focus();
+        return;
+      }
+
+      if (!confirm(`Deseja invocar o ritual de renovação da sua identidade para ${email}?`)) return;
+
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reset_password', email })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // 𓊝 Ritual de Mensagem: Prioriza a voz da Arca
+          alert(data.ritual_message || data.message);
+        } else {
+          alert("A Arca recusa: " + data.error);
+        }
+      } catch (err) {
+        alert("O eco falhou: " + err.message);
+      }
+    }
+
+    function enterAsGuest() {
+      localStorage.setItem('isGuest', 'true');
+      document.getElementById('authPortal').style.display = 'none';
+      
+      // Se não tiver threadId, gera um
+      if (!localStorage.getItem('threadId')) {
+        const tId = generateThreadId();
+        localStorage.setItem('threadId', tId);
+      }
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPass').value;
+      const btn = document.querySelector('#authForm button[type="submit"]');
+      
+      if (!email || !password) return;
+      
+      const originalText = btn.textContent;
+      btn.textContent = 'Processando...';
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: authMode, email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          // Sucesso
+          localStorage.setItem('userData', JSON.stringify(data.user));
+          localStorage.removeItem('isGuest'); // Remove flag de convidado se existir
+          
+          userLoggedIn = true;
+          userData = data.user;
+          updateLoginStatus();
+          
+          document.getElementById('authPortal').style.display = 'none';
+          
+          // Se tiver mensagem de boas-vindas, pode exibir ou só fechar
+        } else {
+          alert('Erro: ' + (data.error || 'Falha na autenticação'));
+        }
+      } catch (err) {
+        alert('Erro de conexão: ' + err.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+    
+    // Mostrar/esconder campo de WhatsApp baseado no checkbox
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar o modo da persona ao carregar a página
+      const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
+      setPersonaMode(savedMode);
+      
+      const whatsappConsent = document.getElementById('whatsappConsent');
+      const whatsappField = document.getElementById('whatsappField');
+      
+      if (whatsappConsent && whatsappField) {
+        whatsappConsent.addEventListener('change', function() {
+          if (this.checked) {
+            whatsappField.style.display = 'block';
+            whatsappField.classList.add('visible');
+            document.getElementById('userWhatsapp').required = true;
+          } else {
+            whatsappField.classList.remove('visible');
+            setTimeout(() => {
+              whatsappField.style.display = 'none';
+            }, 300);
+            document.getElementById('userWhatsapp').required = false;
+          }
+        });
+      }
+      
+      // Configurar auto-expansão do textarea
+      const userInput = document.getElementById('userInput');
+      if (userInput) {
+        // Aplicar ao carregar a página
+        autoResizeTextarea();
+        
+        // Aplicar quando o usuário digita
+        userInput.addEventListener('input', autoResizeTextarea);
+        
+        // Aplicar quando o usuário cola texto
+        userInput.addEventListener('paste', function() {
+          // Pequeno delay para garantir que o conteúdo colado seja processado
+          setTimeout(() => { autoResizeTextarea(); }, 10);
+        });
+      }
+      
+      // Atualizar posicionamento em mudanças de tamanho/rotação (mobile)
+      window.addEventListener('resize', autoResizeTextarea);
+      window.addEventListener('orientationchange', () => setTimeout(autoResizeTextarea, 60));
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', autoResizeTextarea);
+      }
+    });
+    
+    window.sendMessage = sendMessage;
+    window.showResetModal = showResetModal;
+    window.showLoginModal = showLoginModal;
+    window.closeModal = closeModal;
+    window.confirmReset = confirmReset;
+    window.toggleSidebar = toggleSidebar;
+    window.archiveSidebarButtons = archiveSidebarButtons;
+    window.deleteSidebarButtons = deleteSidebarButtons;
+    window.handleLogin = handleLogin;
+    async function apiPost(path, body) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const json = await res.json();
+      return json;
+    }
+    async function arcaImage(prompt, size) {
+      const r = await apiPost('/api/images', { prompt, size });
+      return r;
+    }
+    async function arcaSpeak(input, voice, format) {
+      const r = await apiPost('/api/speech', { input, voice, format });
+      if (r && r.audio_b64) {
+        const src = 'data:audio/' + (r.format || 'mp3') + ';base64,' + r.audio_b64;
+        const audio = new Audio(src);
+        audio.play();
+      }
+      return r;
+    }
+    async function arcaTranscribeFromUrl(audioUrl, mime) {
+      return apiPost('/api/transcribe', { audioUrl, mime });
+    }
+    async function arcaTranscribeFile(file, mime) {
+      const ab = await file.arrayBuffer();
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
+      return apiPost('/api/transcribe', { audioB64: b64, mime: mime || file.type || 'audio/mpeg' });
+    }
+    window.arca = { image: arcaImage, speak: arcaSpeak, transcribeFromUrl: arcaTranscribeFromUrl, transcribeFile: arcaTranscribeFile };
+  </script>
+</body>
+</html>
