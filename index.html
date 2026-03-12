@@ -2106,6 +2106,15 @@
           userId = userData.email;
         }
 
+        clearTimeout(window.invocandoMinTimeout);
+        window.invocandoMinTimeout = setTimeout(() => {
+          const idx = messages.length - 1;
+          if (messages[idx] && messages[idx].role === "assistant" && messages[idx].content === "Invocando...") {
+            messages[idx].content = "";
+            typewriterSetTarget(threadId, idx, messages[idx].content, true);
+          }
+        }, 280);
+
         const response = await fetch("/api/arca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2143,6 +2152,7 @@
 
             if (payload === "[DONE]") {
               // Garantir renderização final e limpeza
+              clearTimeout(window.invocandoMinTimeout);
               clearTimeout(window.renderTimeout);
               typewriterFinish();
               
@@ -2165,8 +2175,9 @@
             // STREAMING RITUAL OTIMIZADO: máxima fluidez e presença
             if (isInvocando && content !== "[DONE]") {
               const idx = messages.length - 1;
-              if (messages[idx].content === "Invocando...") {
+              if (messages[idx].content === "Invocando..." || messages[idx].content === "") {
                 // Remove "Invocando..." e inicia resposta real
+                clearTimeout(window.invocandoMinTimeout);
                 messages[idx].content = fixedContent;
                 typewriterSetTarget(threadId, idx, messages[idx].content, true);
                 
