@@ -101,6 +101,13 @@ async function handler(req, res) {
       content: "DIRETRIZ DE EXTENSÃO: Resposta com densidade ajustada à complexidade. NÃO GERE FECHAMENTO/DESPEDIDA NO FINAL (o sistema fará isso). Pare após o ultimato." 
     };
 
+    const recordForSpeed = global.threadMemory?.get(threadId);
+    const personaForSpeed = recordForSpeed?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
+    const sys = messages.filter(m => m.role === 'system');
+    const nonSys = messages.filter(m => m.role !== 'system');
+    const maxNonSysForOpenAI = personaForSpeed === 'tecnico' ? 14 : 22;
+    const conversationWindow = [...sys, ...nonSys.slice(-maxNonSysForOpenAI)];
+
     if (PROMPT_ID) {
       // MODO PROMPT GERENCIADO (PROMPT MANAGEMENT API)
       // Correção: Ao usar prompt.id, NÃO devemos enviar model, temperature, etc.
@@ -109,7 +116,7 @@ async function handler(req, res) {
       // CRÍTICO: NÃO filtramos mensagens de sistema. Enviamos TUDO para garantir
       // que as regras locais de "resposta longa" (memory.js) sejam respeitadas.
       
-      const conversationHistory = [...messages, systemInjection];
+      const conversationHistory = [...conversationWindow, systemInjection];
       
       requestBody = {
         prompt: {
@@ -124,7 +131,7 @@ async function handler(req, res) {
       endpoint = "https://api.openai.com/v1/chat/completions";
       requestBody = {
         model: userModel,
-        messages: [...messages, systemInjection], // INJEÇÃO AQUI TAMBÉM!
+        messages: [...conversationWindow, systemInjection],
         stream: true,
         temperature: 0.85,
         max_tokens: 16000,
@@ -177,7 +184,7 @@ async function handler(req, res) {
       
       requestBody = {
         model: userModel,
-        messages: [...messages, systemInjectionFallback], // Adiciona a injeção aqui também
+        messages: [...conversationWindow, systemInjectionFallback],
         stream: true,
         temperature: 0.85,
         max_tokens: 16000,
