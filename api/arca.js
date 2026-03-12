@@ -15,6 +15,7 @@ if (!process.env.OPENAI_API_KEY) {
 
 async function handler(req, res) {
   try {
+    const t0 = Date.now();
     console.log('[ARCA] threadId=%s persona=%s', req.body?.threadId, process.env.ARCA_PERSONA || '(unset)');
     
     if (req.method !== "POST") {
@@ -57,6 +58,9 @@ async function handler(req, res) {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    if (res.flushHeaders) res.flushHeaders();
+    res.write(`: ping\n\n`);
+    console.log('[ARCA][TTFT] sse_open_ms=%d', Date.now() - t0);
 
     // (opcional) ping keepalive
     const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
@@ -130,6 +134,8 @@ async function handler(req, res) {
     }
 
     console.log(`[ARCA] Iniciando requisição para OpenAI...`);
+    const tOpenAI = Date.now();
+    let ttftLogged = false;
 
     let finalRes;
     try {
@@ -147,6 +153,7 @@ async function handler(req, res) {
       res.write(`data: [DONE]\n\n`);
       return res.end();
     }
+    console.log('[ARCA][TTFT] openai_headers_ms=%d', Date.now() - tOpenAI);
 
     // Fallback para Chat Completions se falhar (404, 400, etc)
     if (!finalRes.ok) {
@@ -257,6 +264,10 @@ async function handler(req, res) {
           }
 
           if (chunk) {
+            if (!ttftLogged) {
+              ttftLogged = true;
+              console.log('[ARCA][TTFT] first_token_ms=%d', Date.now() - tOpenAI);
+            }
             // Envia abertura na primeira chunk válida (apenas para persona ritual)
             if (!openingSent) {
               // Verifica a persona atual para esta thread
