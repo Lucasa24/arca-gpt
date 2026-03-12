@@ -201,7 +201,7 @@
       align-items: center;
       transition: margin-left 0.3s ease, width 0.3s ease;
       margin-left: 220px;
-      padding: 40px 1rem 300px;
+      padding: 22px 1rem 300px;
       width: calc(100% - 220px);
       position: relative;
     }
@@ -209,6 +209,19 @@
     #mainContent.sidebar-hidden {
       margin-left: 0;
       width: 100%;
+      align-items: stretch;
+      background: #1c1c1c;
+      border-left: 4px solid #b30000;
+    }
+
+    #mainContent.sidebar-hidden #response {
+      background: transparent;
+      border-left: 0;
+      padding: 0;
+      margin-top: 0.75rem;
+      max-width: none;
+      max-height: none;
+      overflow: visible;
     }
 
     #mainContent .invoc {
@@ -504,16 +517,16 @@
       color: white;
     }
     .main-title {
-      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      font-size: clamp(1.05rem, 3.2vw, 1.6rem);
       text-align: center;
-      margin: 0 0 1.5rem 0;
+      margin: 0 0 0.6rem 0;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       width: 100%;
     }
 
     #response {
-      margin-top: 2rem;
+      margin-top: 1rem;
       white-space: normal;
       background: #1c1c1c;
       padding: 1rem;
@@ -1014,12 +1027,12 @@
       }
       
       #mainContent {
-        padding: 60px 2rem 300px;
+        padding: 32px 2rem 300px;
       }
       
       #mainContent.sidebar-hidden {
         margin: 0 auto;
-        padding: 60px 2rem 300px;
+        padding: 32px 2rem 300px;
       }
     }
     
@@ -1059,13 +1072,13 @@
       }
       
       .main-title {
-        font-size: clamp(1.2rem, 4vw, 1.8rem);
-        margin-bottom: 1rem;
+        font-size: clamp(0.95rem, 3.8vw, 1.35rem);
+        margin-bottom: 0.6rem;
       }
       
       #response {
         padding: 0.75rem;
-        margin-top: 1.5rem;
+        margin-top: 0.9rem;
       }
       
       .fixed-footer {
@@ -1349,7 +1362,6 @@
 
   <main id="mainContent">
     <h1 class="main-title">A Arca <span class="arca-anim">𓊝</span></h1>
-    <p class="invoc">Ritual de Travessia ⎠ ۩ ⎞ Entre na Arca:</p>
     <div id="response"></div>
 
     <div class="fixed-footer">
