@@ -198,30 +198,19 @@
     #mainContent {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       transition: margin-left 0.3s ease, width 0.3s ease;
       margin-left: 220px;
       padding: 22px 1rem 300px;
       width: calc(100% - 220px);
       position: relative;
+      background: #1c1c1c;
+      border-left: 4px solid #b30000;
     }
 
     #mainContent.sidebar-hidden {
       margin-left: 0;
       width: 100%;
-      align-items: stretch;
-      background: #1c1c1c;
-      border-left: 4px solid #b30000;
-    }
-
-    #mainContent.sidebar-hidden #response {
-      background: transparent;
-      border-left: 0;
-      padding: 0;
-      margin-top: 0.75rem;
-      max-width: none;
-      max-height: none;
-      overflow: visible;
     }
 
     #mainContent .invoc {
@@ -526,22 +515,22 @@
     }
 
     #response {
-      margin-top: 1rem;
+      margin-top: 0.75rem;
       white-space: normal;
-      background: #1c1c1c;
-      padding: 1rem;
-      border-left: 4px solid #b30000;
+      background: transparent;
+      padding: 0;
+      border-left: 0;
       overflow-wrap: break-word;
       word-wrap: break-word;
       word-break: break-word;
       text-align: justify;
       line-height: 1.8;
       letter-spacing: 0.5px;
-      max-height: 70vh;
-      overflow-y: auto;
+      max-height: none;
+      overflow: visible;
       width: 100%;
       box-sizing: border-box;
-      max-width: 700px;
+      max-width: none;
     }
     
     #response div {
