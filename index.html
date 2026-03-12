@@ -873,26 +873,29 @@
     }
 
     .mode-peteca .mode-peteca-btn {
-      width: 14px;
-      height: 14px;
-      min-width: 14px;
-      min-height: 14px;
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      min-height: 16px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.22);
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.16), rgba(255,255,255,0.06) 35%, rgba(0,0,0,0.18) 70%);
+      border: 1px solid rgba(0,191,255,0.22);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.06), rgba(0,0,0,0) 55%);
       padding: 0;
       cursor: pointer;
+      position: relative;
       display: grid;
       place-items: center;
-      opacity: 0.75;
-      box-shadow: 0 0 10px rgba(0,0,0,0.35);
-      transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease;
+      opacity: 0.9;
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.08), 0 0 10px rgba(0,191,255,0.12);
+      transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
       letter-spacing: 0;
       outline: none;
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
       user-select: none;
       touch-action: manipulation;
+      backdrop-filter: blur(6px) saturate(140%);
+      -webkit-backdrop-filter: blur(6px) saturate(140%);
     }
 
     .mode-peteca .mode-peteca-btn:focus,
@@ -902,21 +905,55 @@
     }
 
     .mode-peteca .mode-peteca-btn:hover {
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), rgba(255,255,255,0.08) 35%, rgba(0,0,0,0.18) 70%);
-      transform: scale(1.08);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.10), rgba(0,0,0,0) 58%);
+      transform: scale(1.06);
       opacity: 1;
-      border-color: rgba(255,255,255,0.32);
+      border-color: rgba(0,191,255,0.40);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.14), 0 0 14px rgba(0,191,255,0.22);
     }
 
     .mode-peteca .mode-peteca-btn:active { transform: scale(0.98); }
 
+    .mode-peteca .mode-peteca-btn[aria-expanded="true"] {
+      border-color: rgba(0,191,255,0.55);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.18), 0 0 18px rgba(0,191,255,0.28);
+      opacity: 1;
+    }
+
+    .mode-peteca .mode-peteca-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background:
+        conic-gradient(from 210deg,
+          rgba(0,191,255,0.00) 0deg,
+          rgba(0,191,255,0.55) 18deg,
+          rgba(0,191,255,0.10) 56deg,
+          rgba(0,191,255,0.55) 92deg,
+          rgba(0,191,255,0.00) 130deg,
+          rgba(0,191,255,0.55) 164deg,
+          rgba(0,191,255,0.00) 210deg,
+          rgba(0,191,255,0.55) 250deg,
+          rgba(0,191,255,0.00) 360deg);
+      -webkit-mask: radial-gradient(circle, transparent 52%, #000 56%);
+      mask: radial-gradient(circle, transparent 52%, #000 56%);
+      filter: drop-shadow(0 0 6px rgba(0,191,255,0.25));
+    }
+
     .mode-peteca .mode-peteca-btn::after {
       content: '';
-      width: 4px;
-      height: 4px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 5px;
+      height: 5px;
+      transform: translate(-50%, -50%);
       border-radius: 50%;
-      background: rgba(255,255,255,0.55);
-      box-shadow: 0 0 6px rgba(255,255,255,0.25);
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.9), rgba(0,191,255,0.7) 45%, rgba(0,191,255,0.05) 70%);
+      box-shadow: 0 0 10px rgba(0,191,255,0.25);
     }
 
     .mode-peteca-menu {
