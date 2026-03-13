@@ -90,7 +90,9 @@ async function handler(req, res) {
     // Cole o ID do seu prompt aqui (começa com pmpt_)
     // [OPCIONAL] Se configurado, usa a Responses API (Prompt Management)
     // Se nulo, usa o modo MANUAL (Chat Completions) que é estável e segue apenas o memory.js
-    const PROMPT_ID = process.env.ARCA_PROMPT_ID || null; 
+    const PROMPT_ID_FAST = process.env.ARCA_PROMPT_ID_FAST || process.env.ARCA_PROMPT_ID || null;
+    const PROMPT_ID_DEEP = process.env.ARCA_PROMPT_ID_DEEP || process.env.ARCA_PROMPT_ID || null;
+    const modelMode = (req.body?.modelMode || 'auto').toLowerCase();
 
     let endpoint = "https://api.openai.com/v1/responses";
     let requestBody;
@@ -107,6 +109,29 @@ async function handler(req, res) {
     const nonSys = messages.filter(m => m.role !== 'system');
     const maxNonSysForOpenAI = personaForSpeed === 'tecnico' ? 14 : 22;
     const conversationWindow = [...sys, ...nonSys.slice(-maxNonSysForOpenAI)];
+
+    const shouldUseDeep = (text) => {
+      const t = (text || "").trim();
+      if (!t) return false;
+      if (t.length >= 260) return true;
+      if (t.split('\n').length >= 3) return true;
+      if ((t.match(/\?/g) || []).length >= 2) return true;
+      if (personaForSpeed !== 'tecnico' && t.length >= 150) return true;
+      if (/(trauma|identidade|prop[oó]sito|sentido|exist[eê]ncia|depress|ansied|dor|relaciona|inf[aâ]ncia|pai|m[aã]e|verdade|autossabot|estrat[eé]gia|funil|monetiza|posicionamento|lan[cç]amento|oferta|diagn[oó]stico|an[aá]lise|plano|ritual)/i.test(t) && t.length >= 90) return true;
+      if (/^\s*como\b[\s\S]{0,120}\b(e|e também|e ainda)\b[\s\S]{0,200}\?/i.test(t)) return true;
+      return false;
+    };
+
+    const pickPromptId = () => {
+      if (modelMode === 'deep') return { id: PROMPT_ID_DEEP, tag: 'deep' };
+      if (modelMode === 'fast') return { id: PROMPT_ID_FAST, tag: 'fast' };
+      const deep = shouldUseDeep(userInput);
+      return deep ? { id: PROMPT_ID_DEEP, tag: 'auto_deep' } : { id: PROMPT_ID_FAST, tag: 'auto_fast' };
+    };
+
+    const picked = pickPromptId();
+    const PROMPT_ID = picked.id;
+    console.log('[ARCA][MODEL_MODE] %s', picked.tag);
 
     if (PROMPT_ID) {
       // MODO PROMPT GERENCIADO (PROMPT MANAGEMENT API)
