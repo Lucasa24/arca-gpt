@@ -996,6 +996,7 @@
       transition: opacity 0.14s ease, transform 0.14s ease;
       z-index: 120;
       max-width: min(92vw, 620px);
+      box-sizing: border-box;
       overflow-x: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
@@ -1023,6 +1024,18 @@
       flex: 0 0 auto;
     }
 
+    @media (max-width: 600px) {
+      .mode-peteca-menu {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        padding: 3px 6px;
+        gap: 6px;
+      }
+      .mode-peteca-menu .mode-group { gap: 5px; }
+      .mode-peteca-menu .mode-btn { padding: 0 7px; font-size: 0.56rem; height: 17px; }
+      .mode-peteca-menu .mode-sep { height: 12px; }
+    }
+
     .mode-peteca-menu .mode-btn {
       background: rgba(0,0,0,0.10);
       color: rgba(245,245,245,0.92);
@@ -1043,6 +1056,17 @@
       text-shadow: 0 0 10px rgba(0,191,255,0.18);
       box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10);
       animation: ark-float 3.2s ease-in-out infinite;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .mode-peteca-menu .mode-btn:focus,
+    .mode-peteca-menu .mode-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10);
     }
 
     #ritualModeBtn { animation-delay: -0.2s; }
