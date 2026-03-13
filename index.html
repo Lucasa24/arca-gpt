@@ -805,6 +805,8 @@
       user-select: none;
       pointer-events: none;
     }
+    
+    .msg-content { min-height: 1em; }
 
     @keyframes blink {
       0%, 50% { opacity: 1; }
@@ -981,6 +983,8 @@
       pointer-events: none;
       display: flex;
       gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
       padding: 3px 4px;
       background: rgba(0,0,0,0.45);
       border: 1px solid rgba(255,255,255,0.10);
@@ -990,7 +994,7 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.45);
       transition: opacity 0.14s ease, transform 0.14s ease;
       z-index: 120;
-      white-space: nowrap;
+      max-width: 240px;
     }
 
     .mode-peteca.open .mode-peteca-menu {
@@ -1004,18 +1008,19 @@
       color: #fff;
       border: 1px solid rgba(255,255,255,0.10);
       border-radius: 4px;
-      padding: 0 6px;
+      padding: 2px 6px;
       font-size: 0.6rem;
       cursor: pointer;
       opacity: 0.85;
       transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
-      height: 14px;
+      min-height: 14px;
       min-width: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       line-height: 1;
-      white-space: nowrap;
+      white-space: normal;
+      text-align: center;
     }
 
     .mode-peteca-menu .mode-btn.active {
@@ -1455,6 +1460,9 @@
           <div class="mode-peteca-menu" id="modePetecaMenu">
             <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn active">Ritual</button>
             <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn">Técnico</button>
+            <button id="modelAutoBtn" onclick="setModelMode('auto')" class="mode-btn">Auto</button>
+            <button id="modelFastBtn" onclick="setModelMode('fast')" class="mode-btn">5.3 (rápido e inteligente)</button>
+            <button id="modelDeepBtn" onclick="setModelMode('deep')" class="mode-btn">5.4 (Profundo)</button>
           </div>
         </div>
       </div>
@@ -1507,6 +1515,8 @@
     let messages = [];
     let isInvocando = false;
     let invocandoHintActive = false;
+    let streamingMsgIndex = -1;
+    let streamingContentEl = null;
     let loaderInterval = null;
     let progress = 0;
     let userLoggedIn = false;
@@ -1630,6 +1640,21 @@
         chunk = " " + chunk; // injeta espaço se o token veio colado após pontuação
       }
       messages[idx].content += chunk;
+    }
+
+    function primeStreamingUI() {
+      renderMessagesWithLiveMarkdown(true);
+      const responseDiv = document.getElementById("response");
+      streamingMsgIndex = messages.length - 1;
+      const msgEl = responseDiv && responseDiv.children ? responseDiv.children[streamingMsgIndex] : null;
+      streamingContentEl = msgEl ? msgEl.querySelector('.msg-content') : null;
+    }
+
+    function updateStreamingUI() {
+      if (!streamingContentEl) return;
+      const msg = messages[streamingMsgIndex];
+      streamingContentEl.textContent = (msg && msg.content) ? msg.content : "";
+      try { window.scrollTo(0, document.body.scrollHeight); } catch {}
     }
 
     const typewriterState = {
@@ -2095,7 +2120,7 @@
       messages.push({ role: "user", content: input }); // Mantém o input original na interface
       messages.push({ role: "assistant", content: "" });
       invocandoHintActive = true;
-      renderMessagesWithLiveMarkdown(); // já mostra as duas
+      primeStreamingUI();
       
       // INICIA O RITUAL DA BARRA
       startLoaderBar();
@@ -2126,6 +2151,7 @@
             userInput: input,
             input: input,
             mode: (localStorage.getItem('arcaPersonaMode') || 'ritual'),
+            modelMode: (localStorage.getItem('arcaModelMode') || 'auto'),
             threadId: threadId,
             userId: userId // Envia o ID do usuário para vincular a thread
           })
@@ -2159,6 +2185,8 @@
               clearTimeout(window.renderTimeout);
               stopLoaderBar();
               invocandoHintActive = false;
+              streamingMsgIndex = -1;
+              streamingContentEl = null;
               renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
               
               document.getElementById("userInput").value = "";
@@ -2182,7 +2210,7 @@
               const idx = messages.length - 1;
               if (messages[idx].content === "") {
                 messages[idx].content = fixedContent;
-                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
+                updateStreamingUI();
                 
                 // Remove barra de loading no primeiro token real
                 window.requestAnimationFrame(() => {
@@ -2191,12 +2219,7 @@
               } else {
                 // Acumula tokens com fluidez natural
                 safeAppend(idx, fixedContent);
-                
-                // Renderização otimizada: debounce inteligente para performance
-                clearTimeout(window.renderTimeout);
-                window.renderTimeout = setTimeout(() => {
-                  renderMessagesWithLiveMarkdown(true); // true = streaming ativo
-                }, 16); // 60fps para máxima suavidade
+                updateStreamingUI();
               }
               
               // 💾 AUTO-SAVE: Salvar progresso durante streaming
@@ -2207,17 +2230,15 @@
             } else {
               // Streaming normal fora do estado de invocação
               safeAppend(messages.length - 1, fixedContent);
-              
-              clearTimeout(window.renderTimeout);
-              window.renderTimeout = setTimeout(() => {
-                renderMessagesWithLiveMarkdown(true); // true = streaming ativo
-              }, 16);
+              updateStreamingUI();
             }
           }
         }
       } catch (err) {
         stopLoaderBar();
         invocandoHintActive = false;
+        streamingMsgIndex = -1;
+        streamingContentEl = null;
         renderMessagesWithLiveMarkdown(false);
         responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
       }
@@ -2295,7 +2316,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           div.style.backgroundColor = "#1a1a1a";
           div.style.borderLeft = "3px solid #666";
           const raw = msg.content; // markdown cru (antes de ajustes)
-          div.innerHTML = "<strong>Você:</strong> " + msg.content;
+          div.innerHTML = "<div class='msg-content'></div>";
+          const contentEl = div.querySelector('.msg-content');
+          const strong = document.createElement('strong');
+          strong.textContent = "Você:";
+          contentEl.appendChild(strong);
+          contentEl.appendChild(document.createTextNode(" " + (msg.content || "")));
           attachMessageToolbar(div, raw);
         } else {
           div.style.color = "#f5f5f5";
@@ -2328,18 +2354,22 @@ div.innerHTML = DOMPurify.sanitize(html, {
             // Corrige palavras coladas em frases como "RITUAL DE AÇÃO:1"
             content = content.replace(/(RITUAL DE [A-ZÀ-Ÿ]+):(?=\d)/g, '$1: ');
           }
-          
-          const html = marked.parse(content);
-          const safeHtml = DOMPurify.sanitize(html, {
-            ALLOWED_TAGS: [
-              'p','strong','em','ul','ol','li',
-              'h1','h2','h3','h4','h5','h6',
-              'br','code','pre','blockquote','hr','a'
-            ],
-            ALLOWED_ATTR: ['class','href','target','rel'] // mantém language-xxx e habilita links
-          });
-          const prefix = showInvocandoHint ? "<div class='invocando-hint'>Invocando...</div>" : "";
-          div.innerHTML = prefix + safeHtml;
+          div.innerHTML = (showInvocandoHint ? "<div class='invocando-hint'>Invocando...</div>" : "") + "<div class='msg-content'></div>";
+          const contentEl = div.querySelector('.msg-content');
+          if (isStreaming && isLastAssistantMessage) {
+            contentEl.textContent = content || "";
+          } else {
+            const html = marked.parse(content || "");
+            const safeHtml = DOMPurify.sanitize(html, {
+              ALLOWED_TAGS: [
+                'p','strong','em','ul','ol','li',
+                'h1','h2','h3','h4','h5','h6',
+                'br','code','pre','blockquote','hr','a'
+              ],
+              ALLOWED_ATTR: ['class','href','target','rel']
+            });
+            contentEl.innerHTML = safeHtml;
+          }
           enhanceCodeBlocks(div);
           hardenLinks(div);
           attachMessageToolbar(div, raw);
@@ -2970,7 +3000,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
       btnTxt.title = 'Copiar texto';
       btnTxt.innerHTML = iconSVG('text');
       btnTxt.addEventListener('click', async () => {
-        const plain = div.innerText.replace(/^Você:\s*/,'').trim();
+        const plain = div.innerText
+          .replace(/^Você:\s*/,'')
+          .replace(/^Invocando\.\.\.\s*/i,'')
+          .trim();
         const ok = await clipboardWrite(plain);
         setIcon(btnTxt, ok ? 'ok' : 'err');
         setTimeout(() => { btnTxt.classList.remove('ok','err'); btnTxt.innerHTML = iconSVG('text'); }, 1200);
@@ -2984,7 +3017,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
       btnSpeak.title = 'Falar mensagem';
       btnSpeak.innerHTML = iconSVG('voice');
       btnSpeak.addEventListener('click', async () => {
-        const plain = div.innerText.replace(/^Você:\s*/,'').trim();
+        const plain = div.innerText
+          .replace(/^Você:\s*/,'')
+          .replace(/^Invocando\.\.\.\s*/i,'')
+          .trim();
         await window.arca.speak(plain, 'alloy', 'mp3');
       });
       bar.appendChild(btnSpeak);
@@ -3168,6 +3204,32 @@ div.innerHTML = DOMPurify.sanitize(html, {
         userInput.placeholder = 'Digite sua instrução técnica de forma clara e objetiva.';
       }
     }
+
+    function setModelMode(mode) {
+      localStorage.setItem('arcaModelMode', mode);
+
+      const autoBtn = document.getElementById('modelAutoBtn');
+      const fastBtn = document.getElementById('modelFastBtn');
+      const deepBtn = document.getElementById('modelDeepBtn');
+
+      if (!autoBtn || !fastBtn || !deepBtn) return;
+
+      autoBtn.classList.remove('active');
+      fastBtn.classList.remove('active');
+      deepBtn.classList.remove('active');
+
+      autoBtn.style.background = '#333';
+      fastBtn.style.background = '#333';
+      deepBtn.style.background = '#333';
+      autoBtn.style.opacity = '0.6';
+      fastBtn.style.opacity = '0.6';
+      deepBtn.style.opacity = '0.6';
+
+      const pick = (mode === 'deep') ? deepBtn : (mode === 'fast') ? fastBtn : autoBtn;
+      pick.classList.add('active');
+      pick.style.background = '#0077cc';
+      pick.style.opacity = '0.85';
+    }
     
     // Função para iniciar login com Google
     async function loginWithGoogle() {
@@ -3299,6 +3361,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       // Inicializar o modo da persona ao carregar a página
       const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
       setPersonaMode(savedMode);
+      const savedModelMode = localStorage.getItem('arcaModelMode') || 'auto';
+      setModelMode(savedModelMode);
     }
 
     // --- LÓGICA DO NOVO PORTAL (Vercel/Supabase Ready) ---
@@ -3437,6 +3501,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       // Inicializar o modo da persona ao carregar a página
       const savedMode = localStorage.getItem('arcaPersonaMode') || 'ritual';
       setPersonaMode(savedMode);
+      const savedModelMode = localStorage.getItem('arcaModelMode') || 'auto';
+      setModelMode(savedModelMode);
       
       const whatsappConsent = document.getElementById('whatsappConsent');
       const whatsappField = document.getElementById('whatsappField');
