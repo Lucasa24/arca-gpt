@@ -1026,14 +1026,17 @@
 
     @media (max-width: 600px) {
       .mode-peteca-menu {
-        width: calc(100vw - 16px);
-        max-width: calc(100vw - 16px);
-        padding: 3px 6px;
-        gap: 6px;
+        width: calc(100vw - 12px);
+        max-width: calc(100vw - 12px);
+        padding: 3px 4px;
+        gap: 5px;
+        overflow-x: hidden;
       }
-      .mode-peteca-menu .mode-group { gap: 5px; }
-      .mode-peteca-menu .mode-btn { padding: 0 7px; font-size: 0.56rem; height: 17px; }
-      .mode-peteca-menu .mode-sep { height: 12px; }
+      .mode-peteca-menu .mode-group { gap: 4px; }
+      .mode-peteca-menu .mode-btn { padding: 0 6px; font-size: 0.54rem; height: 16px; min-width: 0; }
+      .mode-peteca-menu .mode-sep { height: 10px; }
+      .mode-peteca-menu .label-full { display: none; }
+      .mode-peteca-menu .label-short { display: inline; }
     }
 
     .mode-peteca-menu .mode-btn {
@@ -1062,6 +1065,8 @@
       user-select: none;
       touch-action: manipulation;
     }
+    
+    .mode-peteca-menu .label-short { display: none; }
 
     .mode-peteca-menu .mode-btn:focus,
     .mode-peteca-menu .mode-btn:focus-visible {
@@ -1568,8 +1573,8 @@
             <div class="mode-sep" aria-hidden="true"></div>
             <div class="mode-group">
               <button id="modelAutoBtn" onclick="setModelMode('auto')" class="mode-btn model active" data-model="auto">Auto</button>
-              <button id="modelFastBtn" onclick="setModelMode('fast')" class="mode-btn model" data-model="fast">5.3 (rápido e inteligente)</button>
-              <button id="modelDeepBtn" onclick="setModelMode('deep')" class="mode-btn model" data-model="deep">5.4 (Profundo)</button>
+              <button id="modelFastBtn" onclick="setModelMode('fast')" class="mode-btn model" data-model="fast"><span class="label-full">5.3 (rápido e inteligente)</span><span class="label-short">5.3 rápido</span></button>
+              <button id="modelDeepBtn" onclick="setModelMode('deep')" class="mode-btn model" data-model="deep"><span class="label-full">5.4 (Profundo)</span><span class="label-short">5.4 profundo</span></button>
             </div>
           </div>
         </div>
