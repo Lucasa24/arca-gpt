@@ -862,17 +862,41 @@
       border: none !important;
       padding: 0.75rem !important;
       font-size: 0.75rem;
+      line-height: 1.35;
       resize: none;
       min-height: 55px;
       max-height: none;
       font-family: 'Georgia', serif;
       width: 100%;
-      overflow-y: auto;
+      overflow-y: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
       transform: translateZ(0);
       transition: height 0.2s ease;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.25);
+    }
+    
+    textarea::-webkit-scrollbar { width: 8px; }
+    textarea::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.25);
+      border-left: 1px solid rgba(0,191,255,0.12);
+    }
+    textarea::-webkit-scrollbar-thumb {
+      background: linear-gradient(90deg, rgba(0,191,255,0.35), rgba(0,191,255,0.85), rgba(179,0,0,0.35));
+      background-size: 200% 100%;
+      border-radius: 9999px;
+      border: 1px solid rgba(0,191,255,0.22);
+      box-shadow: 0 0 10px rgba(0,191,255,0.20);
+      animation: arc-scroll 1.9s linear infinite;
+    }
+    textarea::-webkit-scrollbar-thumb:hover { box-shadow: 0 0 14px rgba(0,191,255,0.30); }
+    textarea::-webkit-scrollbar-corner { background: rgba(0,0,0,0.25); }
+    
+    @keyframes arc-scroll {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
     }
 
     .mode-buttons-container {
@@ -1637,6 +1661,28 @@
     let userLoggedIn = false;
     let userData = null;
     
+    function measureTextareaLineHeight(textarea) {
+      const cs = window.getComputedStyle(textarea);
+      const probe = document.createElement('div');
+      probe.style.position = 'absolute';
+      probe.style.left = '-9999px';
+      probe.style.top = '-9999px';
+      probe.style.visibility = 'hidden';
+      probe.style.whiteSpace = 'pre';
+      probe.style.fontFamily = cs.fontFamily;
+      probe.style.fontSize = cs.fontSize;
+      probe.style.fontWeight = cs.fontWeight;
+      probe.style.letterSpacing = cs.letterSpacing;
+      probe.style.lineHeight = cs.lineHeight;
+      probe.style.padding = '0';
+      probe.style.border = '0';
+      probe.textContent = 'A\nA';
+      document.body.appendChild(probe);
+      const h = probe.getBoundingClientRect().height / 2;
+      probe.remove();
+      return Number.isFinite(h) && h > 0 ? h : (parseFloat(cs.fontSize) || 14) * 1.35;
+    }
+
     // Função para auto-expandir o textarea conforme o conteúdo
     function autoResizeTextarea() {
       const textarea = document.getElementById('userInput');
@@ -1647,9 +1693,8 @@
       
       // Definir a nova altura baseada no conteúdo (scrollHeight)
       const cs = window.getComputedStyle(textarea);
-      const fontSize = parseFloat(cs.fontSize) || 14;
       let lineHeight = parseFloat(cs.lineHeight);
-      if (!Number.isFinite(lineHeight)) lineHeight = Math.round(fontSize * 1.35);
+      if (!Number.isFinite(lineHeight)) lineHeight = measureTextareaLineHeight(textarea);
       const padTop = parseFloat(cs.paddingTop) || 0;
       const padBottom = parseFloat(cs.paddingBottom) || 0;
       const maxHeight = Math.round(lineHeight * 10 + padTop + padBottom);
