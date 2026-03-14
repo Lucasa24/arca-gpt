@@ -864,7 +864,7 @@
       font-size: 0.75rem;
       resize: none;
       min-height: 55px;
-      max-height: 200px;
+      max-height: none;
       font-family: 'Georgia', serif;
       width: 100%;
       overflow-y: auto;
@@ -1646,8 +1646,16 @@
       textarea.style.height = 'auto';
       
       // Definir a nova altura baseada no conteúdo (scrollHeight)
-      // com limite máximo definido pelo CSS (max-height: 200px)
-      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+      const cs = window.getComputedStyle(textarea);
+      const fontSize = parseFloat(cs.fontSize) || 14;
+      let lineHeight = parseFloat(cs.lineHeight);
+      if (!Number.isFinite(lineHeight)) lineHeight = Math.round(fontSize * 1.35);
+      const padTop = parseFloat(cs.paddingTop) || 0;
+      const padBottom = parseFloat(cs.paddingBottom) || 0;
+      const maxHeight = Math.round(lineHeight * 10 + padTop + padBottom);
+      const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+      textarea.style.height = nextHeight + 'px';
+      textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
 
     (function initWheelSteering() {
