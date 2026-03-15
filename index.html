@@ -745,10 +745,13 @@
       bottom: calc(var(--arca-voice-bottom, 88px) + env(safe-area-inset-bottom));
       width: min(92vw, 560px);
       display: none;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: center;
-      gap: 6px;
+      grid-template-areas:
+        "label label label close"
+        "progress scrub speed controls";
+      grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr) auto auto;
+      grid-template-rows: auto auto;
+      align-items: center;
+      gap: 8px;
       padding: 8px 10px;
       background: rgba(0,0,0,0.55);
       border: 1px solid rgba(0,191,255,0.16);
@@ -763,19 +766,10 @@
       --arca-voice-btn: 12px;
       --arca-voice-ico: 7px;
     }
-    .arca-voice-bar.active { display: flex; }
-
-    .arca-voice-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      width: 100%;
-      min-width: 0;
-    }
-    .arca-voice-row.top { justify-content: space-between; }
-    .arca-voice-row.bottom { justify-content: center; }
+    .arca-voice-bar.active { display: grid; }
 
     .arca-voice-label {
+      grid-area: label;
       flex: 1;
       min-width: 0;
       font-size: 0.58rem;
@@ -787,6 +781,7 @@
       text-shadow: 0 0 10px rgba(0,191,255,0.14);
     }
     .arca-voice-progress {
+      grid-area: progress;
       font-size: 0.55rem;
       color: rgba(0,191,255,0.72);
       letter-spacing: 0.4px;
@@ -795,6 +790,7 @@
       pointer-events: none;
     }
     .arca-voice-scrub {
+      grid-area: scrub;
       -webkit-appearance: none;
       appearance: none;
       width: auto;
@@ -846,6 +842,7 @@
       border: 1px solid rgba(0,191,255,0.14);
     }
     .arca-voice-controls {
+      grid-area: controls;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -891,6 +888,7 @@
     }
 
     .arca-voice-speed {
+      grid-area: speed;
       position: relative;
       flex: 0 0 auto;
     }
@@ -959,6 +957,8 @@
 
     .arca-voice-close {
       flex: 0 0 auto;
+      grid-area: close;
+      justify-self: end;
     }
 
     /* Mobile – um pouco mais compacto */
@@ -972,6 +972,11 @@
         width: auto;
         max-width: none;
         transform: none;
+        grid-template-areas:
+          "close progress scrub"
+          "speed controls controls";
+        grid-template-columns: auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto;
         padding: 7px 8px;
         gap: 6px;
         --arca-voice-btn: 9px;
@@ -991,6 +996,7 @@
       }
       .arca-voice-speed-opt { height: 24px; font-size: 0.56rem; }
       .arca-voice-speed-opt { justify-content: center; gap: 10px; }
+      .arca-voice-close { justify-self: start; }
     }
 
     @media (max-width: 380px) {
@@ -4037,11 +4043,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const btnSkip = mkBtn('', 'Pular', svgSkip);
       const btnClose = mkBtn('danger arca-voice-close', 'Fechar', svgClose);
 
-      const rowTop = document.createElement('div');
-      rowTop.className = 'arca-voice-row top';
-      const rowBottom = document.createElement('div');
-      rowBottom.className = 'arca-voice-row bottom';
-
       const pauseByCancel = () => {
         arcaVoiceState.elapsedOffset = voiceElapsedSec();
         arcaVoiceState.paused = true;
@@ -4180,16 +4181,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       controls.appendChild(btnToggle);
       controls.appendChild(btnPrev);
       controls.appendChild(btnSkip);
-
-      rowTop.appendChild(label);
-      rowTop.appendChild(btnClose);
-      rowBottom.appendChild(progress);
-      rowBottom.appendChild(scrub);
-      rowBottom.appendChild(speedWrap);
-      rowBottom.appendChild(controls);
-
-      el.appendChild(rowTop);
-      el.appendChild(rowBottom);
+      
+      el.appendChild(label);
+      el.appendChild(progress);
+      el.appendChild(scrub);
+      el.appendChild(speedWrap);
+      el.appendChild(controls);
+      el.appendChild(btnClose);
 
       el.dataset.ready = '1';
       el._label = label;
