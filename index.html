@@ -746,10 +746,11 @@
       width: min(92vw, 560px);
       display: none;
       grid-template-areas:
-        "label label label close"
-        "progress scrub controls controls";
-      grid-template-columns: auto minmax(180px, 1fr) auto auto;
-      grid-template-rows: auto auto;
+        "label label close"
+        "progress scrub scrub"
+        "controls controls controls";
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr) auto;
+      grid-template-rows: auto auto auto;
       align-items: center;
       gap: 8px;
       padding: 8px 10px;
