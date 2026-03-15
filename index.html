@@ -4015,34 +4015,36 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const btnSkip = mkBtn('', 'Pular', svgSkip);
       const btnClose = mkBtn('danger', 'Fechar', svgClose);
 
-      const resumeByRestart = () => {
+      const pauseByCancel = () => {
+        arcaVoiceState.elapsedOffset = voiceElapsedSec();
+        arcaVoiceState.paused = true;
+        arcaVoiceState.runId += 1;
+        try { speechSynthesis.cancel(); } catch {}
+        if (arcaVoiceState.raf) cancelAnimationFrame(arcaVoiceState.raf);
+        arcaVoiceState.raf = 0;
+      };
+
+      const resumeBySpeak = () => {
         arcaVoiceState.paused = false;
-        arcaVoiceState.elapsedOffset = (arcaVoiceState.idx > 0 && arcaVoiceState.segCum) ? (arcaVoiceState.segCum[arcaVoiceState.idx - 1] || 0) : 0;
         arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         arcaVoiceState.runId += 1;
         try { speechSynthesis.cancel(); } catch {}
         try { speechSynthesis.resume(); } catch {}
-        setTimeout(() => {
-          if (!arcaVoiceState.active) return;
-          try { speechSynthesis.cancel(); } catch {}
-          startNextSegment();
-        }, 80);
+        try { speechSynthesis.cancel(); } catch {}
+        startNextSegment();
         updateVoiceUI();
       };
 
       btnToggle.addEventListener('click', () => {
         if (!arcaVoiceState.active) return;
-        if (speechSynthesis.speaking && !speechSynthesis.paused) {
-          speechSynthesis.pause();
-          arcaVoiceState.paused = true;
-          arcaVoiceState.elapsedOffset = voiceElapsedSec();
+        if (!arcaVoiceState.paused && speechSynthesis.speaking) {
           btnToggle.innerHTML = svgPlay;
-          if (arcaVoiceState.raf) cancelAnimationFrame(arcaVoiceState.raf);
-          arcaVoiceState.raf = 0;
-        } else {
-          btnToggle.innerHTML = svgPause;
-          resumeByRestart();
+          pauseByCancel();
+          updateVoiceUI();
+          return;
         }
+        btnToggle.innerHTML = svgPause;
+        resumeBySpeak();
       });
 
       btnPrev.addEventListener('click', () => {
@@ -4364,28 +4366,27 @@ div.innerHTML = DOMPurify.sanitize(html, {
       bar.classList.add('active');
 
       if (arcaVoiceState.active && arcaVoiceState.text === text) {
-        if (speechSynthesis.speaking && !speechSynthesis.paused) {
-          speechSynthesis.pause();
-          arcaVoiceState.paused = true;
+        if (!arcaVoiceState.paused && speechSynthesis.speaking) {
           arcaVoiceState.elapsedOffset = voiceElapsedSec();
+          arcaVoiceState.paused = true;
+          arcaVoiceState.runId += 1;
+          try { speechSynthesis.cancel(); } catch {}
           if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPlay;
           if (arcaVoiceState.raf) cancelAnimationFrame(arcaVoiceState.raf);
           arcaVoiceState.raf = 0;
-        } else {
-          if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
-          arcaVoiceState.paused = false;
-          arcaVoiceState.elapsedOffset = (arcaVoiceState.idx > 0 && arcaVoiceState.segCum) ? (arcaVoiceState.segCum[arcaVoiceState.idx - 1] || 0) : 0;
-          arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-          arcaVoiceState.runId += 1;
-          try { speechSynthesis.cancel(); } catch {}
-          try { speechSynthesis.resume(); } catch {}
-          setTimeout(() => {
-            if (!arcaVoiceState.active) return;
-            try { speechSynthesis.cancel(); } catch {}
-            startNextSegment();
-          }, 80);
           updateVoiceUI();
+          return;
         }
+
+        arcaVoiceState.paused = false;
+        arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        arcaVoiceState.runId += 1;
+        try { speechSynthesis.cancel(); } catch {}
+        try { speechSynthesis.resume(); } catch {}
+        try { speechSynthesis.cancel(); } catch {}
+        if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
+        startNextSegment();
+        updateVoiceUI();
         return;
       }
 
