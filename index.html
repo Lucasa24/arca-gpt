@@ -743,10 +743,11 @@
       left: 50%;
       transform: translateX(-50%);
       bottom: calc(var(--arca-voice-bottom, 88px) + env(safe-area-inset-bottom));
-      width: auto;
+      width: min(92vw, 560px);
       display: none;
+      grid-template-areas: "label progress scrub speed controls close";
+      grid-template-columns: minmax(0, 1fr) auto minmax(120px, 1fr) auto auto auto;
       align-items: center;
-      flex-wrap: nowrap;
       gap: 8px;
       padding: 6px 8px;
       background: rgba(0,0,0,0.55);
@@ -757,14 +758,15 @@
       box-shadow: 0 12px 26px rgba(0,0,0,0.55), 0 0 22px rgba(0,191,255,0.08);
       z-index: 999;
       box-sizing: border-box;
-      max-width: calc(100vw - 12px);
+      max-width: min(92vw, 560px);
       overflow: visible;
       --arca-voice-btn: 14px;
       --arca-voice-ico: 8px;
     }
-    .arca-voice-bar.active { display: flex; }
+    .arca-voice-bar.active { display: grid; }
 
     .arca-voice-label {
+      grid-area: label;
       flex: 1;
       min-width: 0;
       font-size: 0.58rem;
@@ -776,6 +778,7 @@
       text-shadow: 0 0 10px rgba(0,191,255,0.14);
     }
     .arca-voice-progress {
+      grid-area: progress;
       font-size: 0.55rem;
       color: rgba(0,191,255,0.72);
       letter-spacing: 0.4px;
@@ -784,6 +787,7 @@
       pointer-events: none;
     }
     .arca-voice-scrub {
+      grid-area: scrub;
       -webkit-appearance: none;
       appearance: none;
       width: auto;
@@ -835,6 +839,7 @@
       border: 1px solid rgba(0,191,255,0.14);
     }
     .arca-voice-controls {
+      grid-area: controls;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -880,6 +885,7 @@
     }
 
     .arca-voice-speed {
+      grid-area: speed;
       position: relative;
       flex: 0 0 auto;
     }
@@ -946,6 +952,11 @@
     .arca-voice-speed-opt:hover { opacity: 1; background: rgba(0,191,255,0.08); border-color: rgba(0,191,255,0.30); }
     .arca-voice-speed-opt.active { background: rgba(0,191,255,0.10); border-color: rgba(0,191,255,0.40); }
 
+    .arca-voice-close {
+      grid-area: close;
+      justify-self: end;
+    }
+
     /* Mobile – um pouco mais compacto */
     @media (max-width: 600px) {
       #response .msg .msg-toolbar { gap: 5px; margin-top: 6px; padding-right: 8px; }
@@ -957,6 +968,11 @@
         width: auto;
         max-width: none;
         transform: none;
+        grid-template-areas:
+          "progress scrub close"
+          "speed controls controls";
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
         padding: 4px 4px;
         gap: 5px;
         --arca-voice-btn: 12px;
@@ -4013,7 +4029,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const btnToggle = mkBtn('', 'Pausar/Retomar', svgPause);
       const btnPrev = mkBtn('', 'Voltar', svgPrev);
       const btnSkip = mkBtn('', 'Pular', svgSkip);
-      const btnClose = mkBtn('danger', 'Fechar', svgClose);
+      const btnClose = mkBtn('danger arca-voice-close', 'Fechar', svgClose);
 
       const pauseByCancel = () => {
         arcaVoiceState.elapsedOffset = voiceElapsedSec();
@@ -4153,13 +4169,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       controls.appendChild(btnToggle);
       controls.appendChild(btnPrev);
       controls.appendChild(btnSkip);
-      controls.appendChild(btnClose);
 
       el.appendChild(label);
       el.appendChild(progress);
       el.appendChild(scrub);
       el.appendChild(speedWrap);
       el.appendChild(controls);
+      el.appendChild(btnClose);
 
       el.dataset.ready = '1';
       el._label = label;
