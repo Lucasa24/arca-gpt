@@ -4021,7 +4021,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
         arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         arcaVoiceState.runId += 1;
         try { speechSynthesis.cancel(); } catch {}
-        startNextSegment();
+        try { speechSynthesis.resume(); } catch {}
+        setTimeout(() => {
+          if (!arcaVoiceState.active) return;
+          try { speechSynthesis.cancel(); } catch {}
+          startNextSegment();
+        }, 80);
         updateVoiceUI();
       };
 
@@ -4373,7 +4378,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           arcaVoiceState.runId += 1;
           try { speechSynthesis.cancel(); } catch {}
-          startNextSegment();
+          try { speechSynthesis.resume(); } catch {}
+          setTimeout(() => {
+            if (!arcaVoiceState.active) return;
+            try { speechSynthesis.cancel(); } catch {}
+            startNextSegment();
+          }, 80);
           updateVoiceUI();
         }
         return;
