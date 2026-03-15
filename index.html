@@ -248,6 +248,8 @@
       text-align: center;
       border-bottom: 1px solid #333;
       padding-bottom: 0.5rem;
+      padding-left: 26px;
+      padding-right: 26px;
       position: relative;
     }
 
@@ -272,6 +274,44 @@
     #closeSidebar:hover {
       background-color: rgba(179, 0, 0, 0.2);
       color: #ff6b6b;
+    }
+
+    #chatSidebar h3 #closeSidebar,
+    #chatSidebar h3 #sidebarArchiveToggle {
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      border-bottom: 0 !important;
+      background: transparent !important;
+      color: rgba(0,191,255,0.92) !important;
+      position: absolute !important;
+      top: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 9999px !important;
+      opacity: 0.62;
+      text-align: center !important;
+      line-height: 1 !important;
+      box-shadow: none !important;
+    }
+    #chatSidebar h3 #closeSidebar { left: 0 !important; }
+    #chatSidebar h3 #sidebarArchiveToggle { right: 0 !important; opacity: 0.48; }
+    #chatSidebar h3 #sidebarArchiveToggle.active { opacity: 0.92; }
+    #chatSidebar h3 #closeSidebar:hover,
+    #chatSidebar h3 #sidebarArchiveToggle:hover {
+      opacity: 1;
+      background: rgba(0,191,255,0.08) !important;
+    }
+    #chatSidebar h3 #closeSidebar svg,
+    #chatSidebar h3 #sidebarArchiveToggle svg {
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+      filter: drop-shadow(0 0 4px rgba(0,191,255,0.45));
     }
 
     #chatSidebar button {
@@ -2925,24 +2965,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
       closeBtn.id = 'closeSidebar';
       closeBtn.type = 'button';
       closeBtn.setAttribute('aria-label', 'Fechar');
-      closeBtn.style.position = 'absolute';
-      closeBtn.style.left = '0';
-      closeBtn.style.top = '-5px';
-      closeBtn.style.width = '20px';
-      closeBtn.style.height = '20px';
-      closeBtn.style.minWidth = '20px';
-      closeBtn.style.background = 'rgba(0,191,255,0.10)';
-      closeBtn.style.border = '1px solid rgba(0,191,255,0.28)';
-      closeBtn.style.color = '#00bfff';
-      closeBtn.style.fontSize = '12px';
-      closeBtn.style.lineHeight = '18px';
-      closeBtn.style.borderRadius = '4px';
-      closeBtn.style.cursor = 'pointer';
-      closeBtn.style.display = 'flex';
-      closeBtn.style.alignItems = 'center';
-      closeBtn.style.justifyContent = 'center';
-      closeBtn.style.webkitTapHighlightColor = 'transparent';
-      closeBtn.style.outline = 'none';
       closeBtn.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0 0 4px rgba(0,191,255,0.65)); pointer-events: none;'><path d='M6 6 C9 5,11 9,12 12 C13 15,15 19,18 18'/><path d='M18 6 C15 5,13 9,12 12 C11 15,9 19,6 18'/></svg>";
       closeBtn.onclick = () => toggleSidebar();
       h3.appendChild(closeBtn);
@@ -2952,24 +2974,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       archiveToggle.id = 'sidebarArchiveToggle';
       archiveToggle.setAttribute('aria-label', showArchived ? 'Ver sessões ativas' : 'Ver sessões arquivadas');
       archiveToggle.title = showArchived ? 'Sessões ativas' : 'Sessões arquivadas';
-      archiveToggle.style.position = 'absolute';
-      archiveToggle.style.right = '0';
-      archiveToggle.style.top = '-5px';
-      archiveToggle.style.width = '20px';
-      archiveToggle.style.height = '20px';
-      archiveToggle.style.minWidth = '20px';
-      archiveToggle.style.background = showArchived ? 'rgba(0,191,255,0.10)' : 'rgba(0,191,255,0.06)';
-      archiveToggle.style.border = '1px solid rgba(0,191,255,0.18)';
-      archiveToggle.style.color = 'rgba(0,191,255,0.92)';
-      archiveToggle.style.borderRadius = '4px';
-      archiveToggle.style.cursor = 'pointer';
-      archiveToggle.style.display = 'flex';
-      archiveToggle.style.alignItems = 'center';
-      archiveToggle.style.justifyContent = 'center';
-      archiveToggle.style.opacity = showArchived ? '0.95' : '0.55';
-      archiveToggle.style.webkitTapHighlightColor = 'transparent';
-      archiveToggle.style.outline = 'none';
       archiveToggle.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0 0 4px rgba(0,191,255,0.40)); pointer-events: none;'><path d='M21 8v13H3V8'/><path d='M1 3h22v5H1z'/><path d='M10 12h4'/></svg>";
+      if (showArchived) archiveToggle.classList.add('active');
       archiveToggle.onclick = () => {
         const cur = localStorage.getItem('arcaShowArchivedSessions') === '1';
         localStorage.setItem('arcaShowArchivedSessions', cur ? '0' : '1');
