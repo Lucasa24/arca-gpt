@@ -4137,15 +4137,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
       speedWrap.appendChild(speedBtn);
       speedWrap.appendChild(speedMenu);
 
-      speedBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        try { e.preventDefault(); } catch {}
-        speedWrap.classList.toggle('open');
-      });
       speedBtn.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         try { e.preventDefault(); } catch {}
-        speedWrap.classList.toggle('open');
+        if (speedWrap.classList.contains('open')) return;
+        speedWrap.classList.add('open');
       });
 
       document.addEventListener('click', (e) => {
