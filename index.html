@@ -777,6 +777,56 @@
       user-select: none;
       pointer-events: none;
     }
+    .arca-voice-scrub {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 120px;
+      height: 6px;
+      border-radius: 9999px;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(0,191,255,0.18) 0px,
+        rgba(0,191,255,0.18) 6px,
+        rgba(0,0,0,0.00) 6px,
+        rgba(0,0,0,0.00) 10px
+      );
+      border: 1px solid rgba(0,191,255,0.14);
+      box-shadow: 0 0 12px rgba(0,191,255,0.10);
+      flex: 0 0 auto;
+      outline: none;
+      cursor: pointer;
+      opacity: 0.9;
+    }
+    .arca-voice-scrub::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 9999px;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.92), rgba(0,191,255,0.82) 45%, rgba(0,191,255,0.12) 70%);
+      border: 1px solid rgba(0,191,255,0.30);
+      box-shadow: 0 0 14px rgba(0,191,255,0.22);
+    }
+    .arca-voice-scrub::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 9999px;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.92), rgba(0,191,255,0.82) 45%, rgba(0,191,255,0.12) 70%);
+      border: 1px solid rgba(0,191,255,0.30);
+      box-shadow: 0 0 14px rgba(0,191,255,0.22);
+    }
+    .arca-voice-scrub::-moz-range-track {
+      height: 6px;
+      border-radius: 9999px;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(0,191,255,0.18) 0px,
+        rgba(0,191,255,0.18) 6px,
+        rgba(0,0,0,0.00) 6px,
+        rgba(0,0,0,0.00) 10px
+      );
+      border: 1px solid rgba(0,191,255,0.14);
+    }
     .arca-voice-controls {
       display: flex;
       align-items: center;
@@ -830,6 +880,7 @@
       .arca-voice-bar { width: calc(100vw - 12px); padding: 6px 6px; gap: 6px; }
       .arca-voice-btn { width: 20px; height: 20px; }
       .arca-voice-btn svg { width: 11px; height: 11px; }
+      .arca-voice-scrub { width: 78px; height: 6px; }
     }
 
     /* Badge da linguagem e botão copiar nos blocos de código */
@@ -3810,6 +3861,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
       paused: false,
       text: "",
       segments: [],
+      segDur: [],
+      segCum: [],
+      totalSec: 0,
+      segStartTs: 0,
+      elapsedOffset: 0,
+      raf: 0,
       idx: 0,
       utter: null
     };
@@ -3842,13 +3899,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const svgPlay = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M8 5v14l11-7z'></path></svg>";
       const svgPause = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M7 6h3v12H7zM14 6h3v12h-3z'></path></svg>";
+      const svgPrev = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M18 5v14l-8-7zM6 5h2v14H6z'></path></svg>";
       const svgSkip = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M6 5v14l8-7zM16 5h2v14h-2z'></path></svg>";
-      const svgStop = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M7 7h10v10H7z'></path></svg>";
       const svgClose = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M6 6l12 12M18 6L6 18' stroke='currentColor' stroke-width='2' fill='none' stroke-linecap='round'></path></svg>";
 
       const btnToggle = mkBtn('', 'Pausar/Retomar', svgPause);
+      const btnPrev = mkBtn('', 'Voltar', svgPrev);
       const btnSkip = mkBtn('', 'Pular', svgSkip);
-      const btnStop = mkBtn('danger', 'Parar', svgStop);
       const btnClose = mkBtn('danger', 'Fechar', svgClose);
 
       btnToggle.addEventListener('click', () => {
@@ -3856,24 +3913,36 @@ div.innerHTML = DOMPurify.sanitize(html, {
         if (speechSynthesis.speaking && !speechSynthesis.paused) {
           speechSynthesis.pause();
           arcaVoiceState.paused = true;
+          arcaVoiceState.elapsedOffset = voiceElapsedSec();
           btnToggle.innerHTML = svgPlay;
         } else {
           speechSynthesis.resume();
           arcaVoiceState.paused = false;
+          arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           btnToggle.innerHTML = svgPause;
+          updateVoiceUI();
         }
       });
 
-      btnSkip.addEventListener('click', () => {
+      btnPrev.addEventListener('click', () => {
         if (!arcaVoiceState.active) return;
-        arcaVoiceState.idx = Math.min(arcaVoiceState.segments.length, arcaVoiceState.idx + 1);
+        const prevCum = (arcaVoiceState.idx > 0 && arcaVoiceState.segCum) ? (arcaVoiceState.idx > 1 ? arcaVoiceState.segCum[arcaVoiceState.idx - 2] : 0) : 0;
+        arcaVoiceState.idx = Math.max(0, arcaVoiceState.idx - 1);
+        arcaVoiceState.elapsedOffset = prevCum || 0;
+        arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         arcaVoiceState.runId += 1;
         try { speechSynthesis.cancel(); } catch {}
         startNextSegment();
       });
 
-      btnStop.addEventListener('click', () => {
-        stopNarration();
+      btnSkip.addEventListener('click', () => {
+        if (!arcaVoiceState.active) return;
+        arcaVoiceState.elapsedOffset = arcaVoiceState.segCum[arcaVoiceState.idx] || voiceElapsedSec();
+        arcaVoiceState.idx = Math.min(arcaVoiceState.segments.length, arcaVoiceState.idx + 1);
+        arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        arcaVoiceState.runId += 1;
+        try { speechSynthesis.cancel(); } catch {}
+        startNextSegment();
       });
 
       btnClose.addEventListener('click', () => {
@@ -3881,18 +3950,35 @@ div.innerHTML = DOMPurify.sanitize(html, {
         el.classList.remove('active');
       });
 
+      const scrub = document.createElement('input');
+      scrub.type = 'range';
+      scrub.className = 'arca-voice-scrub';
+      scrub.min = '0';
+      scrub.max = '0';
+      scrub.value = '0';
+      scrub.step = '1';
+      scrub.setAttribute('aria-label', 'Progresso da narração');
+      scrub.addEventListener('input', () => {
+        if (!arcaVoiceState.active) return;
+        const n = parseInt(scrub.value, 10);
+        if (!Number.isFinite(n)) return;
+        voiceSeekToSec(n);
+      });
+
       controls.appendChild(btnToggle);
+      controls.appendChild(btnPrev);
       controls.appendChild(btnSkip);
-      controls.appendChild(btnStop);
       controls.appendChild(btnClose);
 
       el.appendChild(label);
       el.appendChild(progress);
+      el.appendChild(scrub);
       el.appendChild(controls);
 
       el.dataset.ready = '1';
       el._label = label;
       el._progress = progress;
+      el._scrub = scrub;
       el._btnToggle = btnToggle;
       el._svgPlay = svgPlay;
       el._svgPause = svgPause;
@@ -3945,6 +4031,63 @@ div.innerHTML = DOMPurify.sanitize(html, {
       return out.length ? out : [t];
     }
 
+    function formatVoiceTime(sec) {
+      const s = Math.max(0, Math.floor(sec || 0));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+    }
+
+    function computeVoiceTimeline(segments) {
+      const cps = 14;
+      const dur = (segments || []).map(s => Math.max(0.8, (String(s || '').length / cps)));
+      const cum = [];
+      let acc = 0;
+      for (const d of dur) { acc += d; cum.push(acc); }
+      return { dur, cum, total: acc };
+    }
+
+    function voiceElapsedSec() {
+      if (!arcaVoiceState.active) return 0;
+      if (arcaVoiceState.paused) return arcaVoiceState.elapsedOffset || 0;
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const dt = arcaVoiceState.segStartTs ? ((now - arcaVoiceState.segStartTs) / 1000) : 0;
+      return (arcaVoiceState.elapsedOffset || 0) + Math.max(0, dt);
+    }
+
+    function voiceSeekToSec(targetSec) {
+      const total = arcaVoiceState.totalSec || 0;
+      const t = Math.max(0, Math.min(total, targetSec || 0));
+      const cum = arcaVoiceState.segCum || [];
+      let idx = 0;
+      while (idx < cum.length && cum[idx] < t) idx += 1;
+      arcaVoiceState.idx = Math.max(0, Math.min((arcaVoiceState.segments.length - 1), idx));
+      const prevCum = (arcaVoiceState.idx > 0) ? cum[arcaVoiceState.idx - 1] : 0;
+      arcaVoiceState.elapsedOffset = prevCum;
+      arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      arcaVoiceState.runId += 1;
+      try { speechSynthesis.cancel(); } catch {}
+      startNextSegment();
+    }
+
+    function updateVoiceUI() {
+      const bar = document.getElementById('arcaVoiceBar');
+      if (!bar || !bar.classList.contains('active')) return;
+      const elapsed = voiceElapsedSec();
+      const total = arcaVoiceState.totalSec || 0;
+      if (bar._progress) bar._progress.textContent = `${formatVoiceTime(elapsed)} / ${formatVoiceTime(total)}`;
+      if (bar._scrub) {
+        bar._scrub.min = '0';
+        bar._scrub.max = String(Math.max(0, Math.floor(total)));
+        bar._scrub.step = '1';
+        bar._scrub.value = String(Math.max(0, Math.min(Math.floor(total), Math.floor(elapsed))));
+        bar._scrub.style.display = total > 0 ? '' : 'none';
+      }
+      if (!arcaVoiceState.active || arcaVoiceState.paused) return;
+      if (arcaVoiceState.raf) cancelAnimationFrame(arcaVoiceState.raf);
+      arcaVoiceState.raf = requestAnimationFrame(updateVoiceUI);
+    }
+
     function pickVoicePt() {
       const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
       const pt = voices.find(v => (v.lang || '').toLowerCase().startsWith('pt'));
@@ -3962,7 +4105,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
       try { speechSynthesis.cancel(); } catch {}
       const bar = document.getElementById('arcaVoiceBar');
       if (bar && bar._progress) bar._progress.textContent = '';
+      if (bar && bar._scrub) { bar._scrub.min = '0'; bar._scrub.max = '0'; bar._scrub.value = '0'; bar._scrub.style.display = 'none'; }
       if (bar && bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause || bar._btnToggle.innerHTML;
+      if (arcaVoiceState.raf) cancelAnimationFrame(arcaVoiceState.raf);
+      arcaVoiceState.raf = 0;
     }
 
     function startNextSegment() {
@@ -3989,11 +4135,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       arcaVoiceState.utter = utter;
 
       if (bar._label) bar._label.textContent = seg;
-      if (bar._progress) bar._progress.textContent = `${arcaVoiceState.idx + 1}/${arcaVoiceState.segments.length}`;
+      arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      updateVoiceUI();
       if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
 
       utter.onend = () => {
         if (localRun !== arcaVoiceState.runId) return;
+        arcaVoiceState.elapsedOffset = arcaVoiceState.segCum[arcaVoiceState.idx] || voiceElapsedSec();
         arcaVoiceState.idx += 1;
         startNextSegment();
       };
@@ -4024,11 +4172,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
         if (speechSynthesis.speaking && !speechSynthesis.paused) {
           speechSynthesis.pause();
           arcaVoiceState.paused = true;
+          arcaVoiceState.elapsedOffset = voiceElapsedSec();
           if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPlay;
         } else {
           speechSynthesis.resume();
           arcaVoiceState.paused = false;
+          arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
+          updateVoiceUI();
         }
         return;
       }
@@ -4036,9 +4187,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
       stopNarration();
       arcaVoiceState.text = text;
       arcaVoiceState.segments = splitSpeechSegments(text);
+      const tl = computeVoiceTimeline(arcaVoiceState.segments);
+      arcaVoiceState.segDur = tl.dur;
+      arcaVoiceState.segCum = tl.cum;
+      arcaVoiceState.totalSec = tl.total;
       arcaVoiceState.idx = 0;
       arcaVoiceState.active = true;
       arcaVoiceState.paused = false;
+      arcaVoiceState.elapsedOffset = 0;
       startNextSegment();
     }
 
