@@ -743,7 +743,7 @@
       left: 50%;
       transform: translateX(-50%);
       bottom: calc(var(--arca-voice-bottom, 88px) + env(safe-area-inset-bottom));
-      width: min(92vw, 560px);
+      width: auto;
       display: none;
       align-items: center;
       flex-wrap: nowrap;
@@ -759,8 +759,8 @@
       box-sizing: border-box;
       max-width: calc(100vw - 12px);
       overflow: visible;
-      --arca-voice-btn: 22px;
-      --arca-voice-ico: 12px;
+      --arca-voice-btn: 14px;
+      --arca-voice-ico: 8px;
     }
     .arca-voice-bar.active { display: flex; }
 
@@ -4092,13 +4092,19 @@ div.innerHTML = DOMPurify.sanitize(html, {
       function setRateMode(mode) {
         const m = (mode === 'slow' || mode === 'fast') ? mode : 'normal';
         localStorage.setItem('arcaVoiceRateMode', m);
-        const rate = (m === 'slow') ? 0.92 : (m === 'fast') ? 1.18 : 1.05;
+        const rate = (m === 'slow') ? 0.5 : (m === 'fast') ? 1.5 : 1.0;
         arcaVoiceState.rate = rate;
-        speedBtn.textContent = (m === 'slow') ? '0.9x' : (m === 'fast') ? '1.2x' : '1x';
+        speedBtn.textContent = (m === 'slow') ? '0.5x' : (m === 'fast') ? '1.5x' : '1x';
         [...speedMenu.querySelectorAll('.arca-voice-speed-opt')].forEach(b => {
           b.classList.toggle('active', b.dataset.mode === m);
         });
         if (arcaVoiceState.active) {
+          const tl = computeVoiceTimeline(arcaVoiceState.segments, arcaVoiceState.rate);
+          arcaVoiceState.segDur = tl.dur;
+          arcaVoiceState.segCum = tl.cum;
+          arcaVoiceState.totalSec = tl.total;
+          arcaVoiceState.elapsedOffset = (arcaVoiceState.idx > 0) ? (arcaVoiceState.segCum[arcaVoiceState.idx - 1] || 0) : 0;
+          arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           arcaVoiceState.runId += 1;
           try { speechSynthesis.cancel(); } catch {}
           startNextSegment();
@@ -4109,7 +4115,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       optSlow.type = 'button';
       optSlow.className = 'arca-voice-speed-opt';
       optSlow.dataset.mode = 'slow';
-      optSlow.innerHTML = "<span>Lento</span><span>0.9x</span>";
+      optSlow.innerHTML = "<span>Lento</span><span>0.5x</span>";
       optSlow.addEventListener('click', () => { speedWrap.classList.remove('open'); setRateMode('slow'); });
 
       const optNormal = document.createElement('button');
@@ -4123,7 +4129,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       optFast.type = 'button';
       optFast.className = 'arca-voice-speed-opt';
       optFast.dataset.mode = 'fast';
-      optFast.innerHTML = "<span>Rápido</span><span>1.2x</span>";
+      optFast.innerHTML = "<span>Rápido</span><span>1.5x</span>";
       optFast.addEventListener('click', () => { speedWrap.classList.remove('open'); setRateMode('fast'); });
 
       speedMenu.appendChild(optSlow);
@@ -4133,6 +4139,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
       speedWrap.appendChild(speedMenu);
 
       speedBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        try { e.preventDefault(); } catch {}
+        speedWrap.classList.toggle('open');
+      });
+      speedBtn.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         try { e.preventDefault(); } catch {}
         speedWrap.classList.toggle('open');
@@ -4166,7 +4177,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       el._svgPause = svgPause;
 
       const stored = (localStorage.getItem('arcaVoiceRateMode') || 'normal').toLowerCase();
-      arcaVoiceState.rate = (stored === 'slow') ? 0.92 : (stored === 'fast') ? 1.18 : 1.05;
+      arcaVoiceState.rate = (stored === 'slow') ? 0.5 : (stored === 'fast') ? 1.5 : 1.0;
       setTimeout(() => setRateMode(stored), 0);
 
       return el;
@@ -4224,9 +4235,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
       return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
     }
 
-    function computeVoiceTimeline(segments) {
+    function computeVoiceTimeline(segments, rate) {
       const cps = 14;
-      const dur = (segments || []).map(s => Math.max(0.8, (String(s || '').length / cps)));
+      const r = Math.max(0.25, Math.min(2.5, Number(rate) || 1));
+      const dur = (segments || []).map(s => Math.max(0.8, (String(s || '').length / cps)) / r);
       const cum = [];
       let acc = 0;
       for (const d of dur) { acc += d; cum.push(acc); }
@@ -4384,7 +4396,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       stopNarration();
       arcaVoiceState.text = text;
       arcaVoiceState.segments = splitSpeechSegments(text);
-      const tl = computeVoiceTimeline(arcaVoiceState.segments);
+      const tl = computeVoiceTimeline(arcaVoiceState.segments, arcaVoiceState.rate);
       arcaVoiceState.segDur = tl.dur;
       arcaVoiceState.segCum = tl.cum;
       arcaVoiceState.totalSec = tl.total;
