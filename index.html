@@ -4165,8 +4165,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
       speedBtn.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         try { e.preventDefault(); } catch {}
-        if (speedWrap.classList.contains('open')) return;
-        speedWrap.classList.add('open');
+        speedWrap.classList.toggle('open');
+      });
+      speedBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        try { e.preventDefault(); } catch {}
       });
 
       document.addEventListener('click', (e) => {
