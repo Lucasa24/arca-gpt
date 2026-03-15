@@ -2827,7 +2827,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const sanitizedHistory = history.map(session => ({
         id: session.id,
         title: session.title,
-        timestamp: session.timestamp
+        timestamp: session.timestamp,
+        archived: !!session.archived
       }));
       
       localStorage.setItem("chatHistory", JSON.stringify(sanitizedHistory));
@@ -2912,10 +2913,73 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function loadSidebar() {
       const sidebar = document.getElementById("chatSidebar");
       const rawHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
-      const history = rawHistory.filter(s => !s.archived);
+      const showArchived = localStorage.getItem('arcaShowArchivedSessions') === '1';
+      const history = rawHistory.filter(s => showArchived ? !!s.archived : !s.archived);
       const currentThreadId = localStorage.getItem("threadId");
+      
+      sidebar.innerHTML = "";
+      const h3 = document.createElement('h3');
+      h3.appendChild(document.createTextNode(showArchived ? '◊ Arquivadas' : '◊ Sessões'));
 
-      sidebar.innerHTML = "<h3>◊ Sessões<button id='closeSidebar' onclick='toggleSidebar()' aria-label='Fechar' style='position:absolute; left:0; top:-5px; width:20px; height:20px; min-width:20px; background: rgba(0,191,255,0.10); border: 1px solid rgba(0,191,255,0.28); color:#00bfff; font-size:12px; line-height:18px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color: transparent; outline: none;'><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0 0 4px rgba(0,191,255,0.65)); pointer-events: none;'><path d='M6 6 C9 5,11 9,12 12 C13 15,15 19,18 18'/><path d='M18 6 C15 5,13 9,12 12 C11 15,9 19,6 18'/></svg></button></h3>";
+      const closeBtn = document.createElement('button');
+      closeBtn.id = 'closeSidebar';
+      closeBtn.type = 'button';
+      closeBtn.setAttribute('aria-label', 'Fechar');
+      closeBtn.style.position = 'absolute';
+      closeBtn.style.left = '0';
+      closeBtn.style.top = '-5px';
+      closeBtn.style.width = '20px';
+      closeBtn.style.height = '20px';
+      closeBtn.style.minWidth = '20px';
+      closeBtn.style.background = 'rgba(0,191,255,0.10)';
+      closeBtn.style.border = '1px solid rgba(0,191,255,0.28)';
+      closeBtn.style.color = '#00bfff';
+      closeBtn.style.fontSize = '12px';
+      closeBtn.style.lineHeight = '18px';
+      closeBtn.style.borderRadius = '4px';
+      closeBtn.style.cursor = 'pointer';
+      closeBtn.style.display = 'flex';
+      closeBtn.style.alignItems = 'center';
+      closeBtn.style.justifyContent = 'center';
+      closeBtn.style.webkitTapHighlightColor = 'transparent';
+      closeBtn.style.outline = 'none';
+      closeBtn.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0 0 4px rgba(0,191,255,0.65)); pointer-events: none;'><path d='M6 6 C9 5,11 9,12 12 C13 15,15 19,18 18'/><path d='M18 6 C15 5,13 9,12 12 C11 15,9 19,6 18'/></svg>";
+      closeBtn.onclick = () => toggleSidebar();
+      h3.appendChild(closeBtn);
+
+      const archiveToggle = document.createElement('button');
+      archiveToggle.type = 'button';
+      archiveToggle.id = 'sidebarArchiveToggle';
+      archiveToggle.setAttribute('aria-label', showArchived ? 'Ver sessões ativas' : 'Ver sessões arquivadas');
+      archiveToggle.title = showArchived ? 'Sessões ativas' : 'Sessões arquivadas';
+      archiveToggle.style.position = 'absolute';
+      archiveToggle.style.right = '0';
+      archiveToggle.style.top = '-5px';
+      archiveToggle.style.width = '20px';
+      archiveToggle.style.height = '20px';
+      archiveToggle.style.minWidth = '20px';
+      archiveToggle.style.background = showArchived ? 'rgba(0,191,255,0.10)' : 'rgba(0,191,255,0.06)';
+      archiveToggle.style.border = '1px solid rgba(0,191,255,0.18)';
+      archiveToggle.style.color = 'rgba(0,191,255,0.92)';
+      archiveToggle.style.borderRadius = '4px';
+      archiveToggle.style.cursor = 'pointer';
+      archiveToggle.style.display = 'flex';
+      archiveToggle.style.alignItems = 'center';
+      archiveToggle.style.justifyContent = 'center';
+      archiveToggle.style.opacity = showArchived ? '0.95' : '0.55';
+      archiveToggle.style.webkitTapHighlightColor = 'transparent';
+      archiveToggle.style.outline = 'none';
+      archiveToggle.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0 0 4px rgba(0,191,255,0.40)); pointer-events: none;'><path d='M21 8v13H3V8'/><path d='M1 3h22v5H1z'/><path d='M10 12h4'/></svg>";
+      archiveToggle.onclick = () => {
+        const cur = localStorage.getItem('arcaShowArchivedSessions') === '1';
+        localStorage.setItem('arcaShowArchivedSessions', cur ? '0' : '1');
+        const itemMenu = document.getElementById('itemMenu');
+        if (itemMenu) itemMenu.style.display = 'none';
+        loadSidebar();
+      };
+      h3.appendChild(archiveToggle);
+
+      sidebar.appendChild(h3);
 
       // Botão Nova Travessia
       const newBtn = document.createElement("button");
@@ -2927,6 +2991,16 @@ div.innerHTML = DOMPurify.sanitize(html, {
         document.getElementById("travessiaName").focus();
       };
       sidebar.appendChild(newBtn);
+
+      if (history.length === 0) {
+        const empty = document.createElement('div');
+        empty.textContent = showArchived ? 'Nenhuma sessão arquivada.' : 'Nenhuma sessão ainda.';
+        empty.style.color = 'rgba(245,245,245,0.65)';
+        empty.style.fontSize = '0.72rem';
+        empty.style.padding = '0.5rem 0.25rem 0.75rem';
+        empty.style.textAlign = 'center';
+        sidebar.appendChild(empty);
+      }
 
       // Histórico de sessões (mais recentes primeiro)
       history.reverse().forEach(session => {
@@ -3207,6 +3281,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return;
       }
       menu.innerHTML = '';
+      const fullHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+      const idx = fullHistory.findIndex(s => s.id === sessionId);
+      const isArchived = idx !== -1 ? !!fullHistory[idx].archived : false;
+
       const renameBtn = document.createElement('button');
       renameBtn.type = 'button';
       renameBtn.className = 'action-item';
@@ -3216,6 +3294,53 @@ div.innerHTML = DOMPurify.sanitize(html, {
         menu.style.display = 'none';
       };
       menu.appendChild(renameBtn);
+
+      const archBtn = document.createElement('button');
+      archBtn.type = 'button';
+      archBtn.className = 'action-item';
+      archBtn.textContent = isArchived ? 'Restaurar' : 'Arquivar';
+      archBtn.onclick = () => {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        const i = history.findIndex(s => s.id === sessionId);
+        if (i !== -1) {
+          history[i].archived = !isArchived;
+          localStorage.setItem('chatHistory', JSON.stringify(history));
+        }
+        menu.style.display = 'none';
+        loadSidebar();
+      };
+      menu.appendChild(archBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'action-item danger';
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = () => {
+        if (!confirm('Excluir esta sessão e suas memórias? Esta ação não pode ser desfeita.')) return;
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        const updated = history.filter(s => s.id !== sessionId);
+        localStorage.setItem('chatHistory', JSON.stringify(updated));
+        localStorage.removeItem(`thread_${sessionId}`);
+
+        const current = localStorage.getItem('threadId');
+        if (current === sessionId) {
+          const next = updated.find(s => !s.archived) || updated[updated.length - 1];
+          if (next && next.id) {
+            localStorage.setItem('threadId', next.id);
+            loadThreadMessages(next.id);
+          } else {
+            localStorage.removeItem('threadId');
+            messages = [];
+            const resp = document.getElementById('response');
+            if (resp) resp.innerHTML = '🗑️ Sessão excluída.';
+          }
+        }
+
+        menu.style.display = 'none';
+        loadSidebar();
+      };
+      menu.appendChild(delBtn);
+
       const rect = e.currentTarget.getBoundingClientRect();
       menu.style.display = 'block';
       const mRect = menu.getBoundingClientRect();
