@@ -745,11 +745,10 @@
       bottom: calc(var(--arca-voice-bottom, 88px) + env(safe-area-inset-bottom));
       width: min(92vw, 560px);
       display: none;
-      grid-template-areas: "label progress scrub speed controls close";
-      grid-template-columns: minmax(0, 1fr) auto minmax(120px, 1fr) auto auto auto;
       align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px calc(var(--arca-voice-btn, 12px) + 16px) 6px 10px;
       background: rgba(0,0,0,0.55);
       border: 1px solid rgba(0,191,255,0.16);
       border-radius: 9999px;
@@ -760,13 +759,12 @@
       box-sizing: border-box;
       max-width: min(92vw, 560px);
       overflow: visible;
-      --arca-voice-btn: 14px;
-      --arca-voice-ico: 8px;
+      --arca-voice-btn: 12px;
+      --arca-voice-ico: 7px;
     }
-    .arca-voice-bar.active { display: grid; }
+    .arca-voice-bar.active { display: flex; }
 
     .arca-voice-label {
-      grid-area: label;
       flex: 1;
       min-width: 0;
       font-size: 0.58rem;
@@ -778,7 +776,6 @@
       text-shadow: 0 0 10px rgba(0,191,255,0.14);
     }
     .arca-voice-progress {
-      grid-area: progress;
       font-size: 0.55rem;
       color: rgba(0,191,255,0.72);
       letter-spacing: 0.4px;
@@ -787,7 +784,6 @@
       pointer-events: none;
     }
     .arca-voice-scrub {
-      grid-area: scrub;
       -webkit-appearance: none;
       appearance: none;
       width: auto;
@@ -802,8 +798,8 @@
       );
       border: 1px solid rgba(0,191,255,0.14);
       box-shadow: 0 0 12px rgba(0,191,255,0.10);
-      flex: 1 1 120px;
-      min-width: 44px;
+      flex: 1 1 140px;
+      min-width: 64px;
       outline: none;
       cursor: pointer;
       opacity: 0.9;
@@ -839,7 +835,6 @@
       border: 1px solid rgba(0,191,255,0.14);
     }
     .arca-voice-controls {
-      grid-area: controls;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -885,7 +880,6 @@
     }
 
     .arca-voice-speed {
-      grid-area: speed;
       position: relative;
       flex: 0 0 auto;
     }
@@ -953,8 +947,10 @@
     .arca-voice-speed-opt.active { background: rgba(0,191,255,0.10); border-color: rgba(0,191,255,0.40); }
 
     .arca-voice-close {
-      grid-area: close;
-      justify-self: end;
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
     }
 
     /* Mobile – um pouco mais compacto */
@@ -968,23 +964,26 @@
         width: auto;
         max-width: none;
         transform: none;
-        grid-template-areas:
-          "progress scrub close"
-          "speed controls controls";
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        grid-template-rows: auto auto;
-        padding: 4px 4px;
+        padding: 5px calc(var(--arca-voice-btn, 10px) + 14px) 5px 8px;
         gap: 5px;
-        --arca-voice-btn: 12px;
-        --arca-voice-ico: 7px;
+        --arca-voice-btn: 9px;
+        --arca-voice-ico: 6px;
       }
       .arca-voice-label { display: none; }
       .arca-voice-progress { font-size: 0.52rem; letter-spacing: 0.2px; }
       .arca-voice-controls { gap: 4px; }
-      .arca-voice-scrub { height: 6px; min-width: 44px; flex: 1 1 56px; }
-      .arca-voice-speed-btn { padding: 0 5px; font-size: 0.50rem; }
-      .arca-voice-speed-menu { right: 0; min-width: 124px; max-width: calc(100vw - 24px); }
+      .arca-voice-scrub { height: 6px; min-width: 52px; flex: 1 1 64px; }
+      .arca-voice-speed-btn { padding: 0 6px; font-size: 0.52rem; }
+      .arca-voice-speed-menu {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        min-width: 140px;
+        max-width: calc(100vw - 24px);
+      }
       .arca-voice-speed-opt { height: 24px; font-size: 0.56rem; }
+      .arca-voice-speed-opt { justify-content: center; gap: 10px; }
+      .arca-voice-close { right: 6px; }
     }
 
     @media (max-width: 380px) {
