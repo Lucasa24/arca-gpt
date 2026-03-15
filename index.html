@@ -738,11 +738,98 @@
     /* Acessibilidade */
     #response .msg .msg-btn:focus-visible { outline: 2px solid rgba(0,191,255,0.55); outline-offset: 2px; }
 
+    .arca-voice-bar {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--arca-voice-bottom, 88px) + env(safe-area-inset-bottom));
+      width: min(92vw, 560px);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(0,191,255,0.16);
+      border-radius: 9999px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.55), 0 0 22px rgba(0,191,255,0.08);
+      z-index: 999;
+    }
+    .arca-voice-bar.active { display: flex; }
+
+    .arca-voice-label {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.58rem;
+      letter-spacing: 0.4px;
+      color: rgba(245,245,245,0.92);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 0 10px rgba(0,191,255,0.14);
+    }
+    .arca-voice-progress {
+      font-size: 0.55rem;
+      color: rgba(0,191,255,0.72);
+      letter-spacing: 0.4px;
+      flex: 0 0 auto;
+      user-select: none;
+      pointer-events: none;
+    }
+    .arca-voice-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+    .arca-voice-btn {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 9999px;
+      background: rgba(0,0,0,0.10);
+      color: rgba(0,191,255,0.92);
+      border: 1px solid rgba(0,191,255,0.18);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10);
+      opacity: 0.9;
+      transition: background 0.15s ease, opacity 0.15s ease, transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    .arca-voice-btn:hover {
+      opacity: 1;
+      transform: translateY(-1px);
+      background: rgba(0,191,255,0.08);
+      border-color: rgba(0,191,255,0.34);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.10), 0 0 16px rgba(0,191,255,0.18);
+    }
+    .arca-voice-btn:active { transform: translateY(0); opacity: 0.95; }
+    .arca-voice-btn svg { width: 12px; height: 12px; fill: currentColor; filter: drop-shadow(0 0 3px rgba(0,191,255,0.35)); }
+    .arca-voice-btn.danger {
+      color: rgba(255,107,107,0.95);
+      border-color: rgba(255,107,107,0.22);
+      box-shadow: 0 0 0 1px rgba(255,107,107,0.08), 0 0 12px rgba(255,107,107,0.12);
+    }
+    .arca-voice-btn.danger:hover {
+      background: rgba(255,107,107,0.10);
+      border-color: rgba(255,107,107,0.40);
+    }
+
     /* Mobile – um pouco mais compacto */
     @media (max-width: 600px) {
       #response .msg .msg-toolbar { gap: 5px; margin-top: 6px; padding-right: 8px; }
       #response .msg .msg-btn.icon { width: 14px; height: 14px; }
       #response .msg .msg-btn.icon svg { width: 9px; height: 9px; }
+      .arca-voice-bar { width: calc(100vw - 12px); padding: 6px 6px; gap: 6px; }
+      .arca-voice-btn { width: 20px; height: 20px; }
+      .arca-voice-btn svg { width: 11px; height: 11px; }
     }
 
     /* Badge da linguagem e botão copiar nos blocos de código */
@@ -1620,6 +1707,7 @@
 
   <!-- Botão de acesso ao portal (login) no canto inferior direito -->
   <button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="showAuthPortal()">🗝</button>
+  <div id="arcaVoiceBar" class="arca-voice-bar" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
@@ -3189,7 +3277,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           .replace(/^Você:\s*/,'')
           .replace(/^Invocando\.\.\.\s*/i,'')
           .trim();
-        await window.arca.speak(plain, 'alloy', 'mp3');
+        await window.arca.narrate(plain);
       });
       bar.appendChild(btnSpeak);
       div.appendChild(bar);
@@ -3715,6 +3803,251 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
       return r;
     }
+
+    const arcaVoiceState = {
+      runId: 0,
+      active: false,
+      paused: false,
+      text: "",
+      segments: [],
+      idx: 0,
+      utter: null
+    };
+
+    function buildVoiceBar() {
+      const el = document.getElementById('arcaVoiceBar');
+      if (!el) return null;
+      if (el.dataset.ready === '1') return el;
+
+      const label = document.createElement('div');
+      label.className = 'arca-voice-label';
+      label.textContent = 'Narração';
+
+      const progress = document.createElement('div');
+      progress.className = 'arca-voice-progress';
+      progress.textContent = '';
+
+      const controls = document.createElement('div');
+      controls.className = 'arca-voice-controls';
+
+      const mkBtn = (cls, title, svg) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'arca-voice-btn' + (cls ? (' ' + cls) : '');
+        b.setAttribute('aria-label', title);
+        b.title = title;
+        b.innerHTML = svg;
+        return b;
+      };
+
+      const svgPlay = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M8 5v14l11-7z'></path></svg>";
+      const svgPause = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M7 6h3v12H7zM14 6h3v12h-3z'></path></svg>";
+      const svgSkip = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M6 5v14l8-7zM16 5h2v14h-2z'></path></svg>";
+      const svgStop = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M7 7h10v10H7z'></path></svg>";
+      const svgClose = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M6 6l12 12M18 6L6 18' stroke='currentColor' stroke-width='2' fill='none' stroke-linecap='round'></path></svg>";
+
+      const btnToggle = mkBtn('', 'Pausar/Retomar', svgPause);
+      const btnSkip = mkBtn('', 'Pular', svgSkip);
+      const btnStop = mkBtn('danger', 'Parar', svgStop);
+      const btnClose = mkBtn('danger', 'Fechar', svgClose);
+
+      btnToggle.addEventListener('click', () => {
+        if (!arcaVoiceState.active) return;
+        if (speechSynthesis.speaking && !speechSynthesis.paused) {
+          speechSynthesis.pause();
+          arcaVoiceState.paused = true;
+          btnToggle.innerHTML = svgPlay;
+        } else {
+          speechSynthesis.resume();
+          arcaVoiceState.paused = false;
+          btnToggle.innerHTML = svgPause;
+        }
+      });
+
+      btnSkip.addEventListener('click', () => {
+        if (!arcaVoiceState.active) return;
+        arcaVoiceState.idx = Math.min(arcaVoiceState.segments.length, arcaVoiceState.idx + 1);
+        arcaVoiceState.runId += 1;
+        try { speechSynthesis.cancel(); } catch {}
+        startNextSegment();
+      });
+
+      btnStop.addEventListener('click', () => {
+        stopNarration();
+      });
+
+      btnClose.addEventListener('click', () => {
+        stopNarration();
+        el.classList.remove('active');
+      });
+
+      controls.appendChild(btnToggle);
+      controls.appendChild(btnSkip);
+      controls.appendChild(btnStop);
+      controls.appendChild(btnClose);
+
+      el.appendChild(label);
+      el.appendChild(progress);
+      el.appendChild(controls);
+
+      el.dataset.ready = '1';
+      el._label = label;
+      el._progress = progress;
+      el._btnToggle = btnToggle;
+      el._svgPlay = svgPlay;
+      el._svgPause = svgPause;
+
+      return el;
+    }
+
+    function positionVoiceBar() {
+      const bar = document.getElementById('arcaVoiceBar');
+      if (!bar) return;
+      const footer = document.querySelector('.fixed-footer');
+      const h = footer ? Math.round(footer.getBoundingClientRect().height) : 72;
+      document.documentElement.style.setProperty('--arca-voice-bottom', (h + 8) + 'px');
+    }
+
+    function normalizeSpeechText(text) {
+      return (text || "")
+        .replace(/\s+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim();
+    }
+
+    function splitSpeechSegments(text) {
+      const t = normalizeSpeechText(text);
+      if (!t) return [];
+      const paras = t.split(/\n{2,}/g).map(s => s.trim()).filter(Boolean);
+      const maxChars = 220;
+      const out = [];
+      const pushChunked = (s) => {
+        const parts = s.split(/(?<=[.!?])\s+/g);
+        let cur = "";
+        for (const p of parts) {
+          const piece = p.trim();
+          if (!piece) continue;
+          if (!cur) {
+            cur = piece;
+            continue;
+          }
+          if ((cur + " " + piece).length <= maxChars) {
+            cur += " " + piece;
+          } else {
+            out.push(cur);
+            cur = piece;
+          }
+        }
+        if (cur) out.push(cur);
+      };
+      for (const para of paras) pushChunked(para);
+      return out.length ? out : [t];
+    }
+
+    function pickVoicePt() {
+      const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
+      const pt = voices.find(v => (v.lang || '').toLowerCase().startsWith('pt'));
+      return pt || null;
+    }
+
+    function stopNarration() {
+      arcaVoiceState.runId += 1;
+      arcaVoiceState.active = false;
+      arcaVoiceState.paused = false;
+      arcaVoiceState.text = "";
+      arcaVoiceState.segments = [];
+      arcaVoiceState.idx = 0;
+      arcaVoiceState.utter = null;
+      try { speechSynthesis.cancel(); } catch {}
+      const bar = document.getElementById('arcaVoiceBar');
+      if (bar && bar._progress) bar._progress.textContent = '';
+      if (bar && bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause || bar._btnToggle.innerHTML;
+    }
+
+    function startNextSegment() {
+      const bar = buildVoiceBar();
+      if (!bar) return;
+      positionVoiceBar();
+      bar.classList.add('active');
+
+      if (!arcaVoiceState.active) return;
+      const seg = arcaVoiceState.segments[arcaVoiceState.idx];
+      if (!seg) {
+        arcaVoiceState.active = false;
+        bar.classList.remove('active');
+        return;
+      }
+
+      const localRun = arcaVoiceState.runId;
+      const utter = new SpeechSynthesisUtterance(seg);
+      utter.lang = 'pt-BR';
+      utter.rate = 1.05;
+      utter.pitch = 1.0;
+      const v = pickVoicePt();
+      if (v) utter.voice = v;
+      arcaVoiceState.utter = utter;
+
+      if (bar._label) bar._label.textContent = seg;
+      if (bar._progress) bar._progress.textContent = `${arcaVoiceState.idx + 1}/${arcaVoiceState.segments.length}`;
+      if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
+
+      utter.onend = () => {
+        if (localRun !== arcaVoiceState.runId) return;
+        arcaVoiceState.idx += 1;
+        startNextSegment();
+      };
+      utter.onerror = () => {
+        if (localRun !== arcaVoiceState.runId) return;
+        stopNarration();
+        bar.classList.remove('active');
+      };
+
+      try {
+        speechSynthesis.speak(utter);
+      } catch {
+        stopNarration();
+        bar.classList.remove('active');
+      }
+    }
+
+    async function arcaNarrate(input) {
+      const text = normalizeSpeechText(input);
+      if (!text) return;
+
+      const bar = buildVoiceBar();
+      if (!bar) return;
+      positionVoiceBar();
+      bar.classList.add('active');
+
+      if (arcaVoiceState.active && arcaVoiceState.text === text) {
+        if (speechSynthesis.speaking && !speechSynthesis.paused) {
+          speechSynthesis.pause();
+          arcaVoiceState.paused = true;
+          if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPlay;
+        } else {
+          speechSynthesis.resume();
+          arcaVoiceState.paused = false;
+          if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
+        }
+        return;
+      }
+
+      stopNarration();
+      arcaVoiceState.text = text;
+      arcaVoiceState.segments = splitSpeechSegments(text);
+      arcaVoiceState.idx = 0;
+      arcaVoiceState.active = true;
+      arcaVoiceState.paused = false;
+      startNextSegment();
+    }
+
+    window.addEventListener('resize', positionVoiceBar);
+    window.addEventListener('orientationchange', () => setTimeout(positionVoiceBar, 60));
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', positionVoiceBar);
+    if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener('voiceschanged', () => {});
+    }
     async function arcaTranscribeFromUrl(audioUrl, mime) {
       return apiPost('/api/transcribe', { audioUrl, mime });
     }
@@ -3723,7 +4056,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
       return apiPost('/api/transcribe', { audioB64: b64, mime: mime || file.type || 'audio/mpeg' });
     }
-    window.arca = { image: arcaImage, speak: arcaSpeak, transcribeFromUrl: arcaTranscribeFromUrl, transcribeFile: arcaTranscribeFile };
+    window.arca = { image: arcaImage, speak: arcaSpeak, narrate: arcaNarrate, stopNarration: stopNarration, transcribeFromUrl: arcaTranscribeFromUrl, transcribeFile: arcaTranscribeFile };
   </script>
 </body>
 </html>
