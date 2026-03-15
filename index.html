@@ -4015,21 +4015,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const btnSkip = mkBtn('', 'Pular', svgSkip);
       const btnClose = mkBtn('danger', 'Fechar', svgClose);
 
-      const tryResume = () => {
+      const resumeByRestart = () => {
         arcaVoiceState.paused = false;
+        arcaVoiceState.elapsedOffset = (arcaVoiceState.idx > 0 && arcaVoiceState.segCum) ? (arcaVoiceState.segCum[arcaVoiceState.idx - 1] || 0) : 0;
         arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        try { speechSynthesis.resume(); } catch {}
-        setTimeout(() => {
-          if (!arcaVoiceState.active) return;
-          if (speechSynthesis.paused) {
-            try { speechSynthesis.resume(); } catch {}
-          }
-          if (!speechSynthesis.speaking) {
-            arcaVoiceState.runId += 1;
-            try { speechSynthesis.cancel(); } catch {}
-            startNextSegment();
-          }
-        }, 140);
+        arcaVoiceState.runId += 1;
+        try { speechSynthesis.cancel(); } catch {}
+        startNextSegment();
         updateVoiceUI();
       };
 
@@ -4044,7 +4036,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           arcaVoiceState.raf = 0;
         } else {
           btnToggle.innerHTML = svgPause;
-          tryResume();
+          resumeByRestart();
         }
       });
 
@@ -4377,17 +4369,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
         } else {
           if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
           arcaVoiceState.paused = false;
+          arcaVoiceState.elapsedOffset = (arcaVoiceState.idx > 0 && arcaVoiceState.segCum) ? (arcaVoiceState.segCum[arcaVoiceState.idx - 1] || 0) : 0;
           arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-          try { speechSynthesis.resume(); } catch {}
-          setTimeout(() => {
-            if (!arcaVoiceState.active) return;
-            if (speechSynthesis.paused) { try { speechSynthesis.resume(); } catch {} }
-            if (!speechSynthesis.speaking) {
-              arcaVoiceState.runId += 1;
-              try { speechSynthesis.cancel(); } catch {}
-              startNextSegment();
-            }
-          }, 140);
+          arcaVoiceState.runId += 1;
+          try { speechSynthesis.cancel(); } catch {}
+          startNextSegment();
           updateVoiceUI();
         }
         return;
