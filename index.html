@@ -755,6 +755,11 @@
       -webkit-backdrop-filter: blur(8px);
       box-shadow: 0 12px 26px rgba(0,0,0,0.55), 0 0 22px rgba(0,191,255,0.08);
       z-index: 999;
+      box-sizing: border-box;
+      max-width: calc(100vw - 12px);
+      overflow: hidden;
+      --arca-voice-btn: 22px;
+      --arca-voice-ico: 12px;
     }
     .arca-voice-bar.active { display: flex; }
 
@@ -834,8 +839,8 @@
       flex: 0 0 auto;
     }
     .arca-voice-btn {
-      width: 22px;
-      height: 22px;
+      width: var(--arca-voice-btn);
+      height: var(--arca-voice-btn);
       padding: 0;
       display: grid;
       place-items: center;
@@ -861,7 +866,7 @@
       box-shadow: 0 0 0 1px rgba(0,191,255,0.10), 0 0 16px rgba(0,191,255,0.18);
     }
     .arca-voice-btn:active { transform: translateY(0); opacity: 0.95; }
-    .arca-voice-btn svg { width: 12px; height: 12px; fill: currentColor; filter: drop-shadow(0 0 3px rgba(0,191,255,0.35)); }
+    .arca-voice-btn svg { width: var(--arca-voice-ico); height: var(--arca-voice-ico); fill: currentColor; filter: drop-shadow(0 0 3px rgba(0,191,255,0.35)); }
     .arca-voice-btn.danger {
       color: rgba(255,107,107,0.95);
       border-color: rgba(255,107,107,0.22);
@@ -872,15 +877,98 @@
       border-color: rgba(255,107,107,0.40);
     }
 
+    .arca-voice-speed {
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .arca-voice-speed-btn {
+      height: var(--arca-voice-btn);
+      padding: 0 8px;
+      border-radius: 9999px;
+      background: rgba(0,0,0,0.10);
+      color: rgba(245,245,245,0.90);
+      border: 1px solid rgba(0,191,255,0.16);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10);
+      font-size: 0.56rem;
+      letter-spacing: 0.3px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      opacity: 0.9;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+      white-space: nowrap;
+    }
+    .arca-voice-speed-btn:hover { opacity: 1; background: rgba(0,191,255,0.08); border-color: rgba(0,191,255,0.30); }
+    .arca-voice-speed-btn:active { opacity: 0.95; }
+    .arca-voice-speed-menu {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(0,0,0,0.62);
+      border: 1px solid rgba(0,191,255,0.16);
+      border-radius: 12px;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.6), 0 0 18px rgba(0,191,255,0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      min-width: 140px;
+    }
+    .arca-voice-speed.open .arca-voice-speed-menu { display: flex; }
+    .arca-voice-speed-opt {
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.10);
+      color: rgba(245,245,245,0.92);
+      border: 1px solid rgba(0,191,255,0.14);
+      font-size: 0.58rem;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      opacity: 0.92;
+    }
+    .arca-voice-speed-opt:hover { opacity: 1; background: rgba(0,191,255,0.08); border-color: rgba(0,191,255,0.30); }
+    .arca-voice-speed-opt.active { background: rgba(0,191,255,0.10); border-color: rgba(0,191,255,0.40); }
+
     /* Mobile – um pouco mais compacto */
     @media (max-width: 600px) {
       #response .msg .msg-toolbar { gap: 5px; margin-top: 6px; padding-right: 8px; }
       #response .msg .msg-btn.icon { width: 14px; height: 14px; }
       #response .msg .msg-btn.icon svg { width: 9px; height: 9px; }
-      .arca-voice-bar { width: calc(100vw - 12px); padding: 6px 6px; gap: 6px; }
-      .arca-voice-btn { width: 20px; height: 20px; }
-      .arca-voice-btn svg { width: 11px; height: 11px; }
-      .arca-voice-scrub { width: 78px; height: 6px; }
+      .arca-voice-bar {
+        width: calc(100vw - 12px);
+        max-width: calc(100vw - 12px);
+        padding: 4px 4px;
+        gap: 5px;
+        --arca-voice-btn: 16px;
+        --arca-voice-ico: 9px;
+      }
+      .arca-voice-label { display: none; }
+      .arca-voice-progress { font-size: 0.52rem; letter-spacing: 0.2px; }
+      .arca-voice-controls { gap: 4px; }
+      .arca-voice-scrub { width: 56px; height: 6px; }
+      .arca-voice-speed-btn { padding: 0 6px; font-size: 0.52rem; }
+      .arca-voice-speed-menu { right: 0; min-width: 128px; }
+      .arca-voice-speed-opt { height: 24px; font-size: 0.56rem; }
+    }
+
+    @media (max-width: 380px) {
+      .arca-voice-bar { --arca-voice-btn: 14px; --arca-voice-ico: 8px; gap: 4px; }
+      .arca-voice-scrub { width: 48px; }
+      .arca-voice-speed-btn { padding: 0 5px; }
     }
 
     /* Badge da linguagem e botão copiar nos blocos de código */
@@ -3884,6 +3972,19 @@ div.innerHTML = DOMPurify.sanitize(html, {
       progress.className = 'arca-voice-progress';
       progress.textContent = '';
 
+      const speedWrap = document.createElement('div');
+      speedWrap.className = 'arca-voice-speed';
+
+      const speedBtn = document.createElement('button');
+      speedBtn.type = 'button';
+      speedBtn.className = 'arca-voice-speed-btn';
+      speedBtn.setAttribute('aria-label', 'Velocidade da narração');
+      speedBtn.title = 'Velocidade';
+      speedBtn.textContent = '1x';
+
+      const speedMenu = document.createElement('div');
+      speedMenu.className = 'arca-voice-speed-menu';
+
       const controls = document.createElement('div');
       controls.className = 'arca-voice-controls';
 
@@ -3908,6 +4009,24 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const btnSkip = mkBtn('', 'Pular', svgSkip);
       const btnClose = mkBtn('danger', 'Fechar', svgClose);
 
+      const tryResume = () => {
+        arcaVoiceState.paused = false;
+        arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        try { speechSynthesis.resume(); } catch {}
+        setTimeout(() => {
+          if (!arcaVoiceState.active) return;
+          if (speechSynthesis.paused) {
+            try { speechSynthesis.resume(); } catch {}
+          }
+          if (!speechSynthesis.speaking) {
+            arcaVoiceState.runId += 1;
+            try { speechSynthesis.cancel(); } catch {}
+            startNextSegment();
+          }
+        }, 140);
+        updateVoiceUI();
+      };
+
       btnToggle.addEventListener('click', () => {
         if (!arcaVoiceState.active) return;
         if (speechSynthesis.speaking && !speechSynthesis.paused) {
@@ -3915,12 +4034,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
           arcaVoiceState.paused = true;
           arcaVoiceState.elapsedOffset = voiceElapsedSec();
           btnToggle.innerHTML = svgPlay;
+          if (arcaVoiceState.raf) cancelAnimationFrame(arcaVoiceState.raf);
+          arcaVoiceState.raf = 0;
         } else {
-          speechSynthesis.resume();
-          arcaVoiceState.paused = false;
-          arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
           btnToggle.innerHTML = svgPause;
-          updateVoiceUI();
+          tryResume();
         }
       });
 
@@ -3965,6 +4083,60 @@ div.innerHTML = DOMPurify.sanitize(html, {
         voiceSeekToSec(n);
       });
 
+      function setRateMode(mode) {
+        const m = (mode === 'slow' || mode === 'fast') ? mode : 'normal';
+        localStorage.setItem('arcaVoiceRateMode', m);
+        const rate = (m === 'slow') ? 0.92 : (m === 'fast') ? 1.18 : 1.05;
+        arcaVoiceState.rate = rate;
+        speedBtn.textContent = (m === 'slow') ? '0.9x' : (m === 'fast') ? '1.2x' : '1x';
+        [...speedMenu.querySelectorAll('.arca-voice-speed-opt')].forEach(b => {
+          b.classList.toggle('active', b.dataset.mode === m);
+        });
+        if (arcaVoiceState.active) {
+          arcaVoiceState.runId += 1;
+          try { speechSynthesis.cancel(); } catch {}
+          startNextSegment();
+        }
+      }
+
+      const optSlow = document.createElement('button');
+      optSlow.type = 'button';
+      optSlow.className = 'arca-voice-speed-opt';
+      optSlow.dataset.mode = 'slow';
+      optSlow.innerHTML = "<span>Lento</span><span>0.9x</span>";
+      optSlow.addEventListener('click', () => { speedWrap.classList.remove('open'); setRateMode('slow'); });
+
+      const optNormal = document.createElement('button');
+      optNormal.type = 'button';
+      optNormal.className = 'arca-voice-speed-opt';
+      optNormal.dataset.mode = 'normal';
+      optNormal.innerHTML = "<span>Normal</span><span>1x</span>";
+      optNormal.addEventListener('click', () => { speedWrap.classList.remove('open'); setRateMode('normal'); });
+
+      const optFast = document.createElement('button');
+      optFast.type = 'button';
+      optFast.className = 'arca-voice-speed-opt';
+      optFast.dataset.mode = 'fast';
+      optFast.innerHTML = "<span>Rápido</span><span>1.2x</span>";
+      optFast.addEventListener('click', () => { speedWrap.classList.remove('open'); setRateMode('fast'); });
+
+      speedMenu.appendChild(optSlow);
+      speedMenu.appendChild(optNormal);
+      speedMenu.appendChild(optFast);
+      speedWrap.appendChild(speedBtn);
+      speedWrap.appendChild(speedMenu);
+
+      speedBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        speedWrap.classList.toggle('open');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!speedWrap.classList.contains('open')) return;
+        if (speedWrap.contains(e.target)) return;
+        speedWrap.classList.remove('open');
+      }, { passive: true });
+
       controls.appendChild(btnToggle);
       controls.appendChild(btnPrev);
       controls.appendChild(btnSkip);
@@ -3973,15 +4145,22 @@ div.innerHTML = DOMPurify.sanitize(html, {
       el.appendChild(label);
       el.appendChild(progress);
       el.appendChild(scrub);
+      el.appendChild(speedWrap);
       el.appendChild(controls);
 
       el.dataset.ready = '1';
       el._label = label;
       el._progress = progress;
       el._scrub = scrub;
+      el._speedBtn = speedBtn;
+      el._speedWrap = speedWrap;
       el._btnToggle = btnToggle;
       el._svgPlay = svgPlay;
       el._svgPause = svgPause;
+
+      const stored = (localStorage.getItem('arcaVoiceRateMode') || 'normal').toLowerCase();
+      arcaVoiceState.rate = (stored === 'slow') ? 0.92 : (stored === 'fast') ? 1.18 : 1.05;
+      setTimeout(() => setRateMode(stored), 0);
 
       return el;
     }
@@ -4128,7 +4307,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const localRun = arcaVoiceState.runId;
       const utter = new SpeechSynthesisUtterance(seg);
       utter.lang = 'pt-BR';
-      utter.rate = 1.05;
+      utter.rate = arcaVoiceState.rate || 1.05;
       utter.pitch = 1.0;
       const v = pickVoicePt();
       if (v) utter.voice = v;
@@ -4174,11 +4353,22 @@ div.innerHTML = DOMPurify.sanitize(html, {
           arcaVoiceState.paused = true;
           arcaVoiceState.elapsedOffset = voiceElapsedSec();
           if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPlay;
+          if (arcaVoiceState.raf) cancelAnimationFrame(arcaVoiceState.raf);
+          arcaVoiceState.raf = 0;
         } else {
-          speechSynthesis.resume();
+          if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
           arcaVoiceState.paused = false;
           arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-          if (bar._btnToggle) bar._btnToggle.innerHTML = bar._svgPause;
+          try { speechSynthesis.resume(); } catch {}
+          setTimeout(() => {
+            if (!arcaVoiceState.active) return;
+            if (speechSynthesis.paused) { try { speechSynthesis.resume(); } catch {} }
+            if (!speechSynthesis.speaking) {
+              arcaVoiceState.runId += 1;
+              try { speechSynthesis.cancel(); } catch {}
+              startNextSegment();
+            }
+          }, 140);
           updateVoiceUI();
         }
         return;
@@ -4195,6 +4385,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       arcaVoiceState.active = true;
       arcaVoiceState.paused = false;
       arcaVoiceState.elapsedOffset = 0;
+      arcaVoiceState.segStartTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       startNextSegment();
     }
 
