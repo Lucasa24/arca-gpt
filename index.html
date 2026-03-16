@@ -248,9 +248,12 @@
       text-align: center;
       border-bottom: 1px solid #333;
       padding-bottom: 0.5rem;
-      padding-left: 46px;
+      padding-left: 26px;
       padding-right: 26px;
       position: relative;
+    }
+    #chatSidebar h3.with-back {
+      padding-left: 46px;
     }
 
     #closeSidebar {
@@ -2963,6 +2966,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       
       sidebar.innerHTML = "";
       const h3 = document.createElement('h3');
+      if (showArchived) h3.classList.add('with-back');
       h3.appendChild(document.createTextNode(showArchived ? 'Arquivadas' : 'Travessias'));
 
       const closeBtn = document.createElement('button');
