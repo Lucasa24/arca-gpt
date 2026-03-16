@@ -1859,6 +1859,17 @@
       </div>
     </div>
   </div>
+
+  <div id="arcaConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="arcaConfirmTitle" aria-describedby="arcaConfirmText">
+    <div class="modal-content">
+      <h3 id="arcaConfirmTitle">⚠️ Confirmação</h3>
+      <p id="arcaConfirmText">Você tem certeza?</p>
+      <div class="modal-buttons">
+        <button id="arcaConfirmYes" class="confirm-btn" type="button">Confirmar</button>
+        <button id="arcaConfirmNo" class="cancel-btn" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
   
   <!-- Modal de Nomeação de Travessia -->
   <div id="newTravessiaModal" class="modal">
@@ -3209,13 +3220,67 @@ div.innerHTML = DOMPurify.sanitize(html, {
     }
 
     function closeModal() {
-      const ids = ["resetModal", "loginModal", "newTravessiaModal"];
+      const ids = ["resetModal", "loginModal", "newTravessiaModal", "arcaConfirmModal"];
       ids.forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.style.display = "none";
       });
       const input = document.getElementById("travessiaName");
       if (input) input.value = "";
+    }
+
+    function arcaConfirm(opts) {
+      const modal = document.getElementById('arcaConfirmModal');
+      const titleEl = document.getElementById('arcaConfirmTitle');
+      const textEl = document.getElementById('arcaConfirmText');
+      const yes = document.getElementById('arcaConfirmYes');
+      const no = document.getElementById('arcaConfirmNo');
+      if (!modal || !titleEl || !textEl || !yes || !no) return Promise.resolve(false);
+
+      const title = (opts && opts.title) ? String(opts.title) : '⚠️ Confirmação';
+      const message = (opts && opts.message) ? String(opts.message) : 'Você tem certeza?';
+      const confirmText = (opts && opts.confirmText) ? String(opts.confirmText) : 'Confirmar';
+      const cancelText = (opts && opts.cancelText) ? String(opts.cancelText) : 'Cancelar';
+
+      titleEl.textContent = title;
+      textEl.textContent = message;
+      yes.textContent = confirmText;
+      no.textContent = cancelText;
+
+      modal.style.display = 'block';
+      requestAnimationFrame(() => { try { yes.focus(); } catch {} });
+
+      return new Promise((resolve) => {
+        let settled = false;
+
+        const cleanup = () => {
+          yes.removeEventListener('click', onYes);
+          no.removeEventListener('click', onNo);
+          modal.removeEventListener('mousedown', onBackdrop);
+          document.removeEventListener('keydown', onKey);
+          modal.style.display = 'none';
+        };
+
+        const finish = (v) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve(!!v);
+        };
+
+        const onYes = (e) => { e.preventDefault(); e.stopPropagation(); finish(true); };
+        const onNo = (e) => { e.preventDefault(); e.stopPropagation(); finish(false); };
+        const onBackdrop = (e) => { if (e.target === modal) finish(false); };
+        const onKey = (e) => {
+          if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+          if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        };
+
+        yes.addEventListener('click', onYes);
+        no.addEventListener('click', onNo);
+        modal.addEventListener('mousedown', onBackdrop);
+        document.addEventListener('keydown', onKey);
+      });
     }
     
     function confirmNewTravessia() {
@@ -3345,8 +3410,15 @@ div.innerHTML = DOMPurify.sanitize(html, {
       delBtn.type = 'button';
       delBtn.className = 'action-item danger';
       delBtn.textContent = 'Excluir';
-      delBtn.onclick = () => {
-        if (!confirm('Excluir esta sessão e suas memórias? Esta ação não pode ser desfeita.')) return;
+      delBtn.onclick = async () => {
+        menu.style.display = 'none';
+        const ok = await arcaConfirm({
+          title: '⚠️ Corte Irreversível',
+          message: 'Excluir esta sessão e suas memórias? Esta ação não pode ser desfeita.',
+          confirmText: 'Sim, excluir',
+          cancelText: 'Voltar'
+        });
+        if (!ok) return;
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
         const updated = history.filter(s => s.id !== sessionId);
         localStorage.setItem('chatHistory', JSON.stringify(updated));
@@ -3366,7 +3438,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
           }
         }
 
-        menu.style.display = 'none';
         loadSidebar();
       };
       menu.appendChild(delBtn);
@@ -3456,8 +3527,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const resetModal = document.getElementById("resetModal");
       const loginModal = document.getElementById("loginModal");
       const newTravessiaModal = document.getElementById("newTravessiaModal");
+      const arcaConfirmModal = document.getElementById("arcaConfirmModal");
       
-      if (event.target === resetModal || event.target === loginModal || event.target === newTravessiaModal) {
+      if (event.target === resetModal || event.target === loginModal || event.target === newTravessiaModal || event.target === arcaConfirmModal) {
         closeModal();
       }
 
