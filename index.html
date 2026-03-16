@@ -3056,7 +3056,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
             hasMessages = Array.isArray(msgs) && msgs.length > 0;
           }
         } catch (e) {}
-        const isActive = (session.id === currentThreadId) && hasMessages;
+        const isSelected = (session.id === currentThreadId);
+        const isActive = isSelected && hasMessages;
         btn.style.opacity = isActive ? "1" : "0.7";
         btn.style.fontWeight = isActive ? "bold" : "normal";
         btn.onclick = () => {
@@ -3113,7 +3114,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         dots.style.color = "#fff";
         dots.style.fontSize = "14px";
         dots.style.lineHeight = "22px";
-        dots.style.display = "inline-flex";
+        dots.style.display = isSelected ? "inline-flex" : "none";
         dots.style.alignItems = "center";
         dots.style.justifyContent = "center";
         dots.style.cursor = "pointer";
