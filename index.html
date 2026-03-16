@@ -248,7 +248,7 @@
       text-align: center;
       border-bottom: 1px solid #333;
       padding-bottom: 0.5rem;
-      padding-left: 26px;
+      padding-left: 46px;
       padding-right: 26px;
       position: relative;
     }
@@ -277,6 +277,7 @@
     }
 
     #chatSidebar h3 #closeSidebar,
+    #chatSidebar h3 #sidebarBackBtn,
     #chatSidebar h3 #sidebarArchiveToggle {
       width: 18px !important;
       height: 18px !important;
@@ -299,14 +300,17 @@
       box-shadow: none !important;
     }
     #chatSidebar h3 #closeSidebar { left: 0 !important; }
+    #chatSidebar h3 #sidebarBackBtn { left: 22px !important; opacity: 0.55; }
     #chatSidebar h3 #sidebarArchiveToggle { right: 0 !important; opacity: 0.48; }
     #chatSidebar h3 #sidebarArchiveToggle.active { opacity: 0.92; }
     #chatSidebar h3 #closeSidebar:hover,
+    #chatSidebar h3 #sidebarBackBtn:hover,
     #chatSidebar h3 #sidebarArchiveToggle:hover {
       opacity: 1;
       background: rgba(0,191,255,0.08) !important;
     }
     #chatSidebar h3 #closeSidebar svg,
+    #chatSidebar h3 #sidebarBackBtn svg,
     #chatSidebar h3 #sidebarArchiveToggle svg {
       width: 14px;
       height: 14px;
@@ -2968,6 +2972,22 @@ div.innerHTML = DOMPurify.sanitize(html, {
       closeBtn.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0 0 4px rgba(0,191,255,0.65)); pointer-events: none;'><path d='M6 6 C9 5,11 9,12 12 C13 15,15 19,18 18'/><path d='M18 6 C15 5,13 9,12 12 C11 15,9 19,6 18'/></svg>";
       closeBtn.onclick = () => toggleSidebar();
       h3.appendChild(closeBtn);
+
+      if (showArchived) {
+        const backBtn = document.createElement('button');
+        backBtn.type = 'button';
+        backBtn.id = 'sidebarBackBtn';
+        backBtn.setAttribute('aria-label', 'Voltar para sessões');
+        backBtn.title = 'Voltar';
+        backBtn.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='pointer-events: none;'><path d='M15 18l-6-6 6-6'/><path d='M9 12h10'/></svg>";
+        backBtn.onclick = () => {
+          localStorage.setItem('arcaShowArchivedSessions', '0');
+          const itemMenu = document.getElementById('itemMenu');
+          if (itemMenu) itemMenu.style.display = 'none';
+          loadSidebar();
+        };
+        h3.appendChild(backBtn);
+      }
 
       const archiveToggle = document.createElement('button');
       archiveToggle.type = 'button';
