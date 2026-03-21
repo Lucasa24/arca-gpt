@@ -1093,10 +1093,10 @@
       z-index: 4;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: 10px;
-      margin: -1rem -1rem 0.20rem -1rem;
-      padding: 0.06rem 0.35rem;
+      margin: 0 -1rem 0.25rem -1rem;
+      padding: 0.12rem 0.55rem;
       background: transparent;
       border-bottom: 0;
       backdrop-filter: none;
@@ -1122,17 +1122,17 @@
     #response pre .arca-copy-sticky .copy-btn {
       pointer-events: auto;
       transform: none !important;
-      padding: 0;
-      font-size: 0.58rem;
+      padding: 0.14rem 0.38rem;
+      font-size: 0.60rem;
       letter-spacing: 0.25px;
-      background: transparent;
+      background: rgba(0,0,0,0.10);
       color: rgba(245,245,245,0.88);
-      border: 0 !important;
-      border-radius: 0;
-      opacity: 0.75;
+      border: 1px solid rgba(0,191,255,0.18) !important;
+      border-radius: 9999px;
+      opacity: 0.82;
       min-width: 0;
     }
-    #response pre .arca-copy-sticky .copy-btn:hover { text-decoration: underline; opacity: 1; }
+    #response pre .arca-copy-sticky .copy-btn:hover { background: rgba(0,191,255,0.08); border-color: rgba(0,191,255,0.30) !important; opacity: 1; }
 
     #response pre .code-badge {
       position: absolute;
