@@ -1083,28 +1083,47 @@
       background: linear-gradient(180deg, rgba(0,191,255,0.34), rgba(179,0,0,0.30));
       border-color: rgba(0,191,255,0.30);
     }
-    #response pre.arca-pre-txt .code-badge {
-      right: 60px;
-    }
-    #response pre.arca-pre-txt .copy-btn {
-      position: absolute;
+    #response pre.arca-pre-txt { padding-top: 0 !important; }
+    #response pre.arca-pre-txt .arca-code-head {
+      position: sticky;
       top: 0;
-      right: 0;
-      z-index: 3;
-      transform: scale(0.5);
-      transform-origin: top right;
-      padding: 0.22rem 0.42rem;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: -1rem -1rem 0 -1rem;
+      padding: 0.35rem 0.6rem;
+      background: rgba(179, 0, 0, 0.18);
+      border-bottom: 1px solid rgba(179, 0, 0, 0.35);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    #response pre.arca-pre-txt .arca-code-head .code-badge {
+      position: static;
+      right: auto;
+      top: auto;
+      background: transparent;
+      border: 0;
+      padding: 0;
       font-size: 0.75rem;
       line-height: 1;
+      color: #ff6b6b;
+      letter-spacing: 0.5px;
+    }
+    #response pre.arca-pre-txt .arca-code-head .copy-btn {
+      position: static;
+      transform: none;
+      padding: 0.18rem 0.36rem;
+      font-size: 0.60rem;
       letter-spacing: 0.2px;
       background: rgba(255,255,255,0.06);
       border: 0;
-      border-left: 1px solid rgba(179, 0, 0, 0.26);
-      border-bottom-left-radius: 6px;
+      border-radius: 6px;
+      opacity: 0.9;
+      min-width: 0;
     }
-    #response pre.arca-pre-txt .copy-btn:hover {
-      background: rgba(255,255,255,0.12);
-    }
+    #response pre.arca-pre-txt .arca-code-head .copy-btn:hover { background: rgba(255,255,255,0.12); opacity: 1; }
 
     #response pre .code-badge {
       position: absolute;
@@ -3602,7 +3621,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const cls = (code.getAttribute('class') || '').split(/\s+/);
         let lang = cls.find(c => c.startsWith('language-'));
         lang = lang ? lang.replace('language-', '').toUpperCase() : 'TXT';
-        if (cls.includes('language-txt')) pre.classList.add('arca-pre-txt');
+        const isTxt = cls.includes('language-txt');
+        if (isTxt) pre.classList.add('arca-pre-txt');
 
         // Badge de linguagem
         const badge = document.createElement('div');
@@ -3627,8 +3647,16 @@ div.innerHTML = DOMPurify.sanitize(html, {
           }
         });
 
-        pre.appendChild(badge);
-        pre.appendChild(btn);
+        if (isTxt) {
+          const head = document.createElement('div');
+          head.className = 'arca-code-head';
+          head.appendChild(badge);
+          head.appendChild(btn);
+          pre.insertBefore(head, code);
+        } else {
+          pre.appendChild(badge);
+          pre.appendChild(btn);
+        }
         pre.dataset.enhanced = '1';
       });
     }
