@@ -1044,6 +1044,21 @@
       .arca-voice-close { justify-self: start; }
     }
 
+    @media (min-width: 601px) {
+      .arca-voice-controls {
+        position: relative;
+        width: 100%;
+        flex: 1 1 auto;
+        padding-right: 72px;
+      }
+      .arca-voice-controls .arca-voice-speed {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+    }
+
     @media (max-width: 380px) {
       .arca-voice-bar { --arca-voice-btn: 10px; --arca-voice-ico: 6px; gap: 4px; }
       .arca-voice-scrub { min-width: 40px; flex: 1 1 48px; }
