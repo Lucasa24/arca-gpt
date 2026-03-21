@@ -2230,6 +2230,14 @@
       messages[idx].content += chunk;
     }
 
+    function stripLineAsteriskEmphasis(md) {
+      let s = String(md || "");
+      s = s.replace(/(^|[\r\n])\*{3}([^\r\n]*?)\*{3}(?=[\r\n]|$)/g, '$1$2');
+      s = s.replace(/(^|[\r\n])\*{2}([^\r\n]*?)\*{2}(?=[\r\n]|$)/g, '$1$2');
+      s = s.replace(/(^|[\r\n])\*{1}([^\r\n]*?)\*{1}(?=[\r\n]|$)/g, '$1$2');
+      return s;
+    }
+
     function primeStreamingUI() {
       renderMessagesWithLiveMarkdown(true);
       const responseDiv = document.getElementById("response");
@@ -2241,7 +2249,8 @@
     function updateStreamingUI() {
       if (!streamingContentEl) return;
       const msg = messages[streamingMsgIndex];
-      streamingContentEl.textContent = (msg && msg.content) ? msg.content : "";
+      const raw = (msg && msg.content) ? msg.content : "";
+      streamingContentEl.textContent = stripLineAsteriskEmphasis(raw);
       try { window.scrollTo(0, document.body.scrollHeight); } catch {}
     }
 
@@ -2860,6 +2869,7 @@
           
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // não mate espaços de borda
+          content = stripLineAsteriskEmphasis(content);
           
           // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
@@ -2927,6 +2937,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           
           // Forçar parágrafos se não houver \n\n no conteúdo
           let content = msg.content; // preserve o MD cru para copiar depois
+          content = stripLineAsteriskEmphasis(content);
           if (typewriterState.enabled && typewriterState.idx === index && msg.role === "assistant") {
             content = typewriterSafeSlice(content || "", Math.min(typewriterState.shown, (content || "").length));
           }
