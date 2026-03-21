@@ -1055,14 +1055,18 @@
       position: relative;
       padding-top: 2.2rem !important;
     }
-    #response pre[data-enhanced="1"] {
-      padding-top: 1rem !important;
-    }
 
     #response pre.arca-pre-txt {
-      overflow-x: hidden !important;
-      overflow-y: auto !important;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden !important;
       max-height: min(42vh, 280px);
+    }
+    #response pre.arca-pre-txt .arca-txt-body {
+      flex: 1 1 auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.20);
     }
@@ -1073,42 +1077,31 @@
       display: block;
       padding-top: 0;
     }
-    #response pre.arca-pre-txt::-webkit-scrollbar { width: 8px; }
-    #response pre.arca-pre-txt::-webkit-scrollbar-track {
+    #response pre.arca-pre-txt .arca-txt-body::-webkit-scrollbar { width: 8px; }
+    #response pre.arca-pre-txt .arca-txt-body::-webkit-scrollbar-track {
       background: rgba(0,0,0,0.22);
       border-left: 1px solid rgba(0,191,255,0.10);
     }
-    #response pre.arca-pre-txt::-webkit-scrollbar-thumb {
+    #response pre.arca-pre-txt .arca-txt-body::-webkit-scrollbar-thumb {
       background: linear-gradient(180deg, rgba(0,191,255,0.20), rgba(179,0,0,0.22));
       border: 1px solid rgba(0,191,255,0.18);
       border-radius: 9999px;
       box-shadow: 0 0 10px rgba(0,191,255,0.12);
     }
-    #response pre.arca-pre-txt::-webkit-scrollbar-thumb:hover {
+    #response pre.arca-pre-txt .arca-txt-body::-webkit-scrollbar-thumb:hover {
       background: linear-gradient(180deg, rgba(0,191,255,0.34), rgba(179,0,0,0.30));
       border-color: rgba(0,191,255,0.30);
     }
-    #response pre.arca-pre-txt .arca-copy-sticky,
-    #response pre[data-enhanced="1"] .arca-copy-sticky {
-      position: sticky;
-      top: 0;
-      z-index: 4;
+    #response pre.arca-pre-txt .arca-copy-sticky {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin: 0 0 0.45rem 0;
-      padding: 0.10rem 0;
+      padding: 0;
       background: transparent;
-      border-bottom: 0;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
       pointer-events: none;
     }
-    #response pre .arca-copy-sticky .code-badge {
-      position: static !important;
-      right: auto !important;
-      top: auto !important;
+    #response pre.arca-pre-txt .arca-copy-sticky .code-badge {
       background: transparent !important;
       border: 0 !important;
       padding: 0 !important;
@@ -1122,26 +1115,24 @@
       opacity: 0.9;
       text-shadow: none;
     }
-    #response pre .arca-copy-sticky .copy-btn {
+    #response pre.arca-pre-txt .arca-copy-sticky .copy-btn {
       pointer-events: auto;
       transform: none !important;
-      padding: 0.14rem 0.38rem;
-      font-size: 0.60rem;
-      letter-spacing: 0.25px;
+      padding: 0.08rem 0.22rem;
+      font-size: 0.58rem;
+      line-height: 1;
+      letter-spacing: 0.2px;
       background: rgba(0,0,0,0.10);
       color: rgba(245,245,245,0.88);
       border: 1px solid rgba(0,191,255,0.18) !important;
       border-radius: 9999px;
-      opacity: 0.82;
+      opacity: 0.86;
       min-width: 0;
       box-shadow: none;
     }
-    #response pre .arca-copy-sticky .copy-btn:hover { background: rgba(0,191,255,0.08); border-color: rgba(0,191,255,0.30) !important; opacity: 1; }
-    #response pre .arca-copy-sticky .copy-btn:focus,
-    #response pre .arca-copy-sticky .copy-btn:focus-visible {
-      outline: none;
-      box-shadow: none;
-    }
+    #response pre.arca-pre-txt .arca-copy-sticky .copy-btn:hover { background: rgba(0,191,255,0.08); border-color: rgba(0,191,255,0.30) !important; opacity: 1; }
+    #response pre.arca-pre-txt .arca-copy-sticky .copy-btn:focus,
+    #response pre.arca-pre-txt .arca-copy-sticky .copy-btn:focus-visible { outline: none; box-shadow: none; }
 
     #response pre .code-badge {
       position: absolute;
@@ -3665,11 +3656,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
           }
         });
 
-        const sticky = document.createElement('div');
-        sticky.className = 'arca-copy-sticky';
-        sticky.appendChild(badge);
-        sticky.appendChild(btn);
-        pre.insertBefore(sticky, code);
+        if (isTxt) {
+          const head = document.createElement('div');
+          head.className = 'arca-copy-sticky';
+          head.appendChild(badge);
+          head.appendChild(btn);
+          const body = document.createElement('div');
+          body.className = 'arca-txt-body';
+          pre.insertBefore(head, code);
+          pre.insertBefore(body, code);
+          body.appendChild(code);
+        } else {
+          pre.appendChild(badge);
+          pre.appendChild(btn);
+        }
         pre.dataset.enhanced = '1';
       });
     }
