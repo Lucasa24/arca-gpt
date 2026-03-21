@@ -1085,19 +1085,16 @@
     }
     #response pre.arca-pre-txt { padding-top: 0 !important; }
     #response pre.arca-pre-txt .arca-code-head {
-      position: sticky;
-      top: 0;
-      z-index: 4;
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 8px;
-      margin: -1rem -1rem 0.18rem -1rem;
-      padding: 0.22rem 0.55rem;
-      background: rgba(179, 0, 0, 0.12);
+      margin: -1rem -1rem 0.10rem -1rem;
+      padding: 0.16rem 0.55rem;
+      background: rgba(179, 0, 0, 0.10);
       border-bottom: 1px solid rgba(179, 0, 0, 0.35);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
     }
     #response pre.arca-pre-txt .arca-code-head .code-badge {
       position: static;
@@ -1111,19 +1108,29 @@
       color: #ff6b6b;
       letter-spacing: 0.5px;
     }
-    #response pre.arca-pre-txt .arca-code-head .copy-btn {
-      position: static;
+    #response pre.arca-pre-txt .arca-copy-sticky {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 -1rem 0.18rem -1rem;
+      padding: 0.12rem 0.38rem;
+      pointer-events: none;
+    }
+    #response pre.arca-pre-txt .arca-copy-sticky .copy-btn {
+      pointer-events: auto;
       transform: none;
-      padding: 0.18rem 0.36rem;
-      font-size: 0.60rem;
+      padding: 0.20rem 0.42rem;
+      font-size: 0.66rem;
       letter-spacing: 0.2px;
       background: rgba(255,255,255,0.06);
       border: 0;
-      border-radius: 6px;
-      opacity: 0.9;
+      border-radius: 7px;
+      opacity: 0.92;
       min-width: 0;
     }
-    #response pre.arca-pre-txt .arca-code-head .copy-btn:hover { background: rgba(255,255,255,0.12); opacity: 1; }
+    #response pre.arca-pre-txt .arca-copy-sticky .copy-btn:hover { background: rgba(255,255,255,0.12); opacity: 1; }
 
     #response pre .code-badge {
       position: absolute;
@@ -3651,8 +3658,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
           const head = document.createElement('div');
           head.className = 'arca-code-head';
           head.appendChild(badge);
-          head.appendChild(btn);
           pre.insertBefore(head, code);
+          const sticky = document.createElement('div');
+          sticky.className = 'arca-copy-sticky';
+          sticky.appendChild(btn);
+          pre.insertBefore(sticky, code);
         } else {
           pre.appendChild(badge);
           pre.appendChild(btn);
