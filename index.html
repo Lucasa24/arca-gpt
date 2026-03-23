@@ -1920,6 +1920,22 @@
       transform: scale(1.05);
       box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
     }
+    .invocar-btn.stop {
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(0,191,255,0.28);
+      border-bottom: 2px solid rgba(0,191,255,0.12);
+      color: rgba(0,191,255,0.92);
+      animation: none;
+      letter-spacing: 1px;
+      text-shadow: 0 0 6px rgba(0,191,255,0.18);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 14px rgba(0,191,255,0.10);
+    }
+    .invocar-btn.stop:hover {
+      transform: scale(1.04);
+      background: rgba(0,191,255,0.08);
+      border-color: rgba(0,191,255,0.40);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.10), 0 0 18px rgba(0,191,255,0.16);
+    }
   </style>
 </head>
 <body>
@@ -2013,7 +2029,7 @@
         <div class="textarea-container" style="flex: 1;">
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         </div>
-        <button onclick="sendMessage()" class="invocar-btn">Invocar</button>
+        <button onclick="handleInvokeClick()" class="invocar-btn">Invocar</button>
         <button class="arca-plus-btn" onclick="document.getElementById('imageInput').click()" title="Anexar imagem para análise visual">
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
              <circle cx="12" cy="12" r="9"></circle>
@@ -2088,6 +2104,7 @@
   <script>
     let messages = [];
     let isInvocando = false;
+    let currentStreamController = null;
     let invocandoHintActive = false;
     let streamingMsgIndex = -1;
     let streamingContentEl = null;
@@ -2648,6 +2665,10 @@
     }
     
     async function sendMessage() {
+      // Se já estiver gerando, este botão vira "Parar"
+      if (currentStreamController) {
+        return stopStreaming();
+      }
       const input = document.getElementById("userInput").value.trim();
       const responseDiv = document.getElementById("response");
       const loader = document.getElementById("loader");
@@ -2736,6 +2757,7 @@
       
       // INICIA O RITUAL DA BARRA
       startLoaderBar();
+      updateInvokeButton(true);
 
       try {
         // Garantir que temos um threadId ANTES de chamar a API
@@ -2756,6 +2778,7 @@
           userId = userData.email;
         }
 
+        currentStreamController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
         const response = await fetch("/api/arca", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2766,7 +2789,8 @@
             modelMode: (localStorage.getItem('arcaModelMode') || 'auto'),
             threadId: threadId,
             userId: userId // Envia o ID do usuário para vincular a thread
-          })
+          }),
+          signal: currentStreamController ? currentStreamController.signal : undefined
         });
 
         if (!response.ok) {
@@ -2805,6 +2829,8 @@
               // Resetar o tamanho do textarea para o padrão
               document.getElementById("userInput").style.height = "55px";
               saveToHistory(input, threadId);
+              currentStreamController = null;
+              updateInvokeButton(false);
               return;
             }
 
@@ -2847,12 +2873,51 @@
           }
         }
       } catch (err) {
+        if (err && (err.name === 'AbortError' || /abort/i.test(err.message || ''))) {
+          // Interrupção manual: finalizar com dignidade
+          // Mantém o que já foi produzido e apenas limpa estados visuais
+        } else {
+          responseDiv.innerHTML = "⚠️ A Arca silenciou: " + (err && err.message ? err.message : 'erro desconhecido');
+        }
+        currentStreamController = null;
         stopLoaderBar();
         invocandoHintActive = false;
         streamingMsgIndex = -1;
         streamingContentEl = null;
         renderMessagesWithLiveMarkdown(false);
-        responseDiv.innerHTML = "⚠️ A Arca silenciou: " + err.message;
+        updateInvokeButton(false);
+      }
+    }
+    
+    function handleInvokeClick() {
+      if (currentStreamController) {
+        stopStreaming();
+      } else {
+        sendMessage();
+      }
+    }
+    
+    function stopStreaming() {
+      try { if (currentStreamController) currentStreamController.abort(); } catch {}
+      currentStreamController = null;
+      isInvocando = false;
+      stopLoaderBar();
+      invocandoHintActive = false;
+      streamingMsgIndex = -1;
+      streamingContentEl = null;
+      renderMessagesWithLiveMarkdown(false);
+      updateInvokeButton(false);
+    }
+    
+    function updateInvokeButton(active) {
+      const btn = document.querySelector('.invocar-btn');
+      if (!btn) return;
+      if (active) {
+        btn.textContent = 'Parar';
+        btn.classList.add('stop');
+      } else {
+        btn.textContent = 'Invocar';
+        btn.classList.remove('stop');
       }
     }
 
