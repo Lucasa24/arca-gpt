@@ -2105,6 +2105,8 @@
     let messages = [];
     let isInvocando = false;
     let currentStreamController = null;
+    let streamAutoFollow = false;
+    let lastStreamAssistantIndex = -1;
     let invocandoHintActive = false;
     let streamingMsgIndex = -1;
     let streamingContentEl = null;
@@ -2337,12 +2339,34 @@
       try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
     }
 
+    function isNearBottom(thresholdPx) {
+      const t = typeof thresholdPx === 'number' ? thresholdPx : 140;
+      const doc = document.documentElement;
+      const scrollTop = window.scrollY || doc.scrollTop || 0;
+      const viewport = window.innerHeight || doc.clientHeight || 0;
+      const height = Math.max(doc.scrollHeight || 0, document.body ? document.body.scrollHeight : 0);
+      return (scrollTop + viewport) >= (height - t);
+    }
+
+    function scrollToMessageTopByIndex(idx) {
+      const responseDiv = document.getElementById('response');
+      if (!responseDiv || !responseDiv.children) return;
+      const el = responseDiv.children[idx];
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const target = Math.max(0, Math.round(top - 12));
+      try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
     function primeStreamingUI() {
       renderMessagesWithLiveMarkdown(true);
       const responseDiv = document.getElementById("response");
       streamingMsgIndex = messages.length - 1;
       const msgEl = responseDiv && responseDiv.children ? responseDiv.children[streamingMsgIndex] : null;
       streamingContentEl = msgEl ? msgEl.querySelector('.msg-content') : null;
+      if (streamAutoFollow) {
+        try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+      }
     }
 
     function updateStreamingUI() {
@@ -2350,7 +2374,9 @@
       const msg = messages[streamingMsgIndex];
       const raw = (msg && msg.content) ? msg.content : "";
       streamingContentEl.textContent = stripLineAsteriskEmphasis(raw);
-      try { window.scrollTo(0, document.body.scrollHeight); } catch {}
+      if (streamAutoFollow) {
+        try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+      }
     }
 
     const typewriterState = {
@@ -2819,7 +2845,9 @@
       typewriterReset();
       messages.push({ role: "user", content: input }); // Mantém o input original na interface
       messages.push({ role: "assistant", content: "" });
+      lastStreamAssistantIndex = messages.length - 1;
       invocandoHintActive = true;
+      streamAutoFollow = true;
       primeStreamingUI();
       
       // INICIA O RITUAL DA BARRA
@@ -2891,6 +2919,13 @@
               streamingMsgIndex = -1;
               streamingContentEl = null;
               renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
+              streamAutoFollow = false;
+              if (lastStreamAssistantIndex >= 0) {
+                requestAnimationFrame(() => {
+                  scrollToMessageTopByIndex(lastStreamAssistantIndex);
+                  setTimeout(() => scrollToMessageTopByIndex(lastStreamAssistantIndex), 120);
+                });
+              }
               
               document.getElementById("userInput").value = "";
               // Resetar o tamanho do textarea para o padrão
@@ -2947,6 +2982,7 @@
           responseDiv.innerHTML = "⚠️ A Arca silenciou: " + (err && err.message ? err.message : 'erro desconhecido');
         }
         currentStreamController = null;
+        streamAutoFollow = false;
         stopLoaderBar();
         invocandoHintActive = false;
         streamingMsgIndex = -1;
@@ -2967,6 +3003,7 @@
     function stopStreaming() {
       try { if (currentStreamController) currentStreamController.abort(); } catch {}
       currentStreamController = null;
+      streamAutoFollow = false;
       isInvocando = false;
       stopLoaderBar();
       invocandoHintActive = false;
@@ -3783,6 +3820,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
       window.addEventListener('scroll', () => {
         const tid = localStorage.getItem('threadId');
         if (!tid) return;
+        if (currentStreamController) {
+          streamAutoFollow = isNearBottom(140);
+        }
         clearTimeout(window.__arcaScrollSaveTimer);
         window.__arcaScrollSaveTimer = setTimeout(() => {
           saveThreadViewport(tid);
