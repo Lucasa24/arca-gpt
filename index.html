@@ -2270,6 +2270,48 @@
       return s;
     }
 
+    function saveScrollPositionForThread(threadId) {
+      if (!threadId) return;
+      const responseDiv = document.getElementById('response');
+      if (!responseDiv) return;
+      const msgEls = Array.from(responseDiv.querySelectorAll('.msg'));
+      if (!msgEls.length) return;
+
+      let idx = 0;
+      for (let i = 0; i < msgEls.length; i++) {
+        const r = msgEls[i].getBoundingClientRect();
+        if (r.bottom > 0) { idx = i; break; }
+        idx = i;
+      }
+
+      const r = msgEls[idx].getBoundingClientRect();
+      const offset = Math.max(0, Math.round(-r.top));
+      try {
+        localStorage.setItem(`arcaScroll_${threadId}`, JSON.stringify({ i: idx, o: offset, ts: Date.now() }));
+      } catch {}
+    }
+
+    function restoreScrollPositionForThread(threadId) {
+      if (!threadId) return;
+      let data;
+      try { data = JSON.parse(localStorage.getItem(`arcaScroll_${threadId}`) || 'null'); } catch { data = null; }
+      if (!data || typeof data.i !== 'number') return;
+
+      const responseDiv = document.getElementById('response');
+      if (!responseDiv) return;
+      const msgEls = Array.from(responseDiv.querySelectorAll('.msg'));
+      if (!msgEls.length) return;
+
+      const idx = Math.max(0, Math.min(msgEls.length - 1, data.i | 0));
+      const el = msgEls[idx];
+      const docTop = el.getBoundingClientRect().top + window.scrollY;
+      const maxOff = Math.max(0, (el.offsetHeight || 0) - 8);
+      const off = Math.max(0, Math.min(maxOff, data.o | 0));
+      const target = Math.max(0, Math.round(docTop - off));
+
+      try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
     function primeStreamingUI() {
       renderMessagesWithLiveMarkdown(true);
       const responseDiv = document.getElementById("response");
@@ -3129,6 +3171,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
           // Mensagens encontradas no localStorage
           messages = localMessages;
           renderMessages();
+          requestAnimationFrame(() => {
+            restoreScrollPositionForThread(threadId);
+            setTimeout(() => restoreScrollPositionForThread(threadId), 120);
+          });
           return;
         }
         
@@ -3150,12 +3196,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
         }
         
         renderMessages();
+        requestAnimationFrame(() => {
+          restoreScrollPositionForThread(threadId);
+          setTimeout(() => restoreScrollPositionForThread(threadId), 120);
+        });
       } catch (err) {
         // Se falhar, tentar carregar do localStorage como último recurso
         const localMessages = loadThreadMessagesFromStorage(threadId);
         if (localMessages.length > 0) {
           messages = localMessages;
           renderMessages();
+          requestAnimationFrame(() => {
+            restoreScrollPositionForThread(threadId);
+            setTimeout(() => restoreScrollPositionForThread(threadId), 120);
+          });
         } else {
           document.getElementById("response").innerHTML = "⚠️ Falha ao carregar mensagens.";
         }
@@ -3255,6 +3309,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         btn.style.opacity = isActive ? "1" : "0.7";
         btn.style.fontWeight = isActive ? "bold" : "normal";
         btn.onclick = () => {
+          saveScrollPositionForThread(currentThreadId);
           localStorage.setItem("threadId", session.id);
           loadThreadMessages(session.id);
           document.getElementById("userInput").value = "";
@@ -3695,6 +3750,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       await checkUrlHashForAuth();
 
       loadSidebar();
+
+      window.addEventListener('scroll', () => {
+        const tid = localStorage.getItem('threadId');
+        if (!tid) return;
+        clearTimeout(window.__arcaScrollSaveTimer);
+        window.__arcaScrollSaveTimer = setTimeout(() => saveScrollPositionForThread(tid), 120);
+      }, { passive: true });
       
       // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
       const currentThreadId = localStorage.getItem("threadId");
