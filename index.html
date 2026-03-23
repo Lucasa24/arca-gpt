@@ -2270,6 +2270,28 @@
       return s;
     }
 
+    function saveThreadViewport(threadId) {
+      if (!threadId) return;
+      try {
+        localStorage.setItem(`arcaView_${threadId}`, JSON.stringify({ y: Math.max(0, window.scrollY | 0), ts: Date.now() }));
+      } catch {}
+    }
+
+    function restoreThreadViewport(threadId) {
+      if (!threadId) return false;
+      let data = null;
+      try { data = JSON.parse(localStorage.getItem(`arcaView_${threadId}`) || 'null'); } catch {}
+      if (!data || typeof data.y !== 'number') return false;
+      let tries = 0;
+      const targetY = Math.max(0, data.y | 0);
+      const attempt = () => {
+        window.scrollTo(0, targetY);
+        if (++tries < 6) setTimeout(attempt, 60);
+      };
+      attempt();
+      return true;
+    }
+
     function saveScrollPositionForThread(threadId) {
       if (!threadId) return;
       const responseDiv = document.getElementById('response');
@@ -2289,10 +2311,13 @@
       try {
         localStorage.setItem(`arcaScroll_${threadId}`, JSON.stringify({ i: idx, o: offset, ts: Date.now() }));
       } catch {}
+      saveThreadViewport(threadId);
     }
 
     function restoreScrollPositionForThread(threadId) {
       if (!threadId) return;
+      // Tenta primeiro viewport absoluto (mais estável)
+      if (restoreThreadViewport(threadId)) return;
       let data;
       try { data = JSON.parse(localStorage.getItem(`arcaScroll_${threadId}`) || 'null'); } catch { data = null; }
       if (!data || typeof data.i !== 'number') return;
@@ -3172,6 +3197,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           messages = localMessages;
           renderMessages();
           requestAnimationFrame(() => {
+            restoreThreadViewport(threadId);
             restoreScrollPositionForThread(threadId);
             setTimeout(() => restoreScrollPositionForThread(threadId), 120);
           });
@@ -3197,6 +3223,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         
         renderMessages();
         requestAnimationFrame(() => {
+          restoreThreadViewport(threadId);
           restoreScrollPositionForThread(threadId);
           setTimeout(() => restoreScrollPositionForThread(threadId), 120);
         });
@@ -3207,6 +3234,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           messages = localMessages;
           renderMessages();
           requestAnimationFrame(() => {
+            restoreThreadViewport(threadId);
             restoreScrollPositionForThread(threadId);
             setTimeout(() => restoreScrollPositionForThread(threadId), 120);
           });
@@ -3310,6 +3338,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         btn.style.fontWeight = isActive ? "bold" : "normal";
         btn.onclick = () => {
           saveScrollPositionForThread(currentThreadId);
+          saveThreadViewport(currentThreadId);
           localStorage.setItem("threadId", session.id);
           loadThreadMessages(session.id);
           document.getElementById("userInput").value = "";
@@ -3755,7 +3784,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const tid = localStorage.getItem('threadId');
         if (!tid) return;
         clearTimeout(window.__arcaScrollSaveTimer);
-        window.__arcaScrollSaveTimer = setTimeout(() => saveScrollPositionForThread(tid), 120);
+        window.__arcaScrollSaveTimer = setTimeout(() => {
+          saveThreadViewport(tid);
+          saveScrollPositionForThread(tid);
+        }, 120);
       }, { passive: true });
       
       // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
