@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "deploy:ritual": "powershell -ExecutionPolicy Bypass -File .\\deploy-ritual.ps1"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
