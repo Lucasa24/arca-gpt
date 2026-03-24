@@ -66,6 +66,28 @@ using (true)
 with check (true);
 
 -- ==============================================================================
+-- 🆕 ATUALIZAÇÃO: ESTADO DO USUÁRIO (ÚLTIMA TRAVESSIA / POSIÇÃO)
+-- ==============================================================================
+
+create table if not exists public.user_state (
+  user_id text primary key,
+  last_thread_id text,
+  last_scroll jsonb not null default '{}'::jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.user_state enable row level security;
+
+drop policy if exists "Permitir acesso total a user_state" on public.user_state;
+
+create policy "Permitir acesso total a user_state"
+on public.user_state
+for all
+to public
+using (true)
+with check (true);
+
+-- ==============================================================================
 -- 🆕 ATUALIZAÇÃO: COLUNA PROVIDER (LOGIN SOCIAL)
 -- ==============================================================================
 

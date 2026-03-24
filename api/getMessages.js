@@ -1,4 +1,5 @@
 const { getThreadMessages } = require('../lib/memory.js');
+const { createClient } = require('@supabase/supabase-js');
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -21,6 +22,28 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const authHeader = req.headers['authorization'];
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const anonKey = process.env.SUPABASE_KEY;
+    if (!authHeader || !supabaseUrl || !anonKey) {
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 401;
+      return res.end(JSON.stringify({ error: "JWT ausente (Authorization) ou Supabase não configurado" }));
+    }
+    const supabase = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data, error } = await supabase
+      .from('threads')
+      .select('id')
+      .eq('id', threadId)
+      .single();
+    if (error || !data) {
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 403;
+      return res.end(JSON.stringify({ error: "Acesso negado à thread solicitada" }));
+    }
+
     const messages = getThreadMessages(threadId);
     const userMessages = messages.filter(msg => msg.role !== "system");
     res.setHeader('Content-Type', 'application/json');

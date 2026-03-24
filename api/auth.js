@@ -234,52 +234,74 @@ module.exports = async function handler(req, res) {
       }));
     }
 
-    if (!email || !password) {
-      throw new Error("Email e senha são obrigatórios.");
-    }
+    if (action === 'signup' || action === 'login') {
+      if (!supabase) throw new Error("Supabase indisponível.");
+      if (!email || !password) throw new Error("Email e senha são obrigatórios.");
 
-    // Ação 1: CADASTRO (Sign Up)
-    if (action === 'signup') {
-      const existingUser = await findUserByEmail(email);
-      if (existingUser) {
-        throw new Error("Este email já está cadastrado.");
+      const origin = req.headers.origin || "https://arca-gpt.vercel.app";
+
+      if (action === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${origin}/` }
+        });
+        if (error) throw error;
+
+        // Sincroniza registro básico em public.users (não bloqueante)
+        try {
+          let localUser = await findUserByEmail(email);
+          if (!localUser) {
+            await createUser({
+              id: (data.user && data.user.id) || crypto.randomUUID(),
+              email,
+              password: crypto.randomUUID(),
+              created_at: new Date().toISOString(),
+              is_pro: false,
+              provider: 'email'
+            });
+          }
+        } catch {}
+
+        const needsConfirm = !(data.session && data.session.access_token);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({
+          success: true,
+          requires_confirmation: needsConfirm,
+          access_token: data.session ? data.session.access_token : null,
+          user: data.user ? { id: data.user.id, email: data.user.email, isPro: false } : { email, isPro: false },
+          message: needsConfirm ? "Confirme seu e-mail para concluir o cadastro." : "Conta criada e sessão iniciada."
+        }));
       }
 
-      const newUser = {
-        id: crypto.randomUUID(),
-        email,
-        password, // TODO: Hash em produção real
-        created_at: new Date().toISOString(),
-        is_pro: false
-      };
+      if (action === 'login') {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const token = data.session && data.session.access_token;
 
-      const savedUser = await createUser(newUser);
+        // Sincroniza registro básico em public.users (não bloqueante)
+        try {
+          let localUser = await findUserByEmail(email);
+          if (!localUser) {
+            await createUser({
+              id: data.user.id,
+              email: data.user.email,
+              password: crypto.randomUUID(),
+              created_at: new Date().toISOString(),
+              is_pro: false,
+              provider: 'email'
+            });
+          }
+        } catch {}
 
-      // Dispara e-mail de boas-vindas (em background, sem travar o cadastro)
-      sendWelcomeEmail(email).catch(e => console.error("[ARCA] Erro e-mail cadastro:", e.message));
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ 
-        success: true, 
-        user: { id: savedUser.id, email: savedUser.email, isPro: savedUser.is_pro },
-        message: "Conta criada com sucesso! Bem-vindo à Arca."
-      }));
-    }
-
-    // Ação 2: LOGIN (Sign In)
-    if (action === 'login') {
-      const user = await findUserByEmail(email);
-
-      if (!user || user.password !== password) {
-        throw new Error("Email ou senha incorretos.");
+        res.writeHead(200, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({
+          success: true,
+          access_token: token,
+          user: { id: data.user.id, email: data.user.email, isPro: false },
+          message: "Login realizado com sucesso."
+        }));
       }
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ 
-        success: true, 
-        user: { id: user.id, email: user.email, isPro: user.is_pro },
-        message: "Login realizado com sucesso."
-      }));
     }
     
     throw new Error("Ação inválida.");

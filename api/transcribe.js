@@ -1,4 +1,4 @@
-const { fetch, FormData, Blob } = require("undici");
+const { fetch } = require("undici");
 
 module.exports = async function handler(req, res) {
   try {

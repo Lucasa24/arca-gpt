@@ -277,7 +277,7 @@ async function handler(req, res) {
           }
           
           // Salva resposta completa com abertura + corpo + fechamento
-          addMessageToThread(threadId, "assistant", assistantResponse);
+          await addMessageToThread(threadId, "assistant", assistantResponse, userId);
           
           res.write(`data: [DONE]\n\n`);
           clearInterval(keepalive);

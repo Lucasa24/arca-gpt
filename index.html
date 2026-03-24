@@ -2277,6 +2277,7 @@
       try {
         localStorage.setItem(`arcaView_${threadId}`, JSON.stringify({ y: Math.max(0, window.scrollY | 0), ts: Date.now() }));
       } catch {}
+      scheduleUserStateSave(threadId);
     }
 
     function restoreThreadViewport(threadId) {
@@ -2337,6 +2338,24 @@
       const target = Math.max(0, Math.round(docTop - off));
 
       try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
+    function scheduleUserStateSave(threadId) {
+      if (!userLoggedIn || !userData || !userData.email || !threadId) return;
+      clearTimeout(window.__arcaCloudStateTimer);
+      window.__arcaCloudStateTimer = setTimeout(async () => {
+        try {
+          const view = JSON.parse(localStorage.getItem(`arcaView_${threadId}`) || 'null');
+          const anchor = JSON.parse(localStorage.getItem(`arcaScroll_${threadId}`) || 'null');
+          const lastScroll = {
+            threadId,
+            y: view && typeof view.y === 'number' ? view.y : 0,
+            i: anchor && typeof anchor.i === 'number' ? anchor.i : 0,
+            o: anchor && typeof anchor.o === 'number' ? anchor.o : 0
+          };
+          await apiPost('/api/userState', { action: 'set', userId: userData.email, lastThreadId: threadId, lastScroll });
+        } catch (e) {}
+      }, 900);
     }
 
     function isNearBottom(thresholdPx) {
@@ -3242,13 +3261,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         }
         
         // 🌐 FALLBACK: Tentar carregar do servidor se localStorage vazio
-        const res = await fetch("/api/getMessages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ threadId })
-        });
-
-        const data = await res.json();
+        const data = await apiPost("/api/getMessages", { threadId });
 
         if (data.messages && data.messages.length > 0) {
           messages = data.messages;
@@ -3310,6 +3323,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         backBtn.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='pointer-events: none;'><path d='M15 18l-6-6 6-6'/><path d='M9 12h10'/></svg>";
         backBtn.onclick = () => {
           localStorage.setItem('arcaShowArchivedSessions', '0');
+          scheduleUserPrefsSave();
           const itemMenu = document.getElementById('itemMenu');
           if (itemMenu) itemMenu.style.display = 'none';
           loadSidebar();
@@ -3327,6 +3341,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       archiveToggle.onclick = () => {
         const cur = localStorage.getItem('arcaShowArchivedSessions') === '1';
         localStorage.setItem('arcaShowArchivedSessions', cur ? '0' : '1');
+        scheduleUserPrefsSave();
         const itemMenu = document.getElementById('itemMenu');
         if (itemMenu) itemMenu.style.display = 'none';
         loadSidebar();
@@ -3711,14 +3726,21 @@ div.innerHTML = DOMPurify.sanitize(html, {
       archBtn.className = 'action-item';
       archBtn.textContent = isArchived ? 'Restaurar' : 'Arquivar';
       archBtn.onclick = () => {
-        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-        const i = history.findIndex(s => s.id === sessionId);
-        if (i !== -1) {
-          history[i].archived = !isArchived;
-          localStorage.setItem('chatHistory', JSON.stringify(history));
-        }
-        menu.style.display = 'none';
-        loadSidebar();
+        (async () => {
+          try {
+            await apiPost('/api/toggleArchive', { threadId: sessionId, archived: !isArchived, userId: (userData && userData.email) ? userData.email : null });
+            const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            const i = history.findIndex(s => s.id === sessionId);
+            if (i !== -1) {
+              history[i].archived = !isArchived;
+              localStorage.setItem('chatHistory', JSON.stringify(history));
+            }
+            menu.style.display = 'none';
+            loadSidebar();
+          } catch (e) {
+            alert('Falha ao atualizar estado da sessão.');
+          }
+        })();
       };
       menu.appendChild(archBtn);
 
@@ -3776,9 +3798,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
         if (history.length === 0) { alert('Não há sessões para arquivar.'); return; }
         if (!confirm('Arquivar todas as sessões do sidebar? Elas continuarão preservadas e poderão ser restauradas futuramente.')) return;
-        const updated = history.map(s => ({ ...s, archived: true }));
-        localStorage.setItem('chatHistory', JSON.stringify(updated));
-        loadSidebar();
+        (async () => {
+          for (const s of history) {
+            try { await apiPost('/api/toggleArchive', { threadId: s.id, archived: true, userId: (userData && userData.email) ? userData.email : null }); } catch {}
+          }
+          const updated = history.map(s => ({ ...s, archived: true }));
+          localStorage.setItem('chatHistory', JSON.stringify(updated));
+          loadSidebar();
+        })();
         const menu = document.getElementById('sidebarMenu');
         if (menu) menu.style.display = 'none';
       } catch (e) {
@@ -4247,6 +4274,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
         // Limpar hash da URL visualmente
         window.history.replaceState(null, null, window.location.pathname);
 
+        // Guardar JWT para chamadas com RLS
+        try { localStorage.setItem('sb_jwt', accessToken); } catch {}
+
         // --- FLUXO DE RECUPERAÇÃO DE SENHA ---
         if (type === 'recovery') {
           const newPass = prompt("Ritual de Renovação: Digite sua NOVA senha para a Arca:");
@@ -4296,6 +4326,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
             userData = data.user;
             updateLoginStatus();
             if (portal) portal.style.display = 'none';
+            hydrateUserFromCloud();
           } else {
             alert('Falha ao verificar login Google: ' + (data.error || 'Erro desconhecido'));
             if (portal) {
@@ -4323,6 +4354,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         userLoggedIn = true;
         updateLoginStatus();
         document.getElementById('authPortal').style.display = 'none';
+        hydrateUserFromCloud();
       } else if (isGuest) {
         document.getElementById('authPortal').style.display = 'none';
       } else {
@@ -4336,6 +4368,38 @@ div.innerHTML = DOMPurify.sanitize(html, {
       setPersonaMode(savedMode);
       const savedModelMode = localStorage.getItem('arcaModelMode') || 'auto';
       setModelMode(savedModelMode);
+    }
+
+    async function hydrateUserFromCloud() {
+      if (!userLoggedIn || !userData || !userData.email) return;
+      try {
+        const uid = userData.email;
+        const stateRes = await apiPost('/api/userState', { action: 'get', userId: uid });
+        const listRes = await apiPost('/api/listThreads', { userId: uid });
+        if (listRes && Array.isArray(listRes.threads)) {
+          localStorage.setItem('chatHistory', JSON.stringify(listRes.threads));
+        }
+        const existingThreadId = localStorage.getItem('threadId');
+        const lastThreadId = stateRes && stateRes.state && stateRes.state.last_thread_id;
+        let targetThreadId = existingThreadId || lastThreadId;
+        if ((!targetThreadId || targetThreadId === 'null') && listRes && listRes.threads && listRes.threads[0] && listRes.threads[0].id) {
+          targetThreadId = listRes.threads[0].id;
+        }
+        if (targetThreadId && targetThreadId !== 'null') {
+          localStorage.setItem('threadId', targetThreadId);
+          const lastScroll = stateRes && stateRes.state && stateRes.state.last_scroll;
+          if (lastScroll && typeof lastScroll === 'object' && (lastScroll.threadId === targetThreadId || !lastScroll.threadId)) {
+            try {
+              localStorage.setItem(`arcaView_${targetThreadId}`, JSON.stringify({ y: lastScroll.y || 0, ts: Date.now() }));
+              localStorage.setItem(`arcaScroll_${targetThreadId}`, JSON.stringify({ i: lastScroll.i || 0, o: lastScroll.o || 0, ts: Date.now() }));
+            } catch {}
+          }
+          await loadThreadMessages(targetThreadId);
+        }
+        loadSidebar();
+      } catch (e) {
+        loadSidebar();
+      }
     }
 
     // --- LÓGICA DO NOVO PORTAL (Vercel/Supabase Ready) ---
@@ -4447,7 +4511,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const data = await res.json();
         
         if (res.ok && data.success) {
-          // Sucesso
+          if (data.access_token) {
+            try { localStorage.setItem('sb_jwt', data.access_token); } catch {}
+          } else if (data.requires_confirmation) {
+            alert('Confirme seu e-mail para concluir o cadastro.');
+          }
           localStorage.setItem('userData', JSON.stringify(data.user));
           localStorage.removeItem('isGuest'); // Remove flag de convidado se existir
           
@@ -4530,7 +4598,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
     window.deleteSidebarButtons = deleteSidebarButtons;
     window.handleLogin = handleLogin;
     async function apiPost(path, body) {
-      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const headers = { 'Content-Type': 'application/json' };
+      try {
+        const jwt = localStorage.getItem('sb_jwt');
+        if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
+      } catch {}
+      const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body || {}) });
       const json = await res.json();
       return json;
     }

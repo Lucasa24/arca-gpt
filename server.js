@@ -28,10 +28,6 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'image/x-icon' });
       res.end(data);
     });
-  } else if (req.method === 'POST' && req.url === '/api/thread') {
-    // Mock da API de thread
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ threadId: 'thread_' + Date.now() }));
   } else if (req.method === 'POST' && req.url === '/api/arca') {
     // Usar handler real da API da Arca
     let body = '';
@@ -158,6 +154,58 @@ const server = http.createServer((req, res) => {
         req.body = JSON.parse(body);
         const authHandler = require('./api/auth.js');
         await authHandler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/getMessages') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const handler = require('./api/getMessages.js');
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/listThreads') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const handler = require('./api/listThreads.js');
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/userState') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const handler = require('./api/userState.js');
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/toggleArchive') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const handler = require('./api/toggleArchive.js');
+        await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
