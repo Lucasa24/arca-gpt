@@ -3374,8 +3374,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
         sidebar.appendChild(empty);
       }
 
-      // Histórico de sessões (mais recentes primeiro)
-      history.reverse().forEach(session => {
+      // Ordena em ordem DECRESCENTE por timestamp (mais recentes no topo)
+      const sorted = [...history].sort((a, b) => {
+        const ta = new Date(a.timestamp || 0).getTime();
+        const tb = new Date(b.timestamp || 0).getTime();
+        return tb - ta;
+      });
+      sorted.forEach(session => {
         const btn = document.createElement("button");
         btn.textContent = session.title;
         // Exibir como ativo (opacidade 1 e negrito) SOMENTE se for a sessão atual E já tiver mensagens
