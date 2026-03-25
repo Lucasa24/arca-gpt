@@ -50,8 +50,7 @@ module.exports = async function handler(req, res) {
     const { data, error } = await supabase
       .from('threads')
       .select('id, data, updated_at, user_id')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
+      .eq('user_id', userId);
 
     if (error) throw error;
 
@@ -61,7 +60,7 @@ module.exports = async function handler(req, res) {
       const archived = !!(rec && rec.meta && rec.meta.archived);
       const ts = (rec && rec.meta && rec.meta.created_at) ? rec.meta.created_at : row.updated_at;
       return { id: row.id, title, archived, timestamp: ts };
-    });
+    }).sort((a,b) => new Date(b.timestamp||0) - new Date(a.timestamp||0));
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ threads }));
