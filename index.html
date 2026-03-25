@@ -3322,8 +3322,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         backBtn.title = 'Voltar';
         backBtn.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='pointer-events: none;'><path d='M15 18l-6-6 6-6'/><path d='M9 12h10'/></svg>";
         backBtn.onclick = () => {
-          localStorage.setItem('arcaShowArchivedSessions', '0');
-          scheduleUserPrefsSave();
+          try { localStorage.setItem('arcaShowArchivedSessions', '0'); } catch {}
           const itemMenu = document.getElementById('itemMenu');
           if (itemMenu) itemMenu.style.display = 'none';
           loadSidebar();
@@ -3340,8 +3339,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       if (showArchived) archiveToggle.classList.add('active');
       archiveToggle.onclick = () => {
         const cur = localStorage.getItem('arcaShowArchivedSessions') === '1';
-        localStorage.setItem('arcaShowArchivedSessions', cur ? '0' : '1');
-        scheduleUserPrefsSave();
+        try { localStorage.setItem('arcaShowArchivedSessions', cur ? '0' : '1'); } catch {}
         const itemMenu = document.getElementById('itemMenu');
         if (itemMenu) itemMenu.style.display = 'none';
         loadSidebar();
@@ -3726,21 +3724,31 @@ div.innerHTML = DOMPurify.sanitize(html, {
       archBtn.className = 'action-item';
       archBtn.textContent = isArchived ? 'Restaurar' : 'Arquivar';
       archBtn.onclick = () => {
-        (async () => {
-          try {
-            await apiPost('/api/toggleArchive', { threadId: sessionId, archived: !isArchived, userId: (userData && userData.email) ? userData.email : null });
-            const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-            const i = history.findIndex(s => s.id === sessionId);
-            if (i !== -1) {
-              history[i].archived = !isArchived;
-              localStorage.setItem('chatHistory', JSON.stringify(history));
+        // Atualização otimista imediata
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        const i = history.findIndex(s => s.id === sessionId);
+        if (i !== -1) {
+          const prev = !!history[i].archived;
+          history[i].archived = !isArchived;
+          localStorage.setItem('chatHistory', JSON.stringify(history));
+          loadSidebar();
+          menu.style.display = 'none';
+          // Sincroniza em background; se falhar, reverte
+          (async () => {
+            try {
+              await apiPost('/api/toggleArchive', { threadId: sessionId, archived: !isArchived, userId: (userData && userData.email) ? userData.email : null });
+            } catch (e) {
+              const h2 = JSON.parse(localStorage.getItem('chatHistory')) || [];
+              const j = h2.findIndex(s => s.id === sessionId);
+              if (j !== -1) {
+                h2[j].archived = prev;
+                localStorage.setItem('chatHistory', JSON.stringify(h2));
+                loadSidebar();
+              }
+              alert('Falha ao atualizar sessão na nuvem. Estado local revertido.');
             }
-            menu.style.display = 'none';
-            loadSidebar();
-          } catch (e) {
-            alert('Falha ao atualizar estado da sessão.');
-          }
-        })();
+          })();
+        }
       };
       menu.appendChild(archBtn);
 
@@ -3798,13 +3806,17 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
         if (history.length === 0) { alert('Não há sessões para arquivar.'); return; }
         if (!confirm('Arquivar todas as sessões do sidebar? Elas continuarão preservadas e poderão ser restauradas futuramente.')) return;
+        // Otimista: atualiza local e UI na hora
+        const updated = history.map(s => ({ ...s, archived: true }));
+        localStorage.setItem('chatHistory', JSON.stringify(updated));
+        loadSidebar();
+        // Sincroniza em background (silencioso)
         (async () => {
-          for (const s of history) {
-            try { await apiPost('/api/toggleArchive', { threadId: s.id, archived: true, userId: (userData && userData.email) ? userData.email : null }); } catch {}
+          for (const s of updated) {
+            try {
+              await apiPost('/api/toggleArchive', { threadId: s.id, archived: true, userId: (userData && userData.email) ? userData.email : null });
+            } catch {}
           }
-          const updated = history.map(s => ({ ...s, archived: true }));
-          localStorage.setItem('chatHistory', JSON.stringify(updated));
-          loadSidebar();
         })();
         const menu = document.getElementById('sidebarMenu');
         if (menu) menu.style.display = 'none';
