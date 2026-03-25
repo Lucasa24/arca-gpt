@@ -3199,7 +3199,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
         history.push({
           id: threadId,
           title: userInput.slice(0, 60) + (userInput.length > 60 ? "..." : ""),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          archived: false
         });
       }
       
@@ -3403,6 +3404,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
           loadThreadMessages(session.id);
           document.getElementById("userInput").value = "";
           loadSidebar();
+          // Atualiza itemMenu anchor para o novo id
+          const menu = document.getElementById('itemMenu');
+          if (menu) menu.dataset.anchorId = String(session.id);
           
           // Fechar sidebar no mobile após clicar em sessão (sem ocultar permanentemente)
           if (window.innerWidth <= 768) {
@@ -3654,6 +3658,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
         (async () => {
           try {
             await apiPost('/api/toggleArchive', { threadId: newThreadId, title: travessiaName, archived: false, userId: userData.email });
+            // Puxa o histórico do servidor e re-renderiza com ordem correta
+            await refreshHistoryFromCloud();
           } catch (e) {}
         })();
       }
@@ -3914,6 +3920,17 @@ div.innerHTML = DOMPurify.sanitize(html, {
       
       // Verificar status de login
       checkLoginStatus();
+      
+      // Sincronização quase em tempo real do histórico
+      if (userLoggedIn && userData && userData.email) {
+        clearInterval(window.__arcaHistoryTimer);
+        window.__arcaHistoryTimer = setInterval(refreshHistoryFromCloud, 6000);
+      }
+      window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          refreshHistoryFromCloud();
+        }
+      });
     };
 
     // Fechar modal clicando fora dele
@@ -4438,6 +4455,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
       } catch (e) {
         loadSidebar();
       }
+    }
+    
+    async function refreshHistoryFromCloud() {
+      if (!userLoggedIn || !userData || !userData.email) return;
+      try {
+        const uid = userData.email;
+        const listRes = await apiPost('/api/listThreads', { userId: uid });
+        if (listRes && Array.isArray(listRes.threads)) {
+          localStorage.setItem('chatHistory', JSON.stringify(listRes.threads));
+          loadSidebar();
+        }
+      } catch {}
     }
 
     // --- LÓGICA DO NOVO PORTAL (Vercel/Supabase Ready) ---
