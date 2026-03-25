@@ -3519,6 +3519,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
               fullHistory[idx].title = newTitle;
               localStorage.setItem("chatHistory", JSON.stringify(fullHistory));
             }
+            if (userLoggedIn && userData && userData.email) {
+              (async () => {
+                try {
+                  await apiPost('/api/toggleArchive', { threadId: sessionId, title: newTitle, userId: userData.email });
+                } catch (e) {}
+              })();
+            }
           }
           overlay.remove();
           loadSidebar();
@@ -3636,6 +3643,15 @@ div.innerHTML = DOMPurify.sanitize(html, {
       
       // Inicia mensagens vazias pra essa thread
       localStorage.setItem(`thread_${newThreadId}`, JSON.stringify([]));
+
+      // Persistir sessão na nuvem imediatamente (para aparecer em outros navegadores)
+      if (userLoggedIn && userData && userData.email) {
+        (async () => {
+          try {
+            await apiPost('/api/toggleArchive', { threadId: newThreadId, title: travessiaName, archived: false, userId: userData.email });
+          } catch (e) {}
+        })();
+      }
       
       // Fecha modal e atualiza UI
       closeModal();
