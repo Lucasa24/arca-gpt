@@ -51,7 +51,7 @@ async function handler(req, res) {
     const mode = req.body?.mode; // ritual | tecnico
     if (mode && (mode === 'ritual' || mode === 'tecnico')) {
       console.log(`[ARCA] Atualizando persona para: ${mode}`);
-      await setThreadPersona(threadId, mode);
+      await setThreadPersona(threadId, mode, req.headers['authorization']);
     }
 
     // >>> A PARTIR DAQUI é SSE <<<
@@ -67,8 +67,8 @@ async function handler(req, res) {
     // (opcional) ping keepalive
     const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
 
-    await addMessageToThread(threadId, "user", userInput, userId);
-    const messages = await getThreadMessages(threadId);
+    await addMessageToThread(threadId, "user", userInput, userId, req.headers['authorization']);
+    const messages = await getThreadMessages(threadId, req.headers['authorization']);
     
     // Log das mensagens de sistema para verificação
     const systemMessages = messages.filter(m => m.role==='system');
@@ -277,7 +277,7 @@ async function handler(req, res) {
           }
           
           // Salva resposta completa com abertura + corpo + fechamento
-          await addMessageToThread(threadId, "assistant", assistantResponse, userId);
+          await addMessageToThread(threadId, "assistant", assistantResponse, userId, req.headers['authorization']);
           
           res.write(`data: [DONE]\n\n`);
           clearInterval(keepalive);
@@ -344,7 +344,7 @@ async function handler(req, res) {
 
     // SALVA NO HISTÓRICO (Fundamental para o modelo lembrar do que disse)
     if (assistantResponse && assistantResponse.trim()) {
-        await addMessageToThread(threadId, "assistant", assistantResponse, userId);
+        await addMessageToThread(threadId, "assistant", assistantResponse, userId, req.headers['authorization']);
         console.log(`[ARCA] Resposta salva na thread ${threadId} (len: ${assistantResponse.length})`);
     }
 
