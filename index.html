@@ -2893,9 +2893,14 @@
         }
 
         currentStreamController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const arcaHeaders = { "Content-Type": "application/json" };
+        try {
+          const jwt = localStorage.getItem('sb_jwt');
+          if (jwt) arcaHeaders["Authorization"] = "Bearer " + jwt;
+        } catch {}
         const response = await fetch("/api/arca", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: arcaHeaders,
           body: JSON.stringify({ 
             userInput: input,
             input: input,
