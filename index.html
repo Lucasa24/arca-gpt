@@ -24,6 +24,11 @@
       min-height: 100vh;
     }
 
+    :root {
+      --sidebar-width: 220px;
+      --footer-height: 260px;
+    }
+
     /* --- PORTAL DE ENTRADA (LOGIN) --- */
     #authPortal {
       position: fixed;
@@ -200,9 +205,9 @@
       flex-direction: column;
       align-items: stretch;
       transition: margin-left 0.3s ease, width 0.3s ease;
-      margin-left: 220px;
-      padding: 22px 1rem 300px;
-      width: calc(100% - 220px);
+      margin-left: var(--sidebar-width);
+      padding: 22px 1rem calc(var(--footer-height) + 40px);
+      width: calc(100% - var(--sidebar-width));
       position: relative;
       min-height: 100vh;
       background: #1c1c1c;
@@ -226,7 +231,7 @@
       top: 0;
       left: 0;
       bottom: 0;
-      width: 220px;
+      width: var(--sidebar-width);
       background: #111;
       border-right: 1px solid #333;
       padding: 1rem;
@@ -236,6 +241,29 @@
       transform: translateX(0);
       transition: transform 0.3s ease;
     }
+
+    #chatSidebar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.25);
+      resize: horizontal;
+      overflow-x: hidden;
+      min-width: 180px;
+      max-width: 420px;
+    }
+
+    #chatSidebar::-webkit-scrollbar { width: 7px; }
+    #chatSidebar::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.25);
+      border-left: 1px solid rgba(0,191,255,0.12);
+    }
+    #chatSidebar::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(0,191,255,0.25), rgba(0,191,255,0.85), rgba(179,0,0,0.25));
+      border-radius: 9999px;
+      border: 1px solid rgba(0,191,255,0.22);
+      box-shadow: 0 0 10px rgba(0,191,255,0.18);
+    }
+    #chatSidebar::-webkit-scrollbar-thumb:hover { box-shadow: 0 0 14px rgba(0,191,255,0.28); }
+    #chatSidebar::-webkit-scrollbar-corner { background: rgba(0,0,0,0.25); }
 
     #chatSidebar.hidden {
       transform: translateX(-100%);
@@ -333,6 +361,14 @@
       cursor: pointer;
       font-size: 0.75rem;
       transition: background-color 0.2s;
+    }
+
+    #chatSidebar .session-item {
+      position: relative;
+      padding-right: 44px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     #chatSidebar button:hover {
@@ -1240,16 +1276,21 @@
     .fixed-footer {
       position: fixed;
       bottom: 0;
-      left: 220px; /* Alinhado com o espaço da sidebar */
+      left: var(--sidebar-width);
       right: 0;
       background: #0e0e0e;
       padding: 6px 1rem; /* Padding reduzido para um footer slim */
       border-top: 1px solid #333;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
       font-size: 0.85rem;
-      width: calc(100% - 220px);
+      width: calc(100% - var(--sidebar-width));
       z-index: 100;
       transition: left 0.3s ease, width 0.3s ease;
+      height: var(--footer-height);
+      overflow: auto;
+      resize: vertical;
+      min-height: 170px;
+      max-height: 70vh;
     }
 
     #mainContent.sidebar-hidden .fixed-footer {
@@ -3198,7 +3239,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         // Nova sessão
         history.push({
           id: threadId,
-          title: userInput.slice(0, 60) + (userInput.length > 60 ? "..." : ""),
+          title: String(userInput || "").trim() || "Travessia",
           timestamp: new Date().toISOString(),
           archived: false
         });
@@ -3383,7 +3424,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
       });
       sorted.forEach(session => {
         const btn = document.createElement("button");
+        btn.classList.add('session-item');
         btn.textContent = session.title;
+        btn.title = session.title;
         // Exibir como ativo (opacidade 1 e negrito) SOMENTE se for a sessão atual E já tiver mensagens
         let hasMessages = false;
         try {
@@ -3461,6 +3504,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         dots.style.justifyContent = "center";
         dots.style.cursor = "pointer";
         dots.style.opacity = "0.85";
+        dots.style.zIndex = "2";
         dots.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -3922,17 +3966,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       
       // Verificar status de login
       checkLoginStatus();
-      
-      // Sincronização quase em tempo real do histórico
-      if (userLoggedIn && userData && userData.email) {
-        clearInterval(window.__arcaHistoryTimer);
-        window.__arcaHistoryTimer = setInterval(refreshHistoryFromCloud, 6000);
-      }
-      window.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          refreshHistoryFromCloud();
-        }
-      });
+      initResizableLayout();
     };
 
     // Fechar modal clicando fora dele
@@ -4722,6 +4756,93 @@ div.innerHTML = DOMPurify.sanitize(html, {
           refreshThreadMessagesFromCloud(tid);
         }
       });
+    }
+
+    function initResizableLayout() {
+      const root = document.documentElement;
+      const sidebar = document.getElementById('chatSidebar');
+      const footer = document.querySelector('.fixed-footer');
+      if (!sidebar || !footer) return;
+
+      try {
+        const savedW = localStorage.getItem('arcaSidebarWidth');
+        if (savedW) root.style.setProperty('--sidebar-width', savedW);
+      } catch {}
+      try {
+        const savedH = localStorage.getItem('arcaFooterHeight');
+        if (savedH) root.style.setProperty('--footer-height', savedH);
+      } catch {}
+
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      const maxFooter = () => Math.round(window.innerHeight * 0.70);
+
+      const setSidebarWidthPx = (w) => {
+        const px = clamp(Math.round(w), 180, 420) + 'px';
+        root.style.setProperty('--sidebar-width', px);
+        try { localStorage.setItem('arcaSidebarWidth', px); } catch {}
+      };
+
+      const setFooterHeightPx = (h) => {
+        const px = clamp(Math.round(h), 170, maxFooter()) + 'px';
+        root.style.setProperty('--footer-height', px);
+        try { localStorage.setItem('arcaFooterHeight', px); } catch {}
+        try { positionVoiceBar(); } catch {}
+      };
+
+      try {
+        const ro = new ResizeObserver(() => {
+          try { setSidebarWidthPx(sidebar.getBoundingClientRect().width); } catch {}
+          try { setFooterHeightPx(footer.getBoundingClientRect().height); } catch {}
+        });
+        ro.observe(sidebar);
+        ro.observe(footer);
+      } catch {}
+
+      sidebar.addEventListener('pointerdown', (e) => {
+        if (window.innerWidth <= 768) return;
+        const rect = sidebar.getBoundingClientRect();
+        if (e.clientX < rect.right - 10) return;
+        try { sidebar.setPointerCapture(e.pointerId); } catch {}
+        e.preventDefault();
+
+        const onMove = (ev) => {
+          setSidebarWidthPx(ev.clientX);
+        };
+        const onUp = (ev) => {
+          try { sidebar.releasePointerCapture(ev.pointerId); } catch {}
+          sidebar.removeEventListener('pointermove', onMove);
+          sidebar.removeEventListener('pointerup', onUp);
+          sidebar.removeEventListener('pointercancel', onUp);
+        };
+        sidebar.addEventListener('pointermove', onMove);
+        sidebar.addEventListener('pointerup', onUp);
+        sidebar.addEventListener('pointercancel', onUp);
+      });
+
+      footer.addEventListener('pointerdown', (e) => {
+        if (window.innerWidth <= 768) return;
+        const rect = footer.getBoundingClientRect();
+        if (e.clientY > rect.top + 10) return;
+        try { footer.setPointerCapture(e.pointerId); } catch {}
+        e.preventDefault();
+
+        const onMove = (ev) => {
+          setFooterHeightPx(window.innerHeight - ev.clientY);
+        };
+        const onUp = (ev) => {
+          try { footer.releasePointerCapture(ev.pointerId); } catch {}
+          footer.removeEventListener('pointermove', onMove);
+          footer.removeEventListener('pointerup', onUp);
+          footer.removeEventListener('pointercancel', onUp);
+        };
+        footer.addEventListener('pointermove', onMove);
+        footer.addEventListener('pointerup', onUp);
+        footer.addEventListener('pointercancel', onUp);
+      });
+
+      window.addEventListener('resize', () => {
+        try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 260); } catch {}
+      }, { passive: true });
     }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
