@@ -3667,6 +3667,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       // Fecha modal e atualiza UI
       closeModal();
       loadSidebar();
+      const sb = document.getElementById("chatSidebar");
+      if (sb) sb.scrollTop = 0;
     }
 
     function confirmReset() {
@@ -4410,6 +4412,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         updateLoginStatus();
         document.getElementById('authPortal').style.display = 'none';
         hydrateUserFromCloud();
+          startAccountSync();
       } else if (isGuest) {
         document.getElementById('authPortal').style.display = 'none';
       } else {
@@ -4591,6 +4594,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
           updateLoginStatus();
           
           document.getElementById('authPortal').style.display = 'none';
+          hydrateUserFromCloud();
+          startAccountSync();
           
           // Se tiver mensagem de boas-vindas, pode exibir ou só fechar
         } else {
@@ -4670,9 +4675,51 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const jwt = localStorage.getItem('sb_jwt');
         if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
       } catch {}
-      const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body || {}) });
+      headers['Cache-Control'] = 'no-store';
+      const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body || {}), cache: 'no-store' });
       const json = await res.json();
       return json;
+    }
+
+    async function refreshThreadMessagesFromCloud(threadId) {
+      if (!threadId) return;
+      if (!userLoggedIn || !userData || !userData.email) return;
+      if (currentStreamController) return;
+      try {
+        const data = await apiPost("/api/getMessages", { threadId });
+        const serverMsgs = Array.isArray(data && data.messages) ? data.messages : [];
+        const localMsgs = Array.isArray(messages) ? messages.filter(m => m && m.role !== 'system') : [];
+        const sameLen = serverMsgs.length === localMsgs.length;
+        const sameTail = sameLen && (serverMsgs.length === 0 || (serverMsgs[serverMsgs.length - 1].content === localMsgs[localMsgs.length - 1].content));
+        if (sameLen && sameTail) return;
+        saveScrollPositionForThread(threadId);
+        messages = serverMsgs;
+        saveThreadMessages(threadId);
+        renderMessages();
+        requestAnimationFrame(() => {
+          restoreThreadViewport(threadId);
+          restoreScrollPositionForThread(threadId);
+          setTimeout(() => restoreScrollPositionForThread(threadId), 120);
+        });
+      } catch {}
+    }
+
+    function startAccountSync() {
+      if (!userLoggedIn || !userData || !userData.email) return;
+      clearInterval(window.__arcaHistoryTimer);
+      clearInterval(window.__arcaMsgTimer);
+      window.__arcaHistoryTimer = setInterval(refreshHistoryFromCloud, 2000);
+      window.__arcaMsgTimer = setInterval(() => {
+        const tid = localStorage.getItem('threadId');
+        refreshThreadMessagesFromCloud(tid);
+      }, 2000);
+      window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          refreshHistoryFromCloud();
+          const tid = localStorage.getItem('threadId');
+          refreshThreadMessagesFromCloud(tid);
+        }
+      });
     }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
