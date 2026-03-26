@@ -4691,6 +4691,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const localMsgs = Array.isArray(messages) ? messages.filter(m => m && m.role !== 'system') : [];
         const sameLen = serverMsgs.length === localMsgs.length;
         const sameTail = sameLen && (serverMsgs.length === 0 || (serverMsgs[serverMsgs.length - 1].content === localMsgs[localMsgs.length - 1].content));
+        // Nunca substituir por menos mensagens (evita "sumir" ao entrar em outra sessão)
+        if (serverMsgs.length < localMsgs.length) return;
         if (sameLen && sameTail) return;
         saveScrollPositionForThread(threadId);
         messages = serverMsgs;
