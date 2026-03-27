@@ -1888,10 +1888,10 @@
       height: 18px; /* Reduzido */
       min-width: 18px; /* Reduzido */
       padding: 0;
-      border-radius: 3px;
-      background: #444; /* Cor mais discreta */
-      color: #ccc;
-      border: 1px solid #555;
+      border-radius: 9999px;
+      background: transparent;
+      color: rgba(0,191,255,0.92);
+      border: 0;
       font-size: 10px; /* Fonte menor */
       line-height: 1;
       display: grid;
@@ -1904,6 +1904,7 @@
       -webkit-touch-callout: none;
       user-select: none;
       touch-action: manipulation;
+      filter: drop-shadow(0 0 6px rgba(0,191,255,0.35));
     }
     #cornerReset:focus,
     #cornerReset:focus-visible {
@@ -1911,8 +1912,9 @@
       box-shadow: none;
     }
     #cornerReset:hover { 
-      background: #555; 
       opacity: 1;
+      color: rgba(0,191,255,1);
+      background: rgba(0,191,255,0.08);
     }
     @media (max-width: 600px) {
       #cornerReset { 
