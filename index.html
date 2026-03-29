@@ -390,15 +390,12 @@
     #toggleSidebar {
       display: block;
       position: fixed;
-      top: 0;
-      left: 0;
+      top: 8px;
+      left: 6px;
       z-index: 999;
       width: 14px;
       height: 13px;
-      border-top-left-radius: 0;
-      border-top-right-radius: 9999px;
-      border-bottom-right-radius: 9999px;
-      border-bottom-left-radius: 0;
+      border-radius: 9999px;
       padding: 0;
       border: 1px solid rgba(255,255,255,0.14);
       background: rgba(179, 0, 0, 0.14);
@@ -415,6 +412,35 @@
       -webkit-touch-callout: none;
       user-select: none;
       touch-action: manipulation;
+    }
+    @media (max-width: 768px) {
+      #toggleSidebar {
+        top: 6px;
+        left: 6px;
+        width: 9px;
+        height: 9px;
+        min-width: 9px;
+        min-height: 9px;
+        border-width: 1px;
+        font-size: 0;
+        color: rgba(0,191,255,0.92);
+        background: rgba(0,191,255,0.06);
+        border-color: rgba(0,191,255,0.18);
+        box-shadow: 0 0 10px rgba(0,191,255,0.14);
+      }
+      #toggleSidebar::before {
+        content: '';
+        display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 9999px;
+        background: rgba(0,191,255,0.92);
+        box-shadow: 0 0 6px rgba(0,191,255,0.35);
+        margin: auto;
+      }
+      #toggleSidebar:active {
+        transform: scale(0.92);
+      }
     }
 
     /* Ocultar o botão de menu enquanto a sidebar estiver aberta */
@@ -2309,10 +2335,14 @@
 
     function stripLineAsteriskEmphasis(md) {
       let s = String(md || "");
-      s = s.replace(/(^|[\r\n])\*{3}([^\r\n]*?)\*{3}(?=[\r\n]|$)/g, '$1$2');
-      s = s.replace(/(^|[\r\n])\*{2}([^\r\n]*?)\*{2}(?=[\r\n]|$)/g, '$1$2');
-      s = s.replace(/(^|[\r\n])\*{1}([^\r\n]*?)\*{1}(?=[\r\n]|$)/g, '$1$2');
-      return s;
+      const parts = s.split(/```/g);
+      for (let i = 0; i < parts.length; i += 2) {
+        parts[i] = parts[i].replace(
+          /(^|[\r\n])(\s*)(\*{1,3})\s*([^\r\n]*?)\s*\3(?=\s*[\r\n]|$)/g,
+          '$1$2$3$4$3'
+        );
+      }
+      return parts.join('```');
     }
 
     function saveThreadViewport(threadId) {
