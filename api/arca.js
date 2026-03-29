@@ -81,16 +81,12 @@ async function handler(req, res) {
     const threadRecord = global.threadMemory?.get(threadId);
     console.log('[ARCA][persona]', threadRecord?.currentPersona || 'default');
 
-    // MODELO PADRÃO: GPT-4o (Inteligência Máxima)
-    // Decisão estratégica: Como temos poucos usuários, priorizamos a QUALIDADE ABSOLUTA.
-    // O custo é maior, mas a experiência é incomparável.
     const userModel = "gpt-4o";
     
     // --- MIGRAÇÃO PARA RESPONSES API (BETA) ---
     // Cole o ID do seu prompt aqui (começa com pmpt_)
     // [OPCIONAL] Se configurado, usa a Responses API (Prompt Management)
     // Se nulo, usa o modo MANUAL (Chat Completions) que é estável e segue apenas o memory.js
-    const PROMPT_ID_FAST = process.env.ARCA_PROMPT_ID_FAST || process.env.ARCA_PROMPT_ID || null;
     const PROMPT_ID_DEEP = process.env.ARCA_PROMPT_ID_DEEP || process.env.ARCA_PROMPT_ID || null;
     const modelMode = (req.body?.modelMode || 'auto').toLowerCase();
 
@@ -107,8 +103,6 @@ async function handler(req, res) {
     const personaForSpeed = recordForSpeed?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
     const sys = messages.filter(m => m.role === 'system');
     const nonSys = messages.filter(m => m.role !== 'system');
-    const maxNonSysForOpenAI = personaForSpeed === 'tecnico' ? 14 : 22;
-    const conversationWindow = [...sys, ...nonSys.slice(-maxNonSysForOpenAI)];
 
     const shouldUseDeep = (text) => {
       const t = (text || "").trim();
@@ -124,14 +118,24 @@ async function handler(req, res) {
 
     const pickPromptId = () => {
       if (modelMode === 'deep') return { id: PROMPT_ID_DEEP, tag: 'deep' };
-      if (modelMode === 'fast') return { id: PROMPT_ID_FAST, tag: 'fast' };
+      if (modelMode === 'fast') return { id: null, tag: 'fast_free' };
       const deep = shouldUseDeep(userInput);
-      return deep ? { id: PROMPT_ID_DEEP, tag: 'auto_deep' } : { id: PROMPT_ID_FAST, tag: 'auto_fast' };
+      return deep ? { id: PROMPT_ID_DEEP, tag: 'auto_deep' } : { id: null, tag: 'auto_fast_free' };
     };
 
     const picked = pickPromptId();
     const PROMPT_ID = picked.id;
     console.log('[ARCA][MODEL_MODE] %s', picked.tag);
+    const isFreeFast = picked.tag === 'fast_free' || picked.tag === 'auto_fast_free';
+
+    const maxNonSysForOpenAI = personaForSpeed === 'tecnico' ? 14 : 22;
+    const compactSystem = {
+      role: "system",
+      content: personaForSpeed === "tecnico"
+        ? "Você é A Arca. Responda em português do Brasil. Seja extremamente técnico e objetivo. Entregue passos numerados e exemplos curtos quando necessário. Limite: 10–14 linhas. Não gere despedida/fechamento. Pare após o ultimato."
+        : "Você é A Arca. Responda em português do Brasil com presença e precisão. Use poucos parágrafos, comandos claros e sem enrolação. Limite: 10–14 linhas. Não gere despedida/fechamento. Pare após o ultimato."
+    };
+    const conversationWindow = isFreeFast ? [compactSystem, ...nonSys.slice(-maxNonSysForOpenAI)] : [...sys, ...nonSys.slice(-maxNonSysForOpenAI)];
 
     if (PROMPT_ID) {
       // MODO PROMPT GERENCIADO (PROMPT MANAGEMENT API)
@@ -155,11 +159,11 @@ async function handler(req, res) {
       // MODO MANUAL (Antigo)
       endpoint = "https://api.openai.com/v1/chat/completions";
       requestBody = {
-        model: userModel,
+        model: isFreeFast ? "gpt-4o-mini" : userModel,
         messages: [...conversationWindow, systemInjection],
         stream: true,
-        temperature: 0.85,
-        max_tokens: 16000,
+        temperature: isFreeFast ? 0.75 : 0.85,
+        max_tokens: isFreeFast ? 900 : 16000,
         top_p: 1.0,
         frequency_penalty: 0.0,
         presence_penalty: 0.3
@@ -208,11 +212,11 @@ async function handler(req, res) {
       };
       
       requestBody = {
-        model: userModel,
+        model: isFreeFast ? "gpt-4o-mini" : userModel,
         messages: [...conversationWindow, systemInjectionFallback],
         stream: true,
-        temperature: 0.85,
-        max_tokens: 16000,
+        temperature: isFreeFast ? 0.75 : 0.85,
+        max_tokens: isFreeFast ? 900 : 16000,
         top_p: 1.0,
         frequency_penalty: 0.0,
         presence_penalty: 0.3,
