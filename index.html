@@ -390,22 +390,24 @@
     #toggleSidebar {
       display: block;
       position: fixed;
-      top: 8px;
+      top: 6px;
       left: 6px;
       z-index: 999;
-      width: 14px;
-      height: 13px;
+      width: 9px;
+      height: 9px;
+      min-width: 9px;
+      min-height: 9px;
       border-radius: 9999px;
       padding: 0;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(179, 0, 0, 0.14);
-      color: #fff;
-      font-size: 10px;
+      border: 1px solid rgba(0,191,255,0.18);
+      background: rgba(0,191,255,0.06);
+      color: rgba(0,191,255,0.92);
+      font-size: 0;
       line-height: 1;
       cursor: pointer;
       backdrop-filter: blur(6px) saturate(130%);
       -webkit-backdrop-filter: blur(6px) saturate(130%);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.30);
+      box-shadow: 0 0 10px rgba(0,191,255,0.14);
       transition: background .18s ease, transform .06s ease, border-color .18s ease, opacity .18s ease;
       outline: none;
       -webkit-tap-highlight-color: transparent;
@@ -413,30 +415,19 @@
       user-select: none;
       touch-action: manipulation;
     }
+    #toggleSidebar::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 3px;
+      border-radius: 9999px;
+      background: rgba(0,191,255,0.92);
+      box-shadow: 0 0 6px rgba(0,191,255,0.35);
+      margin: auto;
+    }
     @media (max-width: 768px) {
       #toggleSidebar {
         top: 6px;
-        left: 6px;
-        width: 9px;
-        height: 9px;
-        min-width: 9px;
-        min-height: 9px;
-        border-width: 1px;
-        font-size: 0;
-        color: rgba(0,191,255,0.92);
-        background: rgba(0,191,255,0.06);
-        border-color: rgba(0,191,255,0.18);
-        box-shadow: 0 0 10px rgba(0,191,255,0.14);
-      }
-      #toggleSidebar::before {
-        content: '';
-        display: block;
-        width: 3px;
-        height: 3px;
-        border-radius: 9999px;
-        background: rgba(0,191,255,0.92);
-        box-shadow: 0 0 6px rgba(0,191,255,0.35);
-        margin: auto;
       }
       #toggleSidebar:active {
         transform: scale(0.92);
@@ -452,12 +443,13 @@
     /* Botão de menu permanece visível mesmo com sidebar aberta */
 
     #toggleSidebar:hover {
-      background: rgba(179, 0, 0, 0.26);
-      border-color: rgba(255,255,255,0.22);
+      background: rgba(0,191,255,0.10);
+      border-color: rgba(0,191,255,0.32);
+      box-shadow: 0 0 14px rgba(0,191,255,0.20);
     }
 
     #toggleSidebar:active {
-      transform: scale(0.98);
+      transform: scale(0.92);
     }
 
     #toggleSidebar:focus-visible {
