@@ -1164,8 +1164,8 @@
     }
     #response pre.arca-pre-txt .arca-pre-overlay .copy-btn {
       pointer-events: auto;
-      width: 22px;
-      height: 22px;
+      width: 16px;
+      height: 16px;
       padding: 0;
       display: grid;
       place-items: center;
@@ -1188,8 +1188,8 @@
       box-shadow: none;
     }
     #response pre.arca-pre-txt .arca-pre-overlay .copy-btn svg {
-      width: 12px;
-      height: 12px;
+      width: 9px;
+      height: 9px;
       fill: currentColor;
       filter: drop-shadow(0 0 4px rgba(0,191,255,0.18));
       pointer-events: none;
@@ -1248,9 +1248,9 @@
     #response pre .copy-btn {
       position: absolute;
       top: 4px;
-      right: 12px;
-      width: 22px;
-      height: 22px;
+      right: 10px;
+      width: 16px;
+      height: 16px;
       padding: 0;
       display: grid;
       place-items: center;
@@ -1270,11 +1270,18 @@
       box-shadow: 0 0 12px rgba(0,191,255,0.14);
     }
     #response pre .copy-btn svg {
-      width: 12px;
-      height: 12px;
+      width: 9px;
+      height: 9px;
       fill: currentColor;
       filter: drop-shadow(0 0 4px rgba(0,191,255,0.18));
       pointer-events: none;
+    }
+
+    #response pre code.language-txt,
+    #response pre code.language-markdown {
+      white-space: break-spaces !important;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     /* Animação sutil para indicar streaming ativo */
