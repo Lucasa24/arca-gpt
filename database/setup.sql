@@ -66,6 +66,30 @@ using (true)
 with check (true);
 
 -- ==============================================================================
+-- 🆕 ATUALIZAÇÃO: MENSAGENS (HISTÓRICO COMPLETO POR THREAD)
+-- ==============================================================================
+
+create table if not exists public.thread_messages (
+  id bigserial primary key,
+  thread_id text not null references public.threads(id) on delete cascade,
+  user_id text,
+  role text not null,
+  content text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.thread_messages enable row level security;
+
+drop policy if exists "Permitir acesso total a thread_messages" on public.thread_messages;
+
+create policy "Permitir acesso total a thread_messages"
+on public.thread_messages
+for all
+to public
+using (true)
+with check (true);
+
+-- ==============================================================================
 -- 🆕 ATUALIZAÇÃO: ESTADO DO USUÁRIO (ÚLTIMA TRAVESSIA / POSIÇÃO)
 -- ==============================================================================
 
