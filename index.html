@@ -2455,26 +2455,57 @@
     }
 
     function updateStreamingUI() {
-      if (!streamingContentEl) return;
       const msg = messages[streamingMsgIndex];
       const raw = (msg && msg.content) ? msg.content : "";
       const now = Date.now();
-      const throttleMs = (window.innerWidth <= 768) ? 80 : 0;
-      if (window.__arcaStreamMdPending === true) {
-        streamingContentEl.textContent = stripLineAsteriskEmphasis(raw);
-        return;
-      }
-      if ((now - (window.__arcaStreamMdTs || 0)) < throttleMs) {
-        streamingContentEl.textContent = stripLineAsteriskEmphasis(raw);
-      } else {
-        window.__arcaStreamMdPending = true;
-        window.requestAnimationFrame(() => {
-          window.__arcaStreamMdPending = false;
-          window.__arcaStreamMdTs = Date.now();
-          let content = stripLineAsteriskEmphasis(raw);
-          content = typewriterSafeSlice(content || "", (content || "").length);
-          const looksLikeMd = /[`#*_]|\n\s*[-*]\s+|\n\s*\d+\.\s+/.test(content);
-          if (!looksLikeMd) {
+      const throttleMs = (window.innerWidth <= 768) ? 140 : 16;
+      if (window.__arcaStreamMdPending === true) return;
+      if ((now - (window.__arcaStreamMdTs || 0)) < throttleMs) return;
+
+      window.__arcaStreamMdPending = true;
+      window.requestAnimationFrame(() => {
+        window.__arcaStreamMdPending = false;
+        window.__arcaStreamMdTs = Date.now();
+
+        if (!streamingContentEl) {
+          const responseDiv = document.getElementById("response");
+          const msgEl = responseDiv && responseDiv.children ? responseDiv.children[streamingMsgIndex] : null;
+          streamingContentEl = msgEl ? msgEl.querySelector('.msg-content') : null;
+        }
+        if (!streamingContentEl) return;
+
+        let content = stripLineAsteriskEmphasis(raw);
+        content = typewriterSafeSlice(content || "", (content || "").length);
+
+        const parts = String(content || "").split(/```/g);
+        for (let i = 0; i < parts.length; i += 2) {
+          let seg = parts[i];
+          const runs = [];
+          for (let j = 0; j < seg.length; j++) {
+            if (seg[j] !== '*') continue;
+            let k = j;
+            while (k < seg.length && seg[k] === '*') k++;
+            const len = Math.min(3, k - j);
+            runs.push(len);
+            j = k - 1;
+          }
+          let n3 = 0, n2 = 0, n1 = 0;
+          for (const r of runs) {
+            if (r === 3) n3++;
+            else if (r === 2) n2++;
+            else if (r === 1) n1++;
+          }
+          if (n3 % 2 === 1) seg += '***';
+          else if (n2 % 2 === 1) seg += '**';
+          else if (n1 % 2 === 1) seg += '*';
+          parts[i] = seg;
+        }
+        content = parts.join('```');
+
+        try {
+          const canMd = (typeof marked !== 'undefined' && marked && typeof marked.parse === 'function') &&
+                        (typeof DOMPurify !== 'undefined' && DOMPurify && typeof DOMPurify.sanitize === 'function');
+          if (!canMd) {
             streamingContentEl.textContent = content || "";
             return;
           }
@@ -2487,8 +2518,10 @@
             ],
             ALLOWED_ATTR: ['class','href','target','rel']
           });
-        });
-      }
+        } catch {
+          streamingContentEl.textContent = content || "";
+        }
+      });
       if (streamAutoFollow) {
         try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
       }
