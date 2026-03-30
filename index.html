@@ -1233,7 +1233,7 @@
       position: absolute;
       top: 0;
       left: 0;
-      right: 90px;
+      right: 40px;
       background: rgba(179, 0, 0, 0.18);
       border-bottom: 1px solid rgba(179, 0, 0, 0.35);
       font-family: 'Courier New', monospace;
@@ -1247,19 +1247,35 @@
 
     #response pre .copy-btn {
       position: absolute;
-      top: 0;
-      right: 0;
-      background: rgba(255,255,255,0.06);
-      color: #fff;
-      border: 0;
-      border-left: 1px solid rgba(179, 0, 0, 0.35);
-      padding: 0.35rem 0.6rem;
-      font-size: 0.75rem;
+      top: 6px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0,191,255,0.06);
+      color: rgba(245,245,245,0.92);
+      border: 1px solid rgba(0,191,255,0.16);
+      border-radius: 9999px;
+      font-size: 0;
       cursor: pointer;
-      letter-spacing: 0.4px;
+      letter-spacing: 0;
+      box-shadow: 0 0 10px rgba(0,191,255,0.12);
+      backdrop-filter: blur(6px) saturate(130%);
+      -webkit-backdrop-filter: blur(6px) saturate(130%);
     }
     #response pre .copy-btn:hover {
-      background: rgba(255,255,255,0.12);
+      background: rgba(0,191,255,0.10);
+      border-color: rgba(0,191,255,0.28);
+      box-shadow: 0 0 14px rgba(0,191,255,0.18);
+    }
+    #response pre .copy-btn svg {
+      width: 12px;
+      height: 12px;
+      fill: currentColor;
+      filter: drop-shadow(0 0 4px rgba(0,191,255,0.18));
+      pointer-events: none;
     }
 
     /* Animação sutil para indicar streaming ativo */
