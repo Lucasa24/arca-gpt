@@ -2988,82 +2988,88 @@
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        const handleDone = () => {
+          clearTimeout(window.renderTimeout);
+          stopLoaderBar();
+          invocandoHintActive = false;
+          streamingMsgIndex = -1;
+          streamingContentEl = null;
+          renderMessagesWithLiveMarkdown(false);
+          streamAutoFollow = false;
+          if (lastStreamAssistantIndex >= 0) {
+            requestAnimationFrame(() => {
+              scrollToMessageTopByIndex(lastStreamAssistantIndex);
+              setTimeout(() => scrollToMessageTopByIndex(lastStreamAssistantIndex), 120);
+            });
+          }
 
-          buffer += decoder.decode(value, { stream: true });
-          const parts = buffer.split("\n\n");
-          buffer = parts.pop();
+          document.getElementById("userInput").value = "";
+          document.getElementById("userInput").style.height = "55px";
+          saveToHistory(input, threadId);
+          currentStreamController = null;
+          updateInvokeButton(false);
+        };
 
-          for (let part of parts) {
-            if (!part.startsWith("data: ")) continue;
+        const handleSsePart = (part) => {
+          if (!part) return false;
+          const lines = String(part).split(/\r?\n/g);
+          for (const line of lines) {
+            if (!line) continue;
+            if (!/^data:\s*/.test(line)) continue;
 
-            const payload = part.replace(/^data:\s?/, "");
-
+            const payload = line.replace(/^data:\s?/, '');
             if (payload === "[DONE]") {
-              // Garantir renderização final e limpeza
-              clearTimeout(window.renderTimeout);
-              stopLoaderBar();
-              invocandoHintActive = false;
-              streamingMsgIndex = -1;
-              streamingContentEl = null;
-              renderMessagesWithLiveMarkdown(false); // false = streaming finalizado
-              streamAutoFollow = false;
-              if (lastStreamAssistantIndex >= 0) {
-                requestAnimationFrame(() => {
-                  scrollToMessageTopByIndex(lastStreamAssistantIndex);
-                  setTimeout(() => scrollToMessageTopByIndex(lastStreamAssistantIndex), 120);
-                });
-              }
-              
-              document.getElementById("userInput").value = "";
-              // Resetar o tamanho do textarea para o padrão
-              document.getElementById("userInput").style.height = "55px";
-              saveToHistory(input, threadId);
-              currentStreamController = null;
-              updateInvokeButton(false);
-              return;
+              handleDone();
+              return true;
             }
 
             let content = payload;
             try {
               const json = JSON.parse(payload);
-              if (json.content) content = json.content;
+              if (json && typeof json.content === 'string') content = json.content;
             } catch (e) {}
 
-            // fixedContent agora é apenas o conteúdo decodificado
             const fixedContent = content;
 
-            // STREAMING RITUAL OTIMIZADO: máxima fluidez e presença
             if (isInvocando && content !== "[DONE]") {
               const idx = messages.length - 1;
               if (messages[idx].content === "") {
                 messages[idx].content = fixedContent;
                 updateStreamingUI();
-                
-                // Remove barra de loading no primeiro token real
                 window.requestAnimationFrame(() => {
                   stopLoaderBar();
                 });
               } else {
-                // Acumula tokens com fluidez natural
                 safeAppend(idx, fixedContent);
                 updateStreamingUI();
               }
-              
-              // 💾 AUTO-SAVE: Salvar progresso durante streaming
+
               clearTimeout(window.autoSaveTimeout);
               window.autoSaveTimeout = setTimeout(() => {
                 saveThreadMessages(threadId);
-              }, 1000); // Salva a cada 1 segundo durante streaming
+              }, 1000);
             } else {
-              // Streaming normal fora do estado de invocação
               safeAppend(messages.length - 1, fixedContent);
               updateStreamingUI();
             }
           }
+          return false;
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split(/\r?\n\r?\n/g);
+          buffer = parts.pop();
+
+          for (let part of parts) {
+            if (handleSsePart(part)) return;
+          }
         }
+
+        if (buffer && handleSsePart(buffer)) return;
       } catch (err) {
         if (err && (err.name === 'AbortError' || /abort/i.test(err.message || ''))) {
           // Interrupção manual: finalizar com dignidade
