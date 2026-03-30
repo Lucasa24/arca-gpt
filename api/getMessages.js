@@ -44,7 +44,7 @@ module.exports = async function handler(req, res) {
       return res.end(JSON.stringify({ error: "Acesso negado à thread solicitada" }));
     }
 
-    const messages = await getThreadMessages(threadId, authHeader, true);
+    const messages = await getThreadMessages(threadId, authHeader, true, { full: true });
     const userMessages = messages.filter(msg => msg.role !== "system");
     res.setHeader('Content-Type', 'application/json');
     res.statusCode = 200;
