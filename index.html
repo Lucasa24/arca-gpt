@@ -2458,7 +2458,37 @@
       if (!streamingContentEl) return;
       const msg = messages[streamingMsgIndex];
       const raw = (msg && msg.content) ? msg.content : "";
-      streamingContentEl.textContent = stripLineAsteriskEmphasis(raw);
+      const now = Date.now();
+      const throttleMs = (window.innerWidth <= 768) ? 80 : 0;
+      if (window.__arcaStreamMdPending === true) {
+        streamingContentEl.textContent = stripLineAsteriskEmphasis(raw);
+        return;
+      }
+      if ((now - (window.__arcaStreamMdTs || 0)) < throttleMs) {
+        streamingContentEl.textContent = stripLineAsteriskEmphasis(raw);
+      } else {
+        window.__arcaStreamMdPending = true;
+        window.requestAnimationFrame(() => {
+          window.__arcaStreamMdPending = false;
+          window.__arcaStreamMdTs = Date.now();
+          let content = stripLineAsteriskEmphasis(raw);
+          content = typewriterSafeSlice(content || "", (content || "").length);
+          const looksLikeMd = /[`#*_]|\n\s*[-*]\s+|\n\s*\d+\.\s+/.test(content);
+          if (!looksLikeMd) {
+            streamingContentEl.textContent = content || "";
+            return;
+          }
+          const html = marked.parse(content || "");
+          streamingContentEl.innerHTML = DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [
+              'p','strong','em','ul','ol','li',
+              'h1','h2','h3','h4','h5','h6',
+              'br','code','pre','blockquote','hr','a'
+            ],
+            ALLOWED_ATTR: ['class','href','target','rel']
+          });
+        });
+      }
       if (streamAutoFollow) {
         try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
       }
