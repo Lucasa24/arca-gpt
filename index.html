@@ -391,7 +391,7 @@
       display: block;
       position: fixed;
       top: 6px;
-      left: 6px;
+      left: 14px;
       z-index: 999;
       width: 9px;
       height: 9px;
@@ -3147,7 +3147,7 @@
           // Garantir espaçamento e quebras corretas (não quebra se já houver \n\n)
           const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
           if (!/\n\n/.test(content) && !looksLikeCodeOrHeadings) {
-            content = content.replace(/([.!?])\s+/g, '$1\n\n');
+            content = content.replace(/([.!?])\s+(?!\*{1,3}\s*(?:\r?\n|$))/g, '$1\n\n');
           }
           
           const html = marked.parse(content);
@@ -3221,7 +3221,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
             // Corrige palavras coladas após pontuação e dois pontos
             content = content
               .replace(/([.!?:])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ') // garante ESPAÇO se vier colado
-              .replace(/([.!?])\s+/g, '$1\n\n');           // quebra em parágrafos após pontuação
+              .replace(/([.!?])\s+(?!\*{1,3}\s*(?:\r?\n|$))/g, '$1\n\n');           // quebra em parágrafos após pontuação
             
             // Corrige palavras coladas em frases como "RITUAL DE AÇÃO:1"
             content = content.replace(/(RITUAL DE [A-ZÀ-Ÿ]+):(?=\d)/g, '$1: ');
