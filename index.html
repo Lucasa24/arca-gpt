@@ -1262,18 +1262,26 @@
       cursor: pointer;
       letter-spacing: 0;
       box-shadow: none;
-      backdrop-filter: blur(6px) saturate(130%);
-      -webkit-backdrop-filter: blur(6px) saturate(130%);
+      -webkit-appearance: none;
+      appearance: none;
     }
     #response pre .copy-btn:hover {
       background: transparent;
-      box-shadow: 0 0 12px rgba(0,191,255,0.14);
+      box-shadow: none;
+    }
+    #response pre .copy-btn:focus,
+    #response pre .copy-btn:focus-visible,
+    #response pre .copy-btn:active {
+      outline: none;
+      box-shadow: none;
+      background: transparent;
+      transform: none;
     }
     #response pre .copy-btn svg {
       width: 9px;
       height: 9px;
       fill: currentColor;
-      filter: drop-shadow(0 0 4px rgba(0,191,255,0.18));
+      filter: none;
       pointer-events: none;
     }
 
