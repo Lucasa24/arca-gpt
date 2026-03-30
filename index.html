@@ -1247,7 +1247,7 @@
 
     #response pre .copy-btn {
       position: absolute;
-      top: 4px;
+      top: 6px;
       right: 10px;
       width: 16px;
       height: 16px;
@@ -1264,6 +1264,12 @@
       box-shadow: none;
       -webkit-appearance: none;
       appearance: none;
+    }
+    @media (max-width: 768px) {
+      #response pre .copy-btn {
+        top: 3px;
+        right: 14px;
+      }
     }
     #response pre .copy-btn:hover {
       background: transparent;
