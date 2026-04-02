@@ -1,5 +1,6 @@
 // api/vision.js — HTTP nativo + REST direto (sem SDK)
 const { fetch } = require("undici");
+const { buildSystemMessages } = require("../lib/memory");
 
 async function readBodyBuffer(req) {
   return new Promise((resolve, reject) => {
@@ -54,6 +55,7 @@ module.exports = async function handler(req, res) {
     let prompt;
     let imageB64;
     let mime = "image/png";
+    let mode = "ritual";
 
     const ct = String(req.headers["content-type"] || "");
     if (ct.includes("multipart/form-data")) {
@@ -77,6 +79,8 @@ module.exports = async function handler(req, res) {
           imageB64 = p.data.toString("base64");
         } else if (fieldName === "prompt") {
           prompt = p.data.toString("utf8");
+        } else if (fieldName === "mode") {
+          mode = p.data.toString("utf8") || mode;
         }
       }
     } else {
@@ -84,6 +88,7 @@ module.exports = async function handler(req, res) {
       prompt = b.prompt;
       imageB64 = b.imageB64;
       mime = b.mime || mime;
+      mode = b.mode || mode;
     }
 
     if (!process.env.OPENAI_API_KEY) {
@@ -100,9 +105,12 @@ module.exports = async function handler(req, res) {
       ? imageB64
       : `data:${mime};base64,${imageB64}`;
 
+    const persona = String(mode || "ritual").toLowerCase() === "tecnico" ? "tecnico" : "ritual";
+    const systemMessages = buildSystemMessages(persona, null) || [];
     const body = {
       model: "gpt-4o-mini",
       messages: [
+        ...systemMessages,
         {
           role: "user",
           content: [
