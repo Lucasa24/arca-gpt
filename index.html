@@ -1837,7 +1837,7 @@
       display: block;
       filter: saturate(1.05) contrast(1.02);
     }
-    .image-remove-btn { position: absolute; top: -5px; right: -5px; width: 14px; height: 14px; border-radius: 9999px; border: 1px solid rgba(179,0,0,0.55); background: rgba(0,0,0,0.72); color: rgba(255,107,107,0.92); font-size: 9px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.92; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+    .image-remove-btn { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 9999px; border: 1px solid rgba(179,0,0,0.55); background: rgba(0,0,0,0.72); color: rgba(255,107,107,0.92); font-size: 8px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.92; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
 
     @keyframes auto-pulse {
       0%, 100% { filter: brightness(1); }
@@ -2900,6 +2900,7 @@
 
     function handleImageUpload(event) {
       processSelectedFiles(event.target.files);
+      try { event.target.value = ''; } catch {}
     }
     
     // Função para remover imagem específica
