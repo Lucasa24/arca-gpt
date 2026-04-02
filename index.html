@@ -1777,19 +1777,11 @@
 
     .image-preview {
       display: none;
-      position: absolute;
-      left: 6px;
-      top: 6px;
-      z-index: 4;
+      width: 100%;
+      padding: 6px 8px 0 8px;
     }
     .image-preview.has-images { display: block; }
-    .image-preview-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 0 2px 6px 2px;
-    }
+    .image-preview-head { display: flex; align-items: center; justify-content: flex-end; padding: 0 0 6px 0; }
     .image-preview-add-btn {
       width: 18px;
       height: 18px;
@@ -1829,8 +1821,8 @@
       touch-action: manipulation;
     }
     .image-remove-all-btn:hover { opacity: 1; border-color: rgba(179,0,0,0.60); }
-    .image-preview-list { display: flex; gap: 6px; align-items: flex-start; }
-    .image-container { position: relative; width: 48px; height: 48px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,191,255,0.18); background: rgba(0,0,0,0.25); box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10); }
+    .image-preview-list { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; padding-bottom: 6px; }
+    .image-container { position: relative; width: 46px; height: 46px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,191,255,0.18); background: rgba(0,0,0,0.25); box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10); }
     .image-thumb {
       width: 100%;
       height: 100%;
@@ -2879,7 +2871,6 @@
           const previewDiv = document.getElementById('imagePreview');
           const list = previewDiv ? previewDiv.querySelector('.image-preview-list') : null;
           if (!previewDiv || !list) return;
-          previewDiv.style.display = 'block';
           previewDiv.classList.add('has-images');
           const imageContainer = document.createElement('div');
           imageContainer.id = 'container_' + imageId;
