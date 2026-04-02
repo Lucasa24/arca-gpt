@@ -1781,7 +1781,7 @@
       padding: 6px 8px 0 8px;
     }
     .image-preview.has-images { display: block; }
-    .image-preview-head { display: flex; align-items: center; justify-content: flex-end; padding: 0 0 6px 0; }
+    .image-preview-head { display: flex; align-items: center; gap: 8px; padding: 0 0 6px 0; }
     .image-preview-add-btn {
       width: 18px;
       height: 18px;
@@ -1807,10 +1807,13 @@
       border: 1px solid rgba(179,0,0,0.40);
       background: rgba(179,0,0,0.12);
       color: rgba(245,245,245,0.92);
-      font-size: 0.58rem;
+      font-size: 0.52rem;
       letter-spacing: 0.8px;
       text-transform: uppercase;
-      padding: 2px 8px;
+      padding: 0 7px;
+      height: 14px;
+      min-height: 14px;
+      line-height: 14px;
       border-radius: 9999px;
       cursor: pointer;
       opacity: 0.86;
@@ -1819,9 +1822,13 @@
       -webkit-touch-callout: none;
       user-select: none;
       touch-action: manipulation;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
     }
     .image-remove-all-btn:hover { opacity: 1; border-color: rgba(179,0,0,0.60); }
-    .image-preview-list { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; padding-bottom: 6px; }
+    .image-preview-list { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
     .image-container { position: relative; width: 46px; height: 46px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,191,255,0.18); background: rgba(0,0,0,0.25); box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10); }
     .image-thumb {
       width: 100%;
@@ -2288,9 +2295,9 @@
         <div class="textarea-container" style="flex: 1;">
           <div id="imagePreview" class="image-preview" aria-live="polite">
             <div class="image-preview-head">
+              <div class="image-preview-list"></div>
               <button type="button" class="image-remove-all-btn" onclick="removeImage()">Remover Todas</button>
             </div>
-            <div class="image-preview-list"></div>
           </div>
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         </div>
@@ -3022,7 +3029,9 @@
         const otimizedFile = await redimensionarImagem(file);
         
         const form = new FormData();
+        const mode = (localStorage.getItem('arcaPersonaMode') || 'ritual');
         form.append("prompt", String(prompt || ""));
+        form.append("mode", mode);
         form.append("image", otimizedFile, otimizedFile.name || "image.jpg");
 
         const resp = await fetch("/api/vision", {
