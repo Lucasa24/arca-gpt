@@ -1523,6 +1523,8 @@
       -webkit-touch-callout: none;
       user-select: none;
       touch-action: manipulation;
+      padding: 0;
+      line-height: 0;
     }
     .mode-image-btn:hover { 
       transform: scale(1.02); 
@@ -1537,7 +1539,7 @@
       box-shadow: 0 0 0 1px rgba(179,0,0,0.70), 0 0 14px rgba(179,0,0,0.24); 
       transform: scale(0.98); 
     }
-    .mode-image-btn svg { width: 12px; height: 12px; }
+    .mode-image-btn svg { width: 12px; height: 12px; display: block; transform-origin: 50% 50%; transform: translate(0.5px, 0.5px); }
 
     .mode-peteca .mode-peteca-btn::before {
       content: '';
@@ -1774,12 +1776,13 @@
     }
 
     .image-preview {
-      display: block;
-      width: 100%;
-      margin: 6px 0 6px 0;
+      display: none;
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      z-index: 4;
     }
-    .image-preview:not(.has-images) .image-remove-all-btn { display: none; }
-    .image-preview:not(.has-images) .image-preview-list { display: none; }
+    .image-preview.has-images { display: block; }
     .image-preview-head {
       display: flex;
       align-items: center;
@@ -1826,22 +1829,8 @@
       touch-action: manipulation;
     }
     .image-remove-all-btn:hover { opacity: 1; border-color: rgba(179,0,0,0.60); }
-    .image-preview-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: flex-start;
-    }
-    .image-container {
-      position: relative;
-      width: 120px;
-      height: 80px;
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid rgba(0,191,255,0.14);
-      background: rgba(0,0,0,0.22);
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10);
-    }
+    .image-preview-list { display: flex; gap: 6px; align-items: flex-start; }
+    .image-container { position: relative; width: 48px; height: 48px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,191,255,0.18); background: rgba(0,0,0,0.25); box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10); }
     .image-thumb {
       width: 100%;
       height: 100%;
@@ -1849,29 +1838,7 @@
       display: block;
       filter: saturate(1.05) contrast(1.02);
     }
-    .image-remove-btn {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      width: 16px;
-      height: 16px;
-      border-radius: 9999px;
-      border: 1px solid rgba(179,0,0,0.55);
-      background: rgba(0,0,0,0.70);
-      color: rgba(255,107,107,0.92);
-      font-size: 10px;
-      line-height: 1;
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      padding: 0;
-      opacity: 0.92;
-      outline: none;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      user-select: none;
-      touch-action: manipulation;
-    }
+    .image-remove-btn { position: absolute; top: -5px; right: -5px; width: 14px; height: 14px; border-radius: 9999px; border: 1px solid rgba(179,0,0,0.55); background: rgba(0,0,0,0.72); color: rgba(255,107,107,0.92); font-size: 9px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.92; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
 
     @keyframes auto-pulse {
       0%, 100% { filter: brightness(1); }
