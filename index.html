@@ -1346,7 +1346,22 @@
       resize: vertical;
       min-height: 90px;
       max-height: 70vh;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.25);
     }
+    .fixed-footer::-webkit-scrollbar { width: 8px; }
+    .fixed-footer::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.25);
+      border-left: 1px solid rgba(0,191,255,0.12);
+    }
+    .fixed-footer::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(0,191,255,0.20), rgba(0,191,255,0.85), rgba(179,0,0,0.22));
+      border-radius: 9999px;
+      border: 1px solid rgba(0,191,255,0.22);
+      box-shadow: 0 0 10px rgba(0,191,255,0.18);
+    }
+    .fixed-footer::-webkit-scrollbar-thumb:hover { box-shadow: 0 0 14px rgba(0,191,255,0.28); }
+    .fixed-footer::-webkit-scrollbar-corner { background: rgba(0,0,0,0.25); }
 
     #mainContent.sidebar-hidden .fixed-footer {
       left: 0;
@@ -1494,7 +1509,7 @@
       height: 18px;
       min-width: 18px;
       min-height: 18px;
-      border: 0;
+      border: 1px solid transparent;
       border-radius: 9999px;
       background: transparent;
       color: rgba(0,191,255,0.92);
@@ -1509,9 +1524,10 @@
       user-select: none;
       touch-action: manipulation;
     }
-    .mode-image-btn:hover { transform: scale(1.06); opacity: 1; }
+    .mode-image-btn:hover { transform: scale(1.06); opacity: 1; border-color: rgba(179,0,0,0.45); box-shadow: inset 0 0 0 1px rgba(179,0,0,0.22), 0 0 12px rgba(179,0,0,0.16); }
     .mode-image-btn:focus,
     .mode-image-btn:focus-visible { outline: none; box-shadow: none; }
+    .mode-image-btn:active { border-color: rgba(179,0,0,0.60); box-shadow: inset 0 0 0 1px rgba(179,0,0,0.28), 0 0 14px rgba(179,0,0,0.20); transform: scale(0.98); }
 
     .mode-peteca .mode-peteca-btn::before {
       content: '';
@@ -1745,6 +1761,106 @@
       border: 1px solid rgba(0,191,255,0.25);
       border-radius: 9999px;
       pointer-events: none;
+    }
+
+    .image-preview {
+      display: block;
+      width: 100%;
+      margin: 6px 0 6px 0;
+    }
+    .image-preview:not(.has-images) .image-remove-all-btn { display: none; }
+    .image-preview:not(.has-images) .image-preview-list { display: none; }
+    .image-preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 2px 6px 2px;
+    }
+    .image-preview-add-btn {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      min-height: 18px;
+      border: 1px solid transparent;
+      border-radius: 9999px;
+      background: transparent;
+      color: rgba(0,191,255,0.92);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      opacity: 0.9;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .image-preview-add-btn:hover { border-color: rgba(179,0,0,0.45); box-shadow: inset 0 0 0 1px rgba(179,0,0,0.22), 0 0 12px rgba(179,0,0,0.16); opacity: 1; }
+    .image-preview-add-btn:active { border-color: rgba(179,0,0,0.60); box-shadow: inset 0 0 0 1px rgba(179,0,0,0.28), 0 0 14px rgba(179,0,0,0.20); opacity: 1; transform: scale(0.98); }
+    .image-remove-all-btn {
+      border: 1px solid rgba(179,0,0,0.40);
+      background: rgba(179,0,0,0.12);
+      color: rgba(245,245,245,0.92);
+      font-size: 0.58rem;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      cursor: pointer;
+      opacity: 0.86;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .image-remove-all-btn:hover { opacity: 1; border-color: rgba(179,0,0,0.60); }
+    .image-preview-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .image-container {
+      position: relative;
+      width: 120px;
+      height: 80px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(0,191,255,0.14);
+      background: rgba(0,0,0,0.22);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 12px rgba(0,191,255,0.10);
+    }
+    .image-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(1.05) contrast(1.02);
+    }
+    .image-remove-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      border: 1px solid rgba(179,0,0,0.55);
+      background: rgba(0,0,0,0.70);
+      color: rgba(255,107,107,0.92);
+      font-size: 10px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      padding: 0;
+      opacity: 0.92;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
     }
 
     @keyframes auto-pulse {
@@ -2201,6 +2317,19 @@
     <div class="fixed-footer">
       <div class="input-group">
         <div class="textarea-container" style="flex: 1;">
+          <div id="imagePreview" class="image-preview" aria-live="polite">
+            <div class="image-preview-head">
+              <button type="button" class="image-preview-add-btn" aria-label="Anexar imagem" title="Anexar imagem para leitura" onclick="document.getElementById('imageInput').click()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="5" width="18" height="14" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="10" r="2"></circle>
+                  <path d="M21 15l-5-5-7 7"></path>
+                </svg>
+              </button>
+              <button type="button" class="image-remove-all-btn" onclick="removeImage()">Remover Todas</button>
+            </div>
+            <div class="image-preview-list"></div>
+          </div>
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         </div>
         <button onclick="handleInvokeClick()" class="invocar-btn">Invocar</button>
@@ -2237,11 +2366,6 @@
           </svg>
         </button>
       </div>
-      <div id="imagePreview" style="display: none; text-align: center; margin-top: 10px;">
-          <!-- Imagens serão adicionadas dinamicamente aqui -->
-          <button onclick="removeImage()" style="background-color: #b30000; padding: 5px 10px; font-size: 0.6rem; display: block; margin: 10px auto 0;">Remover Todas</button>
-        </div>
-
       <div id="loader" style="display:none;">
         <div id="loadingBar"></div>
       </div>
@@ -2783,39 +2907,24 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           const previewDiv = document.getElementById('imagePreview');
+          const list = previewDiv ? previewDiv.querySelector('.image-preview-list') : null;
+          if (!previewDiv || !list) return;
           previewDiv.style.display = 'block';
+          previewDiv.classList.add('has-images');
           const imageContainer = document.createElement('div');
           imageContainer.id = 'container_' + imageId;
           imageContainer.className = 'image-container';
-          imageContainer.style.display = 'inline-block';
-          imageContainer.style.margin = '5px';
-          imageContainer.style.position = 'relative';
           const imgElement = document.createElement('img');
+          imgElement.className = 'image-thumb';
           imgElement.src = e.target.result;
-          imgElement.style.maxWidth = '150px';
-          imgElement.style.maxHeight = '100px';
-          imgElement.style.border = '1px solid #333';
-          imgElement.style.borderRadius = '5px';
           const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'image-remove-btn';
           removeBtn.innerHTML = '✕';
-          removeBtn.style.backgroundColor = '#b30000';
-          removeBtn.style.color = 'white';
-          removeBtn.style.border = 'none';
-          removeBtn.style.borderRadius = '50%';
-          removeBtn.style.width = '22px';
-          removeBtn.style.height = '22px';
-          removeBtn.style.fontSize = '0.6rem';
-          removeBtn.style.position = 'absolute';
-          removeBtn.style.top = '-8px';
-          removeBtn.style.right = '-8px';
-          removeBtn.style.cursor = 'pointer';
-          removeBtn.style.display = 'flex';
-          removeBtn.style.alignItems = 'center';
-          removeBtn.style.justifyContent = 'center';
           removeBtn.onclick = function() { removeSpecificImage(imageId); };
           imageContainer.appendChild(imgElement);
           imageContainer.appendChild(removeBtn);
-          previewDiv.appendChild(imageContainer);
+          list.appendChild(imageContainer);
         };
         reader.readAsDataURL(file);
       }
@@ -2838,7 +2947,8 @@
       
       // Esconder o preview se não houver mais imagens
       if (attachedImages.length === 0) {
-        document.getElementById('imagePreview').style.display = 'none';
+        const preview = document.getElementById('imagePreview');
+        if (preview) preview.classList.remove('has-images');
       }
     }
     
@@ -2846,8 +2956,9 @@
     function removeImage() {
       attachedImages = [];
       const previewDiv = document.getElementById('imagePreview');
-      previewDiv.innerHTML = '';
-      previewDiv.style.display = 'none';
+      const list = previewDiv ? previewDiv.querySelector('.image-preview-list') : null;
+      if (list) list.innerHTML = '';
+      if (previewDiv) previewDiv.classList.remove('has-images');
       document.getElementById('imageInput').value = '';
     }
 
@@ -2949,32 +3060,13 @@
         // Redimensionar imagem antes de processar
         const otimizedFile = await redimensionarImagem(file);
         
-        // Função auxiliar para converter ArrayBuffer para base64 sem estouro de pilha
-        function arrayBufferToBase64(buffer) {
-          const bytes = new Uint8Array(buffer);
-          let binary = '';
-          const chunkSize = 1024; // Tamanho do chunk para processamento seguro
-          
-          // Processar bytes em pequenos chunks para evitar estouro de pilha
-          for (let i = 0; i < bytes.length; i += chunkSize) {
-            const slice = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
-            let binaryChunk = '';
-            for (let j = 0; j < slice.length; j++) {
-              binaryChunk += String.fromCharCode(slice[j]);
-            }
-            binary += binaryChunk;
-          }
-          
-          return btoa(binary);
-        }
-        
-        const buf = await otimizedFile.arrayBuffer();
-        const b64 = arrayBufferToBase64(buf);
-        
+        const form = new FormData();
+        form.append("prompt", String(prompt || ""));
+        form.append("image", otimizedFile, otimizedFile.name || "image.jpg");
+
         const resp = await fetch("/api/vision", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, imageB64: b64, mime: otimizedFile.type })
+          body: form
         });
         
         if (!resp.ok) {
