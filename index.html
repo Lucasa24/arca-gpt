@@ -1905,7 +1905,38 @@
       font-size: 0.6rem;
       letter-spacing: 0.6px;
     }
-    .image-remove-btn { position: absolute; top: 2px; right: 3px; width: 8px; height: 8px; border-radius: 9999px; border: 0; background: transparent; color: rgba(255,107,107,0.95); font-size: 9px; line-height: 0; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.95; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; box-shadow: none; }
+    .image-remove-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 9999px;
+      border: 0;
+      background: transparent;
+      color: rgba(245,245,245,0.88);
+      font-size: 0;
+      line-height: 0;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      padding: 0;
+      opacity: 0.92;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      touch-action: manipulation;
+      box-shadow: none;
+    }
+    .image-remove-btn::before {
+      content: '×';
+      display: block;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1;
+      transform: translateY(-0.4px);
+    }
 
     @keyframes auto-pulse {
       0%, 100% { filter: brightness(1); }
@@ -2966,7 +2997,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.className = 'image-remove-btn';
-          removeBtn.innerHTML = '✕';
+          removeBtn.setAttribute('aria-label', 'Remover imagem');
           removeBtn.onclick = function() { removeSpecificImage(imageId); };
           imageContainer.appendChild(imgElement);
           imageContainer.appendChild(removeBtn);
