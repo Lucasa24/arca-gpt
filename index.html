@@ -1908,12 +1908,13 @@
     .image-remove-btn {
       position: absolute;
       top: 2px;
-      right: 2px;
+      right: 1px;
       width: 12px;
       height: 12px;
       border-radius: 9999px;
-      border: 0;
-      background: transparent;
+      border: 0 !important;
+      background: transparent !important;
+      background-color: transparent !important;
       color: rgba(245,245,245,0.88);
       font-size: 0;
       line-height: 0;
@@ -1927,7 +1928,22 @@
       -webkit-touch-callout: none;
       user-select: none;
       touch-action: manipulation;
-      box-shadow: none;
+      box-shadow: none !important;
+      transform: none !important;
+      filter: none !important;
+    }
+    .image-remove-btn:hover,
+    .image-remove-btn:active,
+    .image-remove-btn:focus,
+    .image-remove-btn:focus-visible {
+      background: transparent !important;
+      background-color: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      outline: none !important;
+      transform: none !important;
+      filter: none !important;
+      opacity: 1;
     }
     .image-remove-btn::before {
       content: '×';
@@ -1935,7 +1951,7 @@
       font-family: Arial, sans-serif;
       font-size: 12px;
       line-height: 1;
-      transform: translateY(-0.4px);
+      transform: translate(0.6px, -0.4px);
     }
 
     @keyframes auto-pulse {
