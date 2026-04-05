@@ -1837,7 +1837,71 @@
       display: block;
       filter: saturate(1.05) contrast(1.02);
     }
-    .image-remove-btn { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 9999px; border: 1px solid rgba(179,0,0,0.55); background: rgba(0,0,0,0.72); color: rgba(255,107,107,0.92); font-size: 8px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.92; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+    #imageZoomOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1200;
+    }
+    #imageZoomOverlay.show { display: flex; }
+    #imageZoomOverlay .zoom-content {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(0,191,255,0.22);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,191,255,0.18);
+    }
+    #imageZoomOverlay img {
+      max-width: min(88vw, 720px);
+      max-height: 78vh;
+      border-radius: 8px;
+      border: 1px solid rgba(0,191,255,0.25);
+      box-shadow: 0 0 20px rgba(0,191,255,0.18);
+      display: block;
+    }
+    .zoom-prev, .zoom-next, .zoom-close {
+      border: 1px solid rgba(179,0,0,0.45);
+      background: rgba(179,0,0,0.12);
+      color: rgba(245,245,245,0.92);
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      min-height: 18px;
+      border-radius: 9999px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 10px;
+      line-height: 1;
+      opacity: 0.92;
+    }
+    .zoom-close {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: rgba(0,0,0,0.65);
+      border-color: rgba(179,0,0,0.60);
+    }
+    .zoom-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      border: 1px solid rgba(0,191,255,0.20);
+      background: rgba(0,0,0,0.25);
+      color: rgba(245,245,245,0.86);
+      font-size: 0.6rem;
+      letter-spacing: 0.6px;
+    }
+    .image-remove-btn { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 9999px; border: 0; background: rgba(0,0,0,0.65); color: rgba(255,107,107,0.92); font-size: 7px; line-height: 0.9; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.95; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; box-shadow: none; }
 
     @keyframes auto-pulse {
       0%, 100% { filter: brightness(1); }
@@ -2246,6 +2310,15 @@
   <div id="chatSidebar"></div>
   <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
   <div id="dropOverlay"><div class="drop-msg">Solte imagens aqui</div></div>
+  <div id="imageZoomOverlay" aria-live="polite">
+    <div class="zoom-content">
+      <button type="button" class="zoom-close" aria-label="Fechar" onclick="closeImageZoom()">✕</button>
+      <button type="button" class="zoom-prev" aria-label="Anterior" onclick="zoomPrev()">⟨</button>
+      <img alt="preview" />
+      <button type="button" class="zoom-next" aria-label="Próxima" onclick="zoomNext()">⟩</button>
+      <div class="zoom-meta"><span class="zoom-name"></span></div>
+    </div>
+  </div>
   
   <!-- Modal de Login REMOVIDO -->
   
@@ -2885,6 +2958,7 @@
           const imgElement = document.createElement('img');
           imgElement.className = 'image-thumb';
           imgElement.src = e.target.result;
+          imgElement.addEventListener('click', function(){ openImageZoomById(imageId); });
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.className = 'image-remove-btn';
@@ -2961,6 +3035,50 @@
         }
       }, false);
     }
+
+    let __zoomIndex = -1;
+    function fileToDataUrl(file) {
+      return new Promise((resolve,reject)=>{
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+    async function updateZoomUI() {
+      const ov = document.getElementById('imageZoomOverlay');
+      if (!ov) return;
+      const imgEl = ov.querySelector('img');
+      const nameEl = ov.querySelector('.zoom-name');
+      const prevBtn = ov.querySelector('.zoom-prev');
+      const nextBtn = ov.querySelector('.zoom-next');
+      const items = attachedImages || [];
+      if (__zoomIndex < 0 || __zoomIndex >= items.length) { closeImageZoom(); return; }
+      const it = items[__zoomIndex];
+      const src = await fileToDataUrl(it.file);
+      if (imgEl) imgEl.src = src;
+      if (nameEl) nameEl.textContent = (it.file && it.file.name) ? it.file.name : `Imagem ${__zoomIndex+1}/${items.length}`;
+      if (prevBtn) prevBtn.disabled = (__zoomIndex <= 0);
+      if (nextBtn) nextBtn.disabled = (__zoomIndex >= items.length - 1);
+      ov.classList.add('show');
+    }
+    function openImageZoomById(id) {
+      const idx = (attachedImages || []).findIndex(x => x.id === id);
+      if (idx === -1) return;
+      __zoomIndex = idx;
+      updateZoomUI();
+    }
+    function closeImageZoom() {
+      const ov = document.getElementById('imageZoomOverlay');
+      if (!ov) return;
+      ov.classList.remove('show');
+      __zoomIndex = -1;
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeImageZoom();
+    }, false);
+    function zoomPrev() { if (__zoomIndex > 0) { __zoomIndex--; updateZoomUI(); } }
+    function zoomNext() { const items = attachedImages || []; if (__zoomIndex < items.length - 1) { __zoomIndex++; updateZoomUI(); } }
     
     // Função para redimensionar imagem antes de enviar
     function redimensionarImagem(file) {
