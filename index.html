@@ -1509,7 +1509,7 @@
       height: 18px;
       min-width: 18px;
       min-height: 18px;
-      border: 1px solid transparent;
+      border: 0;
       border-radius: 9999px;
       background: transparent;
       color: rgba(0,191,255,0.92);
@@ -1517,7 +1517,7 @@
       place-items: center;
       cursor: pointer;
       opacity: 0.9;
-      transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      transition: transform 0.12s ease, opacity 0.12s ease;
       outline: none;
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
@@ -1529,17 +1529,17 @@
     .mode-image-btn:hover { 
       transform: scale(1.02); 
       opacity: 1; 
-      border-color: rgba(179,0,0,0.55); 
-      box-shadow: 0 0 0 1px rgba(179,0,0,0.55), 0 0 12px rgba(179,0,0,0.20); 
+      border-color: transparent; 
+      box-shadow: none; 
     }
     .mode-image-btn:focus,
     .mode-image-btn:focus-visible { outline: none; box-shadow: none; }
     .mode-image-btn:active { 
-      border-color: rgba(179,0,0,0.70); 
-      box-shadow: 0 0 0 1px rgba(179,0,0,0.70), 0 0 14px rgba(179,0,0,0.24); 
+      border-color: transparent; 
+      box-shadow: none; 
       transform: scale(0.98); 
     }
-    .mode-image-btn svg { width: 12px; height: 12px; display: block; transform-origin: 50% 50%; transform: translate(0.5px, 0.5px); }
+    .mode-image-btn svg { width: 12px; height: 12px; display: block; transform-origin: 50% 50%; transform: translate(0, 0); }
 
     .mode-peteca .mode-peteca-btn::before {
       content: '';
@@ -1867,8 +1867,9 @@
       display: block;
     }
     .zoom-prev, .zoom-next, .zoom-close {
-      border: 1px solid rgba(179,0,0,0.45);
-      background: rgba(179,0,0,0.12);
+      border: 0;
+      background: transparent;
+      box-shadow: none;
       color: rgba(245,245,245,0.92);
       width: 18px;
       height: 18px;
@@ -1878,16 +1879,19 @@
       display: grid;
       place-items: center;
       cursor: pointer;
-      font-size: 10px;
-      line-height: 1;
+      font-size: 12px;
+      line-height: 0;
       opacity: 0.92;
+      padding: 0;
     }
+    .zoom-prev:disabled,
+    .zoom-next:disabled { opacity: 0.35; cursor: default; }
     .zoom-close {
       position: absolute;
       top: -8px;
       right: -8px;
-      background: rgba(0,0,0,0.65);
-      border-color: rgba(179,0,0,0.60);
+      background: transparent;
+      border-color: transparent;
     }
     .zoom-meta {
       display: flex;
@@ -1901,7 +1905,7 @@
       font-size: 0.6rem;
       letter-spacing: 0.6px;
     }
-    .image-remove-btn { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 9999px; border: 0; background: rgba(0,0,0,0.65); color: rgba(255,107,107,0.92); font-size: 7px; line-height: 0.9; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.95; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; box-shadow: none; }
+    .image-remove-btn { position: absolute; top: 2px; right: 3px; width: 8px; height: 8px; border-radius: 9999px; border: 0; background: transparent; color: rgba(255,107,107,0.95); font-size: 9px; line-height: 0; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0.95; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; box-shadow: none; }
 
     @keyframes auto-pulse {
       0%, 100% { filter: brightness(1); }
