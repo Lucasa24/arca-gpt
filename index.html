@@ -3193,7 +3193,7 @@
     }
     
     // Função para enviar imagem para análise
-    async function enviarImagem(file, prompt) {
+    async function enviarImagem(file, prompt, signal) {
       try {
         // Redimensionar imagem antes de processar
         const otimizedFile = await redimensionarImagem(file);
@@ -3206,7 +3206,8 @@
 
         const resp = await fetch("/api/vision", {
           method: "POST",
-          body: form
+          body: form,
+          signal
         });
         
         if (!resp.ok) {
@@ -3222,11 +3223,16 @@
     }
     
     // Função para processar múltiplas imagens sequencialmente
-    async function processarMultiplasImagens(imagens, prompt) {
+    async function processarMultiplasImagens(imagens, prompt, signal) {
       let resultadoCompleto = "";
       let contadorImagens = 0;
       
       for (const img of imagens) {
+        if (signal && signal.aborted) {
+          const err = new Error('AbortError');
+          err.name = 'AbortError';
+          throw err;
+        }
         contadorImagens++;
         try {
           // Adicionar contador à prompt para diferenciar as imagens
@@ -3234,7 +3240,7 @@
             ? `${prompt} [Imagem ${contadorImagens}/${imagens.length}]` 
             : prompt;
             
-          const resultado = await enviarImagem(img.file, promptComContador);
+          const resultado = await enviarImagem(img.file, promptComContador, signal);
           
           // Adicionar separador entre resultados de imagens diferentes
           if (resultadoCompleto) {
@@ -3248,6 +3254,9 @@
           
           resultadoCompleto += resultado;
         } catch (error) {
+          if (error && (error.name === 'AbortError' || /abort/i.test(error.message || ''))) {
+            throw error;
+          }
           resultadoCompleto += `\n\nErro ao processar imagem ${contadorImagens}: ${error.message}`;
         }
       }
@@ -3305,9 +3314,11 @@
           
           // INICIA O RITUAL DA BARRA
           startLoaderBar();
+          updateInvokeButton(true);
+          currentStreamController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
           
           // Analisar imagens
-          const visionResult = await processarMultiplasImagens(attachedImages, prefixedPrompt);
+          const visionResult = await processarMultiplasImagens(attachedImages, prefixedPrompt, currentStreamController ? currentStreamController.signal : undefined);
           
           // Limpar imagem após uso
           removeImage();
@@ -3325,6 +3336,8 @@
           
           // Finalizar barra
           stopLoaderBar();
+          currentStreamController = null;
+          updateInvokeButton(false);
           
           // Limpar input e redimensionar textarea
           document.getElementById("userInput").value = "";
@@ -3332,10 +3345,17 @@
           return;
           
         } catch (error) {
+          if (error && (error.name === 'AbortError' || /abort/i.test(error.message || ''))) {
+            currentStreamController = null;
+            updateInvokeButton(false);
+            return;
+          }
           console.error('Erro na análise de imagem:', error);
           messages[messages.length - 1].content = `⚠️ Erro na análise da imagem: ${error.message}`;
           renderMessagesWithLiveMarkdown();
           stopLoaderBar();
+          currentStreamController = null;
+          updateInvokeButton(false);
           return;
         }
       }
