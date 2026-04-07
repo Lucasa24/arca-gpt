@@ -1836,6 +1836,8 @@
       object-fit: cover;
       display: block;
       filter: saturate(1.05) contrast(1.02);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     #imageZoomOverlay {
       position: fixed;
@@ -1952,6 +1954,15 @@
       font-size: 12px;
       line-height: 1;
       transform: translate(0.6px, -0.4px);
+    }
+    @media (max-width: 768px) {
+      .image-remove-btn {
+        left: 2px;
+        right: auto;
+      }
+      .image-remove-btn::before {
+        transform: translate(-0.2px, -0.4px);
+      }
     }
 
     @keyframes auto-pulse {
@@ -3009,11 +3020,15 @@
           const imgElement = document.createElement('img');
           imgElement.className = 'image-thumb';
           imgElement.src = e.target.result;
-          imgElement.addEventListener('click', function(){ openImageZoomById(imageId); });
+          imgElement.addEventListener('pointerup', function(e){
+            try { if (e && e.button != null && e.button !== 0) return; } catch {}
+            openImageZoomById(imageId);
+          });
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.className = 'image-remove-btn';
           removeBtn.setAttribute('aria-label', 'Remover imagem');
+          removeBtn.addEventListener('pointerup', function(e){ try { e.stopPropagation(); } catch {} });
           removeBtn.onclick = function() { removeSpecificImage(imageId); };
           imageContainer.appendChild(imgElement);
           imageContainer.appendChild(removeBtn);
