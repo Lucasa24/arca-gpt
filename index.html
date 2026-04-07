@@ -1838,6 +1838,7 @@
       filter: saturate(1.05) contrast(1.02);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      pointer-events: auto;
     }
     #imageZoomOverlay {
       position: fixed;
@@ -1936,6 +1937,7 @@
       transform: none !important;
       filter: none !important;
       z-index: 3;
+      pointer-events: auto;
     }
     .image-remove-btn:hover,
     .image-remove-btn:active,
@@ -1957,6 +1959,8 @@
       font-size: 10px;
       line-height: 1;
       transform: translate(0.5px, -0.3px);
+      color: rgba(245,245,245,0.95);
+      text-shadow: 0 0 2px rgba(0,0,0,0.6);
     }
 
     @media (max-width: 768px) {
@@ -3051,15 +3055,25 @@
           const imgElement = document.createElement('img');
           imgElement.className = 'image-thumb';
           imgElement.src = e.target.result;
-          imgElement.addEventListener('pointerup', function(e){
+          const openZoomIfAllowed = function(e) {
             try { if (e && e.button != null && e.button !== 0) return; } catch {}
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile && e && e.type === 'click') return;
+            if (!isMobile && e && e.type === 'pointerup') return;
+            try {
+              const isRemove = e && e.target && ((e.target.classList && e.target.classList.contains('image-remove-btn')) || (e.target.closest && e.target.closest('.image-remove-btn')));
+              if (isRemove) return;
+            } catch {}
             openImageZoomById(imageId);
-          });
+          };
+          imgElement.addEventListener('pointerup', openZoomIfAllowed, { passive: true });
+          imgElement.addEventListener('click', openZoomIfAllowed, { passive: true });
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.className = 'image-remove-btn';
           removeBtn.setAttribute('aria-label', 'Remover imagem');
-          removeBtn.addEventListener('pointerup', function(e){ try { e.stopPropagation(); } catch {} });
+          removeBtn.addEventListener('pointerup', function(e){ try { e.stopPropagation(); } catch {} }, { passive: true });
+          removeBtn.addEventListener('click', function(e){ try { e.stopPropagation(); } catch {} }, { passive: true });
           removeBtn.onclick = function() { removeSpecificImage(imageId); };
           imageContainer.appendChild(imgElement);
           imageContainer.appendChild(removeBtn);
