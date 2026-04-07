@@ -3316,6 +3316,22 @@
           startLoaderBar();
           updateInvokeButton(true);
           currentStreamController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          try {
+            const footer = document.querySelector('.fixed-footer');
+            const loaderEl = document.getElementById('loader');
+            window.requestAnimationFrame(() => {
+              try {
+                if (loaderEl && typeof loaderEl.scrollIntoView === 'function') {
+                  loaderEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+                if (footer && typeof footer.scrollTo === 'function') {
+                  footer.scrollTo({ top: footer.scrollHeight, behavior: 'smooth' });
+                } else if (footer) {
+                  footer.scrollTop = footer.scrollHeight;
+                }
+              } catch {}
+            });
+          } catch {}
           
           // Analisar imagens
           const visionResult = await processarMultiplasImagens(attachedImages, prefixedPrompt, currentStreamController ? currentStreamController.signal : undefined);
