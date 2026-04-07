@@ -1914,8 +1914,8 @@
       top: 2px;
       left: auto;
       right: 2px;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 9999px;
       border: 0 !important;
       background: transparent !important;
@@ -1956,9 +1956,9 @@
       content: '×';
       display: block;
       font-family: Arial, sans-serif;
-      font-size: 10px;
+      font-size: 9px;
       line-height: 1;
-      transform: translate(0.5px, -0.3px);
+      transform: translate(0.4px, -0.4px);
       color: rgba(245,245,245,0.95);
       text-shadow: 0 0 2px rgba(0,0,0,0.6);
     }
@@ -1969,7 +1969,7 @@
         right: auto;
       }
       .image-remove-btn::before {
-        transform: translate(-0.2px, -0.3px);
+        transform: translate(-0.2px, -0.4px);
       }
     }
 
@@ -1997,7 +1997,8 @@
         top: 6px;
         right: 6px;
       }
-      .zoom-meta { width: 100%; justify-content: center; }
+      .zoom-meta { width: 100%; justify-content: center; white-space: normal; }
+      .zoom-meta .zoom-name { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; text-align: center; }
     }
 
     @keyframes auto-pulse {
