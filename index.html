@@ -1859,6 +1859,7 @@
       border: 1px solid rgba(0,191,255,0.22);
       border-radius: 10px;
       box-shadow: 0 0 20px rgba(0,191,255,0.18);
+      box-sizing: border-box;
     }
     #imageZoomOverlay img {
       max-width: min(88vw, 720px);
@@ -1910,14 +1911,15 @@
     .image-remove-btn {
       position: absolute;
       top: 2px;
-      right: 1px;
-      width: 12px;
-      height: 12px;
+      left: auto;
+      right: 2px;
+      width: 10px;
+      height: 10px;
       border-radius: 9999px;
       border: 0 !important;
       background: transparent !important;
       background-color: transparent !important;
-      color: rgba(245,245,245,0.88);
+      color: rgba(245,245,245,0.86);
       font-size: 0;
       line-height: 0;
       display: grid;
@@ -1933,6 +1935,7 @@
       box-shadow: none !important;
       transform: none !important;
       filter: none !important;
+      z-index: 3;
     }
     .image-remove-btn:hover,
     .image-remove-btn:active,
@@ -1951,18 +1954,46 @@
       content: '×';
       display: block;
       font-family: Arial, sans-serif;
-      font-size: 12px;
+      font-size: 10px;
       line-height: 1;
-      transform: translate(0.6px, -0.4px);
+      transform: translate(0.5px, -0.3px);
     }
+
     @media (max-width: 768px) {
       .image-remove-btn {
         left: 2px;
         right: auto;
       }
       .image-remove-btn::before {
-        transform: translate(-0.2px, -0.4px);
+        transform: translate(-0.2px, -0.3px);
       }
+    }
+
+    @media (max-width: 768px) {
+      #imageZoomOverlay .zoom-content {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        padding: 8px;
+        gap: 8px;
+      }
+      #imageZoomOverlay img {
+        max-width: calc(100vw - 76px);
+        max-height: 70vh;
+      }
+      .zoom-prev, .zoom-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+      }
+      .zoom-prev { left: 6px; }
+      .zoom-next { right: 6px; }
+      .zoom-close {
+        top: 6px;
+        right: 6px;
+      }
+      .zoom-meta { width: 100%; justify-content: center; }
     }
 
     @keyframes auto-pulse {
