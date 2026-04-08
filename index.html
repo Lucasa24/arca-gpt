@@ -2262,6 +2262,197 @@
       animation: none !important;
       transform-origin: 50% 50%;
     }
+    .arca-plus-btn .helm-arrow-white {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      border-right: 2px solid rgba(0,191,255,0.95);
+      border-top: 2px solid rgba(0,191,255,0.95);
+      opacity: 0.75;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      pointer-events: none;
+    }
+    .arca-plus-btn .helm-hover-layer {
+      position: absolute;
+      inset: -6px;
+      border-radius: 9999px;
+      background: rgba(0,191,255,0.05);
+      opacity: 0;
+      transform: scale(0.88);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .arca-plus-btn .helm-hover-layer::before {
+      content: '';
+      position: absolute;
+      inset: -45%;
+      background: linear-gradient(90deg, transparent, rgba(245,245,245,0.18), transparent);
+      transform: translateX(-45%) rotate(18deg);
+      transition: transform 0.55s ease;
+    }
+    .arca-plus-btn .helm-hover-layer .helm-arrow-grey {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      border-right: 2px solid rgba(230,230,230,0.68);
+      border-top: 2px solid rgba(230,230,230,0.68);
+    }
+    .arca-plus-btn:hover .helm-hover-layer {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .arca-plus-btn:hover .helm-hover-layer::before {
+      transform: translateX(70%) rotate(18deg);
+    }
+    .arca-plus-btn:hover .helm-arrow-white {
+      opacity: 0.18;
+      transform: translateY(-50%) rotate(45deg) translateX(3px);
+    }
+    .arca-plus-btn.pulse .helm-hover-layer {
+      opacity: 1;
+      transform: scale(1.04);
+      animation: helm-pulse 520ms ease-out;
+    }
+    @keyframes helm-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0,191,255,0); }
+      35% { box-shadow: 0 0 0 10px rgba(0,191,255,0.12); }
+      100% { box-shadow: 0 0 0 16px rgba(0,191,255,0); }
+    }
+
+    .helm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+      z-index: 160;
+    }
+    .helm-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .helm-panel {
+      position: absolute;
+      right: 14px;
+      bottom: calc(var(--footer-height) + 14px);
+      width: min(440px, calc(100vw - 28px));
+      max-height: min(70vh, calc(100vh - var(--footer-height) - 44px));
+      background: linear-gradient(180deg, rgba(10,10,10,0.98), rgba(5,5,5,0.98));
+      border: 1px solid rgba(0,191,255,0.22);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.08), 0 12px 34px rgba(0,0,0,0.62), 0 0 18px rgba(0,191,255,0.12);
+      border-radius: 10px;
+      clip-path: polygon(0% 8%, 8% 0%, 92% 0%, 100% 8%, 100% 100%, 0% 100%);
+      transform: translateY(10px) scale(0.98);
+      opacity: 0;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+      overflow: hidden;
+    }
+    .helm-overlay.open .helm-panel {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .helm-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0,191,255,0.14);
+      background: rgba(0,191,255,0.04);
+    }
+    .helm-panel-title {
+      font-family: 'Cinzel', 'Georgia', serif;
+      letter-spacing: 1px;
+      font-size: 0.85rem;
+      color: rgba(0,191,255,0.92);
+      text-transform: uppercase;
+      user-select: none;
+    }
+    .helm-close {
+      background: transparent;
+      border: 1px solid rgba(0,191,255,0.18);
+      color: rgba(0,191,255,0.86);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .helm-close:focus,
+    .helm-close:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
+    .helm-close:hover {
+      background: rgba(0,191,255,0.08);
+      border-color: rgba(0,191,255,0.30);
+      transform: scale(1.04);
+    }
+    .helm-panel-body {
+      padding: 10px 12px;
+      overflow: auto;
+      max-height: inherit;
+    }
+    .helm-section-label {
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(245,245,245,0.58);
+      margin: 0 0 8px 0;
+      user-select: none;
+    }
+    .helm-option {
+      width: 100%;
+      text-align: left;
+      padding: 10px 10px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(0,191,255,0.14);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      color: rgba(245,245,245,0.9);
+      display: block;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .helm-option:focus,
+    .helm-option:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
+    .helm-option:hover {
+      background: rgba(0,191,255,0.06);
+      border-color: rgba(0,191,255,0.26);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 18px rgba(0,191,255,0.10);
+      transform: translateY(-1px);
+    }
+    .helm-option.active {
+      background: rgba(0,191,255,0.10);
+      border-color: rgba(0,191,255,0.42);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.14), 0 0 22px rgba(0,191,255,0.16);
+    }
+    .helm-option-title {
+      font-size: 0.86rem;
+      letter-spacing: 0.4px;
+      color: rgba(0,191,255,0.92);
+      margin: 0 0 6px 0;
+    }
+    .helm-option-desc {
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: rgba(245,245,245,0.72);
+    }
 
     /* Botão reset colado no canto inferior direito da página */
     #cornerReset {
@@ -2473,7 +2664,9 @@
           <textarea id="userInput" placeholder="Escreva com presença. Aqui não há espaço para palavras vazias."></textarea>
         </div>
         <button onclick="handleInvokeClick()" class="invocar-btn">Invocar</button>
-        <button class="arca-plus-btn" onclick="document.getElementById('imageInput').click()" title="Anexar imagem para análise visual">
+        <button type="button" class="arca-plus-btn" id="helmBtn" aria-label="Abrir Timão" aria-expanded="false" title="Abrir Timão">
+           <span class="helm-arrow-white" aria-hidden="true"></span>
+           <span class="helm-hover-layer" aria-hidden="true"><span class="helm-arrow-grey"></span></span>
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
              <circle cx="12" cy="12" r="9"></circle>
              <path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"></path>
@@ -2513,6 +2706,26 @@
       <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer Login</a> • </p>
     </div>
   </main>
+  <div id="helmOverlay" class="helm-overlay" aria-hidden="true">
+    <div id="helmPanel" class="helm-panel" role="dialog" aria-label="Timão da Arca">
+      <div class="helm-panel-header">
+        <div class="helm-panel-title">⎈ Timão</div>
+        <button type="button" class="helm-close" id="helmCloseBtn" aria-label="Fechar Timão">✕</button>
+      </div>
+      <div class="helm-panel-body">
+        <div class="helm-section-label">Voz</div>
+        <button type="button" class="helm-option" id="helmOptRealtime">
+          <div class="helm-option-title">Realtime API (Nova API de Voz em Tempo Real)</div>
+          <div class="helm-option-desc">
+            <div>É a tecnologia mais avançada, usada para criar assistentes de voz conversacionais de baixa latência (tempo real).</div>
+            <div>Recursos: suporta conversas "fala-para-fala" (input de áudio -&gt; output de áudio).</div>
+            <div>Vozes: oferece suporte nativo às seis vozes predefinidas da OpenAI.</div>
+            <div>Funcionalidades: inclui entrada de imagens e suporte a chamadas telefônicas via SIP.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Botão de acesso ao portal (login) no canto inferior direito -->
   <button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="showAuthPortal()">🗝</button>
@@ -2603,6 +2816,53 @@
       textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
 
+    function setHelmOpen(open) {
+      const overlay = document.getElementById('helmOverlay');
+      const btn = document.getElementById('helmBtn');
+      if (!overlay || !btn) return;
+      overlay.classList.toggle('open', !!open);
+      overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function toggleHelm() {
+      const overlay = document.getElementById('helmOverlay');
+      if (!overlay) return;
+      setHelmOpen(!overlay.classList.contains('open'));
+    }
+
+    function setVoiceApiMode(mode) {
+      try { localStorage.setItem('arcaVoiceApiMode', mode); } catch {}
+      updateHelmUI();
+    }
+
+    function updateHelmUI() {
+      const mode = (localStorage.getItem('arcaVoiceApiMode') || '').trim();
+      const optRealtime = document.getElementById('helmOptRealtime');
+      if (optRealtime) optRealtime.classList.toggle('active', mode === 'realtime');
+    }
+
+    (function initHelmPanel() {
+      const overlay = document.getElementById('helmOverlay');
+      const closeBtn = document.getElementById('helmCloseBtn');
+      const optRealtime = document.getElementById('helmOptRealtime');
+      if (closeBtn) closeBtn.addEventListener('click', () => setHelmOpen(false));
+      if (overlay) {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) setHelmOpen(false);
+        });
+      }
+      if (optRealtime) {
+        optRealtime.addEventListener('click', () => {
+          setVoiceApiMode('realtime');
+        });
+      }
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setHelmOpen(false);
+      });
+      updateHelmUI();
+    })();
+
     (function initWheelSteering() {
       const btn = document.querySelector('.arca-plus-btn');
       if (!btn) return;
@@ -2645,6 +2905,13 @@
         active = true;
         if (btn.setPointerCapture) btn.setPointerCapture(e.pointerId);
         updateFromPointer(e);
+      });
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.add('pulse');
+        setTimeout(() => btn.classList.remove('pulse'), 560);
+        toggleHelm();
       });
       const end = (e) => {
         if (btn.releasePointerCapture) {
