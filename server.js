@@ -146,6 +146,19 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
+  } else if (req.method === 'POST' && req.url === '/api/realtimeSession') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const handler = require('./api/realtimeSession.js');
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
   } else if (req.method === 'POST' && req.url === '/api/auth') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
