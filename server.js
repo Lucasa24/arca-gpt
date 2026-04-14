@@ -152,7 +152,7 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         req.body = JSON.parse(body);
-        const handler = require('./lib/realtimeSession.js');
+        const handler = require('./api/realtimeSession.js');
         await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
