@@ -3019,8 +3019,21 @@
       setRealtimeUi('connecting');
 
       try {
-        const sessionRes = await fetch('/api/realtimeSession', { method: 'POST' });
-        const sessionData = await sessionRes.json();
+        const sessionRes = await fetch('/api/realtimeSession', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        let sessionData;
+        const contentType = sessionRes.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          sessionData = await sessionRes.json();
+        } else {
+          const text = await sessionRes.text();
+          console.error('[ARCA][REALTIME] Non-JSON response:', text);
+          throw new Error(`Resposta do servidor não é JSON (${sessionRes.status})`);
+        }
+
         if (!sessionRes.ok) throw new Error(sessionData.error || 'Falha ao obter sessão');
 
         const { client_secret: clientSecret, model } = sessionData;
@@ -5809,7 +5822,16 @@ div.innerHTML = DOMPurify.sanitize(html, {
       } catch {}
       headers['Cache-Control'] = 'no-store';
       const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body || {}), cache: 'no-store' });
-      const json = await res.json();
+      
+      if (res.status === 401) {
+        console.warn(`[ARCA][AUTH] 401 Unauthorized em ${path}. Sincronização pausada.`);
+        // Se der 401, paramos o sync para não inundar o log do Vercel
+        clearInterval(window.__arcaHistoryTimer);
+        clearInterval(window.__arcaMsgTimer);
+        return { error: 'Unauthorized', messages: [] };
+      }
+
+      const json = await res.json().catch(() => ({}));
       return json;
     }
 
