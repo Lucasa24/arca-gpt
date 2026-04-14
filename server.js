@@ -120,27 +120,14 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/speech') {
+  } else if (req.method === 'POST' && (req.url === '/api/speech' || req.url === '/api/transcribe')) {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
         req.body = JSON.parse(body);
-        const speechHandler = require('./api/speech.js');
-        await speechHandler(req, res);
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
-      }
-    });
-  } else if (req.method === 'POST' && req.url === '/api/transcribe') {
-    let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', async () => {
-      try {
-        req.body = JSON.parse(body);
-        const transcribeHandler = require('./api/transcribe.js');
-        await transcribeHandler(req, res);
+        const handler = require('./api/audio.js');
+        await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
