@@ -2971,6 +2971,13 @@
         actionBtn.textContent = 'ENCERRAR';
         actionBtn.style.borderColor = '#ff4d4d';
         actionBtn.style.color = '#ff4d4d';
+      } else if (status === 'listen') {
+        circle.classList.add('active'); // Mantém o brilho mas muda o texto
+        statusText.textContent = 'ESCUTA RITUAL';
+        statusText.style.color = '#f5f5f5';
+        actionBtn.textContent = 'ENCERRAR';
+        actionBtn.style.borderColor = '#ff4d4d';
+        actionBtn.style.color = '#ff4d4d';
       } else if (status === 'connecting') {
         circle.classList.add('connecting');
         statusText.textContent = 'CONECTANDO';
@@ -3059,9 +3066,16 @@
           }
         };
 
-        const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        arcaRealtimeState.localStream = localStream;
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        let localStream = null;
+        let micError = null;
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          arcaRealtimeState.localStream = localStream;
+          localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        } catch (mErr) {
+          console.warn('[ARCA][REALTIME] Falha ao acessar microfone:', mErr);
+          micError = mErr;
+        }
 
         const dc = pc.createDataChannel('oai-events');
         arcaRealtimeState.dc = dc;
@@ -3099,12 +3113,11 @@
 
         arcaRealtimeState.connecting = false;
         arcaRealtimeState.active = true;
-        setRealtimeUi('active');
+        setRealtimeUi(micError ? 'listen' : 'active');
       } catch (err) {
         console.error('[ARCA][REALTIME]', err);
         arcaRealtimeState.connecting = false;
         setRealtimeUi('error');
-        // Não para imediatamente para mostrar o erro na UI
       }
     }
 
@@ -5816,16 +5829,22 @@ div.innerHTML = DOMPurify.sanitize(html, {
     window.handleLogin = handleLogin;
     async function apiPost(path, body) {
       const headers = { 'Content-Type': 'application/json' };
+      let jwt = null;
       try {
-        const jwt = localStorage.getItem('sb_jwt');
+        jwt = localStorage.getItem('sb_jwt');
         if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
       } catch {}
       headers['Cache-Control'] = 'no-store';
       const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body || {}), cache: 'no-store' });
       
       if (res.status === 401) {
-        console.warn(`[ARCA][AUTH] 401 Unauthorized em ${path}. Sincronização pausada.`);
-        // Se der 401, paramos o sync para não inundar o log do Vercel
+        if (jwt) {
+          console.warn(`[ARCA][AUTH] Sessão expirada ou inválida em ${path}. Sincronização pausada.`);
+          // Se tinha um token e deu 401, a sessão expirou
+          localStorage.removeItem('userData');
+          localStorage.removeItem('sb_jwt');
+          userLoggedIn = false;
+        }
         clearInterval(window.__arcaHistoryTimer);
         clearInterval(window.__arcaMsgTimer);
         return { error: 'Unauthorized', messages: [] };
