@@ -2411,18 +2411,18 @@
       color: rgba(245,245,245,0.58);
       margin: 0 0 8px 0;
       user-select: none;
+      display: none; /* Removido por solicitação */
     }
     .helm-option {
       width: 100%;
       text-align: left;
-      padding: 10px 10px;
-      background: rgba(0,0,0,0.28);
-      border: 1px solid rgba(0,191,255,0.14);
-      border-radius: 8px;
+      padding: 0; /* Ajustado para o novo design */
+      background: transparent;
+      border: none;
       cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-      color: rgba(245,245,245,0.9);
-      display: block;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       outline: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -2432,26 +2432,131 @@
       box-shadow: none;
     }
     .helm-option:hover {
-      background: rgba(0,191,255,0.06);
-      border-color: rgba(0,191,255,0.26);
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.06), 0 0 18px rgba(0,191,255,0.10);
-      transform: translateY(-1px);
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      transform: none;
     }
     .helm-option.active {
-      background: rgba(0,191,255,0.10);
-      border-color: rgba(0,191,255,0.42);
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.14), 0 0 22px rgba(0,191,255,0.16);
+      background: transparent;
+      border: none;
+      box-shadow: none;
     }
+
+    /* Estilo Timeline Circle Arca */
+    .timeline__circle {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 20px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .timeline__circle__shape,
+    .timeline__circle__mask {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      pointer-events: none;
+    }
+    .timeline__circle__shape circle {
+      fill: none;
+      stroke: rgba(0, 191, 255, 0.15);
+      stroke-width: 1;
+    }
+    .timeline__circle__mask circle {
+      fill: none;
+      stroke: #00bfff;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 6253.18; /* 2 * PI * 998 */
+      stroke-dashoffset: 6253.18;
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+      filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.6));
+    }
+    .timeline__circle.active .timeline__circle__mask circle {
+      stroke-dashoffset: 0;
+      animation: timeline-glow 2s infinite alternate;
+    }
+    @keyframes timeline-glow {
+      from { filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.6)); stroke: #00bfff; }
+      to { filter: drop-shadow(0 0 15px rgba(0, 191, 255, 0.9)); stroke: #33ccff; }
+    }
+    .timeline__title {
+      position: absolute;
+      top: 15%;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(0, 191, 255, 0.6);
+    }
+    .timeline__text {
+      text-align: center;
+      z-index: 2;
+    }
+    .timeline__text__year {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      color: rgba(245, 245, 245, 0.5);
+      margin-bottom: 4px;
+    }
+    .timeline__text__title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: #f5f5f5;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(0, 191, 255, 0.4);
+    }
+    .timeline__button {
+      margin-top: 15px;
+      z-index: 2;
+    }
+    .button--bordered {
+      background: transparent;
+      border: 1px solid rgba(0, 191, 255, 0.4);
+      color: #00bfff;
+      padding: 6px 20px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+      clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
+    }
+    .button--bordered:hover {
+      background: rgba(0, 191, 255, 0.1);
+      border-color: #00bfff;
+      box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
+      transform: scale(1.05);
+    }
+    .timeline__circle.active .button--bordered {
+      background: rgba(179, 0, 0, 0.1);
+      border-color: #ff4d4d;
+      color: #ff4d4d;
+    }
+    .timeline__circle.connecting .timeline__circle__mask circle {
+      animation: timeline-connecting 1.5s linear infinite;
+      stroke-dashoffset: 5000;
+    }
+    @keyframes timeline-connecting {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     .helm-option-title {
-      font-size: 0.86rem;
-      letter-spacing: 0.4px;
-      color: rgba(0,191,255,0.92);
-      margin: 0 0 6px 0;
+      display: none; /* Removido por solicitação */
     }
     .helm-option-desc {
-      font-size: 0.78rem;
-      line-height: 1.4;
-      color: rgba(245,245,245,0.72);
+      display: none; /* Removido por solicitação */
     }
 
     /* Botão reset colado no canto inferior direito da página */
@@ -2715,12 +2820,23 @@
       <div class="helm-panel-body">
         <div class="helm-section-label">Voz</div>
         <button type="button" class="helm-option" id="helmOptRealtime">
-          <div class="helm-option-title">Realtime API (Nova API de Voz em Tempo Real)</div>
-          <div class="helm-option-desc">
-            <div>É a tecnologia mais avançada, usada para criar assistentes de voz conversacionais de baixa latência (tempo real).</div>
-            <div>Recursos: suporta conversas "fala-para-fala" (input de áudio -&gt; output de áudio).</div>
-            <div>Vozes: oferece suporte nativo às seis vozes predefinidas da OpenAI.</div>
-            <div>Funcionalidades: inclui entrada de imagens e suporte a chamadas telefônicas via SIP.</div>
+          <div class="timeline__circle" id="realtimeCircle">
+            <div class="timeline__title">PRESENÇA</div>
+            <svg class="timeline__circle__shape" version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 2000 2000">
+              <circle cx="1000" cy="1000" r="998"></circle>
+            </svg>
+            <svg class="timeline__circle__mask" version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 2000 2000">
+              <circle id="mask-circle" cx="1000" cy="1000" r="998"></circle>
+            </svg>
+            <div class="timeline__text">
+              <div class="timeline__text__container">
+                <div class="timeline__text__year" id="realtimeStatusText">OFFLINE</div>
+                <div class="timeline__text__title">VOZ RITUAL</div>
+              </div>
+            </div>
+            <div class="timeline__button">
+              <button class="button--bordered" id="realtimeActionBtn">ATIVAR</button>
+            </div>
           </div>
         </button>
       </div>
@@ -2831,6 +2947,154 @@
       setHelmOpen(!overlay.classList.contains('open'));
     }
 
+    const arcaRealtimeState = {
+      active: false,
+      connecting: false,
+      pc: null,
+      dc: null,
+      localStream: null,
+      audioEl: null
+    };
+
+    function setRealtimeUi(status) {
+      const circle = document.getElementById('realtimeCircle');
+      const statusText = document.getElementById('realtimeStatusText');
+      const actionBtn = document.getElementById('realtimeActionBtn');
+      if (!circle || !statusText || !actionBtn) return;
+
+      circle.classList.remove('active', 'connecting', 'error');
+      
+      if (status === 'active') {
+        circle.classList.add('active');
+        statusText.textContent = 'ONLINE';
+        statusText.style.color = '#00bfff';
+        actionBtn.textContent = 'ENCERRAR';
+        actionBtn.style.borderColor = '#ff4d4d';
+        actionBtn.style.color = '#ff4d4d';
+      } else if (status === 'connecting') {
+        circle.classList.add('connecting');
+        statusText.textContent = 'CONECTANDO';
+        statusText.style.color = '#f5f5f5';
+        actionBtn.textContent = 'AGUARDE';
+        actionBtn.disabled = true;
+      } else if (status === 'error') {
+        circle.classList.add('error');
+        statusText.textContent = 'FALHA';
+        statusText.style.color = '#ff4d4d';
+        actionBtn.textContent = 'REENTRAR';
+        actionBtn.disabled = false;
+        actionBtn.style.borderColor = '#00bfff';
+        actionBtn.style.color = '#00bfff';
+      } else {
+        statusText.textContent = 'OFFLINE';
+        statusText.style.color = 'rgba(245, 245, 245, 0.5)';
+        actionBtn.textContent = 'ATIVAR';
+        actionBtn.disabled = false;
+        actionBtn.style.borderColor = 'rgba(0, 191, 255, 0.4)';
+        actionBtn.style.color = '#00bfff';
+      }
+    }
+
+    async function stopRealtimeVoice() {
+      if (arcaRealtimeState.dc) { try { arcaRealtimeState.dc.close(); } catch {} arcaRealtimeState.dc = null; }
+      if (arcaRealtimeState.pc) { try { arcaRealtimeState.pc.close(); } catch {} arcaRealtimeState.pc = null; }
+      if (arcaRealtimeState.localStream) {
+        arcaRealtimeState.localStream.getTracks().forEach(t => t.stop());
+        arcaRealtimeState.localStream = null;
+      }
+      if (arcaRealtimeState.audioEl) {
+        arcaRealtimeState.audioEl.srcObject = null;
+        try { arcaRealtimeState.audioEl.remove(); } catch {}
+        arcaRealtimeState.audioEl = null;
+      }
+      arcaRealtimeState.active = false;
+      arcaRealtimeState.connecting = false;
+      setRealtimeUi('idle');
+    }
+
+    async function startRealtimeVoice() {
+      if (arcaRealtimeState.active || arcaRealtimeState.connecting) return stopRealtimeVoice();
+      
+      arcaRealtimeState.connecting = true;
+      setRealtimeUi('connecting');
+
+      try {
+        const sessionRes = await fetch('/api/realtimeSession', { method: 'POST' });
+        const sessionData = await sessionRes.json();
+        if (!sessionRes.ok) throw new Error(sessionData.error || 'Falha ao obter sessão');
+
+        const { client_secret: clientSecret, model } = sessionData;
+        const pc = new RTCPeerConnection();
+        arcaRealtimeState.pc = pc;
+
+        const audioEl = document.createElement('audio');
+        audioEl.autoplay = true;
+        audioEl.playsInline = true;
+        audioEl.style.display = 'none';
+        document.body.appendChild(audioEl);
+        arcaRealtimeState.audioEl = audioEl;
+
+        pc.ontrack = (e) => {
+          const stream = e.streams && e.streams[0];
+          if (stream && audioEl.srcObject !== stream) audioEl.srcObject = stream;
+        };
+
+        pc.onconnectionstatechange = () => {
+          const s = pc.connectionState;
+          if (s === 'failed' || s === 'disconnected' || s === 'closed') {
+            stopRealtimeVoice();
+          }
+        };
+
+        const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        arcaRealtimeState.localStream = localStream;
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+        const dc = pc.createDataChannel('oai-events');
+        arcaRealtimeState.dc = dc;
+
+        dc.onopen = () => {
+          try {
+            dc.send(JSON.stringify({
+              type: 'session.update',
+              session: {
+                instructions: 'Você é A Arca. Responda em pt-BR com presença e precisão. Sem encheção. Sem despedida.',
+                turn_detection: { type: 'server_vad' }
+              }
+            }));
+          } catch {}
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const answerRes = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${clientSecret}`,
+            'Content-Type': 'application/sdp'
+          },
+          body: offer.sdp
+        });
+        if (!answerRes.ok) {
+          const errText = await answerRes.text();
+          console.error('[ARCA][REALTIME] Handshake error body:', errText);
+          throw new Error(`realtime handshake falhou (${answerRes.status})`);
+        }
+        const answerSdp = await answerRes.text();
+        await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+        arcaRealtimeState.connecting = false;
+        arcaRealtimeState.active = true;
+        setRealtimeUi('active');
+      } catch (err) {
+        console.error('[ARCA][REALTIME]', err);
+        arcaRealtimeState.connecting = false;
+        setRealtimeUi('error');
+        // Não para imediatamente para mostrar o erro na UI
+      }
+    }
+
     function setVoiceApiMode(mode) {
       try { localStorage.setItem('arcaVoiceApiMode', mode); } catch {}
       updateHelmUI();
@@ -2846,6 +3110,8 @@
       const overlay = document.getElementById('helmOverlay');
       const closeBtn = document.getElementById('helmCloseBtn');
       const optRealtime = document.getElementById('helmOptRealtime');
+      const actionBtn = document.getElementById('realtimeActionBtn');
+      
       if (closeBtn) closeBtn.addEventListener('click', () => setHelmOpen(false));
       if (overlay) {
         overlay.addEventListener('click', (e) => {
@@ -2853,14 +3119,24 @@
         });
       }
       if (optRealtime) {
-        optRealtime.addEventListener('click', () => {
+        optRealtime.addEventListener('click', (e) => {
+          // Se clicou no botão interno de ação, não troca apenas o modo
+          if (e.target.closest('.button--bordered')) return;
           setVoiceApiMode('realtime');
+        });
+      }
+      if (actionBtn) {
+        actionBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          startRealtimeVoice();
         });
       }
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') setHelmOpen(false);
       });
       updateHelmUI();
+      setRealtimeUi('idle');
     })();
 
     (function initWheelSteering() {
