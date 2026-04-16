@@ -2835,7 +2835,7 @@
               </div>
             </div>
             <div class="timeline__button">
-              <button class="button--bordered" id="realtimeActionBtn">ATIVAR</button>
+              <button class="button--bordered" id="realtimeActionBtn" disabled style="border-color: rgba(255, 255, 255, 0.1); color: rgba(245, 245, 245, 0.4); cursor: not-allowed;"><span style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">🔒</span> BLOQUEADO</button>
             </div>
           </div>
         </button>
@@ -2971,6 +2971,7 @@
         actionBtn.textContent = 'ENCERRAR';
         actionBtn.style.borderColor = '#ff4d4d';
         actionBtn.style.color = '#ff4d4d';
+        actionBtn.style.display = 'inline-block';
       } else if (status === 'listen') {
         circle.classList.add('active'); // Mantém o brilho mas muda o texto
         statusText.textContent = 'ESCUTA RITUAL';
@@ -2978,12 +2979,14 @@
         actionBtn.textContent = 'ENCERRAR';
         actionBtn.style.borderColor = '#ff4d4d';
         actionBtn.style.color = '#ff4d4d';
+        actionBtn.style.display = 'inline-block';
       } else if (status === 'connecting') {
         circle.classList.add('connecting');
         statusText.textContent = 'CONECTANDO';
         statusText.style.color = '#f5f5f5';
         actionBtn.textContent = 'AGUARDE';
         actionBtn.disabled = true;
+        actionBtn.style.display = 'inline-block';
       } else if (status === 'error') {
         circle.classList.add('error');
         statusText.textContent = 'FALHA';
@@ -2992,13 +2995,16 @@
         actionBtn.disabled = false;
         actionBtn.style.borderColor = '#00bfff';
         actionBtn.style.color = '#00bfff';
+        actionBtn.style.display = 'inline-block';
       } else {
         statusText.textContent = 'OFFLINE';
         statusText.style.color = 'rgba(245, 245, 245, 0.5)';
-        actionBtn.textContent = 'ATIVAR';
-        actionBtn.disabled = false;
-        actionBtn.style.borderColor = 'rgba(0, 191, 255, 0.4)';
-        actionBtn.style.color = '#00bfff';
+        actionBtn.innerHTML = '<span style="font-size: 1.1em; vertical-align: middle; margin-right: 4px;">🔒</span> BLOQUEADO';
+        actionBtn.disabled = true;
+        actionBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        actionBtn.style.color = 'rgba(245, 245, 245, 0.4)';
+        actionBtn.style.display = 'inline-block';
+        actionBtn.style.cursor = 'not-allowed';
       }
     }
 
@@ -3020,6 +3026,10 @@
     }
 
     async function startRealtimeVoice() {
+      // Realtime temporariamente bloqueado por ordem superior
+      console.warn('[ARCA][REALTIME] Funcionalidade bloqueada temporariamente.');
+      return;
+
       if (arcaRealtimeState.active || arcaRealtimeState.connecting) return stopRealtimeVoice();
       
       arcaRealtimeState.connecting = true;
@@ -3075,6 +3085,13 @@
         } catch (mErr) {
           console.warn('[ARCA][REALTIME] Falha ao acessar microfone:', mErr);
           micError = mErr;
+          alert("⚠️ Microfone não detectado ou acesso negado. A Arca entrará em modo de ESCUTA RITUAL (apenas áudio de saída).");
+        }
+
+        if (micError) {
+          // Se não há mic, a OpenAI Rejeita a oferta sem seção de áudio.
+          // Precisamos criar um transceptor de áudio apenas de recepção (recvonly)
+          pc.addTransceiver('audio', { direction: 'recvonly' });
         }
 
         const dc = pc.createDataChannel('oai-events');
@@ -3089,6 +3106,23 @@
                 turn_detection: { type: 'server_vad' }
               }
             }));
+            // Saudação inicial após configurar a sessão
+            setTimeout(() => {
+              try {
+                dc.send(JSON.stringify({
+                  type: 'conversation.item.create',
+                  item: {
+                    type: 'message',
+                    role: 'user',
+                    content: [{
+                      type: 'input_text',
+                      text: 'Olá! Eu sou A Arca, sua presença nesta travessia. Como posso iluminar seu caminho hoje? Qual é a sua dúvida?'
+                    }]
+                  }
+                }));
+                dc.send(JSON.stringify({ type: 'response.create' }));
+              } catch {}
+            }, 500);
           } catch {}
         };
 
