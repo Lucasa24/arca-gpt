@@ -96,7 +96,7 @@ async function handler(req, res) {
     // Definição global da injeção para usar em ambos os casos
     const systemInjection = { 
       role: "system", 
-      content: "DIRETRIZ DE EXTENSÃO: Resposta com densidade ajustada à complexidade. NÃO GERE FECHAMENTO/DESPEDIDA NO FINAL (o sistema fará isso). Pare após o ultimato." 
+      content: "DIRETRIZ DE DENSIDADE: Sua resposta deve ter extensão proporcional à complexidade do pedido. Para perguntas simples ou saudações, seja breve (3-5 linhas). Para diagnósticos, planos ou análises profundas, use toda a extensão necessária para ser exaustivo, mantendo a densidade. NÃO GERE FECHAMENTO/DESPEDIDA NO FINAL (o sistema fará isso). Pare após o ultimato." 
     };
 
     const recordForSpeed = global.threadMemory?.get(threadId);
@@ -167,7 +167,7 @@ async function handler(req, res) {
         messages: [...conversationWindow, systemInjection],
         stream: true,
         temperature: isFreeFast ? 0.75 : 0.85,
-        max_tokens: isFreeFast ? 900 : 16000,
+        max_tokens: isFreeFast ? 1200 : 16384,
         top_p: 1.0,
         frequency_penalty: 0.0,
         presence_penalty: 0.3
@@ -220,7 +220,7 @@ async function handler(req, res) {
         messages: [...conversationWindow, systemInjectionFallback],
         stream: true,
         temperature: isFreeFast ? 0.75 : 0.85,
-        max_tokens: isFreeFast ? 900 : 16000,
+        max_tokens: isFreeFast ? 1200 : 16384,
         top_p: 1.0,
         frequency_penalty: 0.0,
         presence_penalty: 0.3,
