@@ -117,8 +117,13 @@ module.exports = async function handler(req, res) {
             { type: "text", text: prompt || "Analise a imagem e dê um diagnóstico executável." },
             { type: "image_url", image_url: { url: dataUrl } }
           ]
+        },
+        {
+          role: "system",
+          content: "DIRETRIZ DE DENSIDADE: Responda com extensão proporcional à complexidade visual e do prompt. Seja breve para saudações, mas exaustivo para diagnósticos e planos de ação. Maximize a utilidade sem redundância."
         }
-      ]
+      ],
+      max_tokens: 16384
     };
 
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
