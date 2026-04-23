@@ -1349,6 +1349,10 @@
       scrollbar-width: thin;
       scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.25);
     }
+    .fixed-footer.peteca-open {
+      overflow: visible;
+      z-index: 10000;
+    }
     .fixed-footer::-webkit-scrollbar { width: 8px; }
     .fixed-footer::-webkit-scrollbar-track {
       background: rgba(0,0,0,0.25);
@@ -3289,10 +3293,12 @@
       const btn = document.getElementById('modePetecaBtn');
       const menu = document.getElementById('modePetecaMenu');
       if (!wrap || !btn || !menu) return;
+      const footer = wrap.closest('.fixed-footer');
 
       const setOpen = (v) => {
         wrap.classList.toggle('open', v);
         btn.setAttribute('aria-expanded', v ? 'true' : 'false');
+        if (footer) footer.classList.toggle('peteca-open', v);
       };
 
       btn.addEventListener('pointerenter', (e) => {
