@@ -5553,10 +5553,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
       
       // Atualiza o placeholder do textarea de acordo com o modo
       const userInput = document.getElementById('userInput');
-      if (mode === 'ritual') {
-        userInput.placeholder = 'Escreva com presença. Aqui não há espaço para palavras vazias.';
-      } else {
-        userInput.placeholder = 'Digite sua instrução técnica de forma clara e objetiva.';
+      if (userInput) {
+        if (mode === 'ritual') {
+          userInput.placeholder = 'Escreva com presença. Aqui não há espaço para palavras vazias.';
+        } else {
+          userInput.placeholder = 'Digite sua instrução técnica de forma clara e objetiva.';
+        }
       }
     }
 
@@ -5902,6 +5904,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
       setPersonaMode(savedMode);
       const savedModelMode = localStorage.getItem('arcaModelMode') || 'auto';
       setModelMode(savedModelMode);
+
+      const ritualBtn = document.getElementById('ritualModeBtn');
+      const tecnicoBtn = document.getElementById('tecnicoModeBtn');
+      if (ritualBtn) ritualBtn.addEventListener('pointerdown', () => setPersonaMode('ritual'));
+      if (tecnicoBtn) tecnicoBtn.addEventListener('pointerdown', () => setPersonaMode('tecnico'));
+
+      const autoBtn = document.getElementById('modelAutoBtn');
+      const fastBtn = document.getElementById('modelFastBtn');
+      const deepBtn = document.getElementById('modelDeepBtn');
+      const geminiBtn = document.getElementById('modelGeminiBtn');
+      if (autoBtn) autoBtn.addEventListener('pointerdown', () => setModelMode('auto'));
+      if (fastBtn) fastBtn.addEventListener('pointerdown', () => setModelMode('fast'));
+      if (deepBtn) deepBtn.addEventListener('pointerdown', () => setModelMode('deep'));
+      if (geminiBtn) geminiBtn.addEventListener('pointerdown', () => setModelMode('gemini'));
       
       const whatsappConsent = document.getElementById('whatsappConsent');
       const whatsappField = document.getElementById('whatsappField');
