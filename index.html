@@ -1611,7 +1611,7 @@
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       gap: 10px;
       padding: 12px;
       background: rgba(10, 10, 10, 0.98);
@@ -1646,6 +1646,60 @@
       gap: 4px;
       flex: 1;
       justify-content: center;
+    }
+
+    .mode-peteca-menu .mode-row--functions {
+      justify-content: flex-start;
+    }
+
+    .mode-peteca-menu .mode-functions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .mode-peteca-menu .peteca-fn-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+      color: #ff5500;
+      transition: color 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mode-peteca-menu .peteca-fn-btn:hover { color: #ff7a33; }
+
+    .mode-peteca-menu .peteca-fn-btn:focus,
+    .mode-peteca-menu .peteca-fn-btn:focus-visible { outline: none; }
+
+    .mode-peteca-menu .peteca-fn-indicator {
+      width: 14px;
+      height: 14px;
+      border: 1px solid #ff5500;
+      background: transparent;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      flex: 0 0 auto;
+    }
+
+    .mode-peteca-menu .peteca-fn-btn.active .peteca-fn-indicator {
+      background: #ff5500;
+      border-color: #ff5500;
+    }
+
+    .mode-peteca-menu .mode-divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.10);
     }
 
     @media (max-width: 768px) {
@@ -1683,6 +1737,8 @@
       }
       .mode-peteca-menu .label-full { display: none !important; }
       .mode-peteca-menu .label-short { display: inline-block !important; }
+
+      .mode-peteca-menu .peteca-fn-btn { font-size: 0.9rem; }
     }
 
     .mode-peteca-menu .mode-btn {
@@ -2796,12 +2852,19 @@
         <div class="mode-peteca" id="modePeteca">
           <button type="button" class="mode-peteca-btn" id="modePetecaBtn" aria-label="Alternar modos" aria-expanded="false"></button>
           <div class="mode-peteca-menu" id="modePetecaMenu">
-            <div class="mode-row">
-              <div class="mode-group">
-                <button id="ritualModeBtn" onclick="setPersonaMode('ritual')" class="mode-btn persona active" data-persona="ritual">Ritual</button>
-                <button id="tecnicoModeBtn" onclick="setPersonaMode('tecnico')" class="mode-btn persona" data-persona="tecnico">Técnico</button>
+            <div class="mode-row mode-row--functions">
+              <div class="mode-functions">
+                <button id="ritualModeBtn" type="button" onclick="setPersonaMode('ritual')" class="peteca-fn-btn active" data-persona="ritual">
+                  <span class="peteca-fn-indicator" aria-hidden="true"></span>
+                  <span class="peteca-fn-label">Ritual</span>
+                </button>
+                <button id="tecnicoModeBtn" type="button" onclick="setPersonaMode('tecnico')" class="peteca-fn-btn" data-persona="tecnico">
+                  <span class="peteca-fn-indicator" aria-hidden="true"></span>
+                  <span class="peteca-fn-label">Técnico</span>
+                </button>
               </div>
             </div>
+            <div class="mode-divider" aria-hidden="true"></div>
             <div class="mode-row">
               <div class="mode-group">
                 <button id="modelAutoBtn" onclick="setModelMode('auto')" class="mode-btn model active" data-model="auto">Auto</button>
