@@ -5909,6 +5909,15 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const tecnicoBtn = document.getElementById('tecnicoModeBtn');
       if (ritualBtn) ritualBtn.addEventListener('pointerdown', () => setPersonaMode('ritual'));
       if (tecnicoBtn) tecnicoBtn.addEventListener('pointerdown', () => setPersonaMode('tecnico'));
+
+      const autoBtn = document.getElementById('modelAutoBtn');
+      const fastBtn = document.getElementById('modelFastBtn');
+      const deepBtn = document.getElementById('modelDeepBtn');
+      const geminiBtn = document.getElementById('modelGeminiBtn');
+      if (autoBtn) autoBtn.addEventListener('pointerdown', () => setModelMode('auto'));
+      if (fastBtn) fastBtn.addEventListener('pointerdown', () => setModelMode('fast'));
+      if (deepBtn) deepBtn.addEventListener('pointerdown', () => setModelMode('deep'));
+      if (geminiBtn) geminiBtn.addEventListener('pointerdown', () => setModelMode('gemini'));
       
       const whatsappConsent = document.getElementById('whatsappConsent');
       const whatsappField = document.getElementById('whatsappField');
