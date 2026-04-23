@@ -1587,18 +1587,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: nowrap;
-      padding: 4px 8px;
+      padding: 6px 14px;
       background: rgba(0,0,0,0.38);
       border: 1px solid rgba(0,191,255,0.14);
       border-radius: 9999px;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       box-shadow: 0 10px 20px rgba(0,0,0,0.45), 0 0 18px rgba(0,191,255,0.08);
       transition: opacity 0.14s ease, transform 0.14s ease;
       z-index: 120;
-      max-width: min(92vw, 620px);
+      max-width: min(94vw, 780px);
       box-sizing: border-box;
       overflow-x: auto;
       overscroll-behavior: contain;
@@ -1621,23 +1621,26 @@
 
     .mode-peteca-menu .mode-sep {
       width: 1px;
-      height: 14px;
-      background: rgba(0,191,255,0.18);
+      height: 18px;
+      background: rgba(0,191,255,0.22);
       box-shadow: 0 0 10px rgba(0,191,255,0.12);
       flex: 0 0 auto;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 680px) {
       .mode-peteca-menu {
         width: calc(100vw - 12px);
         max-width: calc(100vw - 12px);
-        padding: 3px 4px;
-        gap: 5px;
-        overflow-x: hidden;
+        padding: 5px 8px;
+        gap: 6px;
+        overflow-x: auto;
+        justify-content: flex-start;
+        border-radius: 12px;
+        transform: translateX(-50%) translateY(8px) scale(0.98);
       }
-      .mode-peteca-menu .mode-group { gap: 4px; }
-      .mode-peteca-menu .mode-btn { padding: 0 6px; font-size: 0.54rem; height: 16px; min-width: 0; }
-      .mode-peteca-menu .mode-sep { height: 10px; }
+      .mode-peteca-menu .mode-group { gap: 5px; }
+      .mode-peteca-menu .mode-btn { padding: 0 8px; font-size: 0.58rem; height: 20px; min-width: 0; }
+      .mode-peteca-menu .mode-sep { height: 12px; }
       .mode-peteca-menu .label-full { display: none !important; }
       .mode-peteca-menu .label-short { display: inline !important; }
     }
@@ -1682,6 +1685,7 @@
     #modelAutoBtn { animation-delay: -1.1s; }
     #modelFastBtn { animation-delay: -1.6s; }
     #modelDeepBtn { animation-delay: -2.0s; }
+    #modelGeminiBtn { animation-delay: -2.4s; }
 
     .mode-peteca-menu .mode-btn:hover {
       opacity: 1;
@@ -1719,6 +1723,13 @@
     .mode-peteca-menu .mode-btn.model.active[data-model="deep"] {
       background: rgba(0,119,204,0.24);
       border-color: rgba(0,191,255,0.55);
+    }
+
+    .mode-peteca-menu .mode-btn.model.active[data-model="gemini"] {
+      background: rgba(138, 43, 226, 0.24);
+      border-color: rgba(138, 43, 226, 0.55);
+      text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+      box-shadow: 0 0 0 1px rgba(138, 43, 226, 0.14), 0 0 18px rgba(138, 43, 226, 0.26);
     }
 
     .mode-peteca-menu .mode-btn.model.active[data-model="auto"] {
@@ -2793,6 +2804,13 @@
               <button id="modelAutoBtn" onclick="setModelMode('auto')" class="mode-btn model active" data-model="auto">Auto</button>
               <button id="modelFastBtn" onclick="setModelMode('fast')" class="mode-btn model" data-model="fast"><span class="label-full">5.3 (rápido e inteligente)</span><span class="label-short">5.3 rápido</span></button>
               <button id="modelDeepBtn" onclick="setModelMode('deep')" class="mode-btn model" data-model="deep"><span class="label-full">5.4 (Profundo)</span><span class="label-short">5.4 profundo</span></button>
+            </div>
+            <div class="mode-sep" aria-hidden="true"></div>
+            <div class="mode-group">
+              <button id="modelGeminiBtn" onclick="setModelMode('gemini')" class="mode-btn model" data-model="gemini" title="Gemini 1.5 Flash (Gratuito)">
+                <span class="label-full">Gemini Grátis</span>
+                <span class="label-short">Gemini</span>
+              </button>
             </div>
           </div>
         </div>
