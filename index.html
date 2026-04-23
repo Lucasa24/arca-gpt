@@ -5503,12 +5503,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const autoBtn = document.getElementById('modelAutoBtn');
       const fastBtn = document.getElementById('modelFastBtn');
       const deepBtn = document.getElementById('modelDeepBtn');
+      const geminiBtn = document.getElementById('modelGeminiBtn');
 
-      if (!autoBtn || !fastBtn || !deepBtn) return;
-
-      autoBtn.classList.toggle('active', mode === 'auto');
-      fastBtn.classList.toggle('active', mode === 'fast');
-      deepBtn.classList.toggle('active', mode === 'deep');
+      if (autoBtn) autoBtn.classList.toggle('active', mode === 'auto');
+      if (fastBtn) fastBtn.classList.toggle('active', mode === 'fast');
+      if (deepBtn) deepBtn.classList.toggle('active', mode === 'deep');
+      if (geminiBtn) geminiBtn.classList.toggle('active', mode === 'gemini');
     }
     
     // Função para iniciar login com Google
