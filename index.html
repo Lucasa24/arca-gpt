@@ -5975,12 +5975,39 @@ div.innerHTML = DOMPurify.sanitize(html, {
         document.body.appendChild(btn);
 
         const doc = document.documentElement;
+        const isVisible = (el) => {
+          if (!el) return false;
+          const cs = window.getComputedStyle(el);
+          return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0' && cs.pointerEvents !== 'none';
+        };
+        const anyModalOpen = () => {
+          const items = Array.from(document.querySelectorAll('.modal'));
+          for (const m of items) {
+            const cs = window.getComputedStyle(m);
+            if (cs.display !== 'none') return true;
+          }
+          return false;
+        };
+        const isOverlayActive = () => {
+          const helmOverlay = document.getElementById('helmOverlay');
+          if (helmOverlay && helmOverlay.classList.contains('open')) return true;
+          const zoom = document.getElementById('imageZoomOverlay');
+          if (zoom && zoom.classList.contains('show')) return true;
+          if (anyModalOpen()) return true;
+          const portal = document.getElementById('authPortal');
+          if (portal && !portal.classList.contains('hidden') && isVisible(portal)) return true;
+          const peteca = document.getElementById('modePeteca');
+          if (peteca && peteca.classList.contains('open')) return true;
+          const sidebar = document.getElementById('chatSidebar');
+          if (sidebar && sidebar.classList.contains('open')) return true;
+          return false;
+        };
         const getBottomGap = () => {
           const height = Math.max(doc.scrollHeight || 0, document.body ? (document.body.scrollHeight || 0) : 0);
           return height - ((window.scrollY || 0) + (window.innerHeight || 0));
         };
         const update = () => {
-          btn.classList.toggle('show', getBottomGap() > 240);
+          btn.classList.toggle('show', !isOverlayActive() && getBottomGap() > 240);
         };
         window.addEventListener('scroll', update, { passive: true });
         window.addEventListener('resize', update);
@@ -5990,6 +6017,16 @@ div.innerHTML = DOMPurify.sanitize(html, {
           try { window.scrollTo({ top, behavior: 'smooth' }); } catch { window.scrollTo(0, top); }
           update();
         });
+        const targets = [
+          document.getElementById('helmOverlay'),
+          document.getElementById('imageZoomOverlay'),
+          document.getElementById('authPortal'),
+          document.getElementById('modePeteca'),
+          document.getElementById('chatSidebar'),
+          ...Array.from(document.querySelectorAll('.modal'))
+        ].filter(Boolean);
+        const mo = new MutationObserver(() => update());
+        for (const el of targets) mo.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'aria-hidden'] });
         setTimeout(update, 0);
       }
       
