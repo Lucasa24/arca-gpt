@@ -2715,6 +2715,10 @@
       pointer-events: auto;
     }
 
+    #scrollToBottomBtn.show.idle {
+      opacity: 0.18;
+    }
+
     #scrollToBottomBtn:hover {
       background: rgba(0, 191, 255, 0.08);
       border-color: rgba(0, 191, 255, 0.30);
@@ -6006,15 +6010,32 @@ div.innerHTML = DOMPurify.sanitize(html, {
           const height = Math.max(doc.scrollHeight || 0, document.body ? (document.body.scrollHeight || 0) : 0);
           return height - ((window.scrollY || 0) + (window.innerHeight || 0));
         };
+        let idleTimer = 0;
+        const setIdle = (v) => btn.classList.toggle('idle', !!v);
+        const scheduleIdle = () => {
+          clearTimeout(idleTimer);
+          if (!btn.classList.contains('show')) { setIdle(false); return; }
+          idleTimer = setTimeout(() => setIdle(true), 1400);
+        };
+        const markActive = () => {
+          setIdle(false);
+          scheduleIdle();
+        };
         const update = () => {
           btn.classList.toggle('show', !isOverlayActive() && getBottomGap() > 240);
+          if (!btn.classList.contains('show')) setIdle(false);
+          scheduleIdle();
         };
         window.addEventListener('scroll', update, { passive: true });
         window.addEventListener('resize', update);
+        window.addEventListener('pointerdown', markActive, { passive: true });
+        window.addEventListener('pointermove', markActive, { passive: true });
+        window.addEventListener('keydown', markActive);
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           const top = Math.max(doc.scrollHeight || 0, document.body ? (document.body.scrollHeight || 0) : 0);
           try { window.scrollTo({ top, behavior: 'smooth' }); } catch { window.scrollTo(0, top); }
+          markActive();
           update();
         });
         const targets = [
