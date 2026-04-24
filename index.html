@@ -2684,25 +2684,25 @@
 
     #scrollToBottomBtn {
       position: fixed;
-      right: 14px;
-      bottom: calc(var(--footer-height) + 16px + env(safe-area-inset-bottom, 0px));
-      width: 44px;
-      height: 44px;
+      right: 8px;
+      bottom: calc(var(--footer-height) + 8px + env(safe-area-inset-bottom, 0px));
+      width: 22px;
+      height: 22px;
       border-radius: 9999px;
-      border: 1px solid rgba(0, 191, 255, 0.22);
-      background: rgba(10, 10, 10, 0.92);
-      color: rgba(0, 191, 255, 0.95);
+      border: 1px solid rgba(0, 191, 255, 0.16);
+      background: rgba(10, 10, 10, 0.22);
+      color: rgba(0, 191, 255, 0.75);
       display: grid;
       place-items: center;
       cursor: pointer;
       z-index: 1200;
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(6px);
       pointer-events: none;
-      transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.10), 0 10px 30px rgba(0,0,0,0.55);
+      transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.06);
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
       user-select: none;
@@ -2710,23 +2710,24 @@
     }
 
     #scrollToBottomBtn.show {
-      opacity: 1;
+      opacity: 0.9;
       transform: translateY(0);
       pointer-events: auto;
     }
 
     #scrollToBottomBtn:hover {
       background: rgba(0, 191, 255, 0.08);
-      border-color: rgba(0, 191, 255, 0.45);
+      border-color: rgba(0, 191, 255, 0.30);
+      color: rgba(0, 191, 255, 0.92);
     }
 
     #scrollToBottomBtn:focus,
     #scrollToBottomBtn:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px rgba(0,191,255,0.25), 0 10px 30px rgba(0,0,0,0.55);
+      box-shadow: 0 0 0 2px rgba(0,191,255,0.18);
     }
 
-    #scrollToBottomBtn svg { pointer-events: none; }
+    #scrollToBottomBtn svg { pointer-events: none; display: block; }
 
     @keyframes float-ark {
       0%, 100% { transform: scale(1); filter: brightness(1); }
@@ -5970,7 +5971,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         btn.id = 'scrollToBottomBtn';
         btn.type = 'button';
         btn.setAttribute('aria-label', 'Voltar para o final');
-        btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v12"/><path d="M7 13l5 5 5-5"/></svg>';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v12"/><path d="M7 13l5 5 5-5"/></svg>';
         document.body.appendChild(btn);
 
         const doc = document.documentElement;
