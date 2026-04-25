@@ -178,7 +178,7 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         req.body = JSON.parse(body);
-        const handler = require('./api/listThreads.js');
+        const handler = require('./api/threads.js');
         await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -204,7 +204,20 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         req.body = JSON.parse(body);
-        const handler = require('./api/toggleArchive.js');
+        const handler = require('./api/threads.js');
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Body JSON inválido' }));
+      }
+    });
+  } else if (req.method === 'POST' && req.url === '/api/credits') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        req.body = JSON.parse(body);
+        const handler = require('./api/auth.js');
         await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits, adicionarCreditos, debitarCreditos, registrarConsumo } = require('../lib/credits.js');
 
 // --- SISTEMA DE E-MAIL HÍBRIDO (SUPABASE / RESEND) ---
 async function sendWelcomeEmail(email) {
@@ -121,7 +122,7 @@ module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Webhook-Secret, X-Payment-Webhook-Secret');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -135,6 +136,87 @@ module.exports = async function handler(req, res) {
 
   try {
     const { action, email, password, access_token } = req.body;
+
+    const internalSecret = process.env.INTERNAL_API_SECRET;
+    const gotInternal = req.headers["x-internal-secret"];
+    const internalOk = internalSecret && String(gotInternal || "") === String(internalSecret);
+
+    if (action === 'credits_get' || action === 'consultarCreditos') {
+      const userId = req.body && req.body.userId;
+      const rec = await getOrCreateCredits(userId, req.headers['authorization']);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({
+        creditosDisponiveis: rec ? Number(rec.creditos_disponiveis || 0) : 0,
+        creditosGastos: rec ? Number(rec.creditos_gastos || 0) : 0,
+        historicoDeRecargas: rec ? rec.historico_de_recargas || [] : [],
+        historicoDeConsumo: rec ? rec.historico_de_consumo || [] : []
+      }));
+    }
+
+    if (action === 'credits_create_checkout' || action === 'criarCheckoutCredito') {
+      const userId = req.body && req.body.userId;
+      const valor = req.body && req.body.valor;
+      const out = await criarCheckoutCredito(userId, valor);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao criar checkout" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify(out));
+    }
+
+    if (action === 'credits_webhook_confirm' || action === 'confirmarPagamentoWebhook') {
+      const headers = Object.fromEntries(Object.entries(req.headers || {}).map(([k, v]) => [String(k).toLowerCase(), v]));
+      const out = await confirmarPagamentoWebhook(req.body && (req.body.evento || req.body.event || req.body), headers);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha no webhook" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true, message: out.mensagem || "Créditos adicionados com sucesso." }));
+    }
+
+    if (action === 'adicionarCreditos') {
+      if (!internalOk) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "forbidden" }));
+      }
+      const out = await adicionarCreditos(req.body && req.body.userId, req.body && req.body.valor, req.body && (req.body.meta || {}), req.headers['authorization']);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao adicionar créditos" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true, message: "Créditos adicionados com sucesso." }));
+    }
+
+    if (action === 'debitarCreditos') {
+      if (!internalOk) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "forbidden" }));
+      }
+      const out = await debitarCreditos(req.body && req.body.userId, req.body && req.body.valor, req.body && (req.body.dados || {}), req.headers['authorization']);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao debitar créditos" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true }));
+    }
+
+    if (action === 'registrarConsumo') {
+      if (!internalOk) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "forbidden" }));
+      }
+      const out = await registrarConsumo(req.body && req.body.userId, req.body && (req.body.dados || {}), req.headers['authorization']);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao registrar consumo" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true }));
+    }
 
     // Actions que não requerem email/senha
     if (action === 'get_google_url') {

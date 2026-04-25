@@ -1,5 +1,6 @@
-const { getThreadMessages, addMessageToThread, setThreadPersona, composeAssistantContent, generateClosing } = require('../lib/memory.js');
+const { getThreadMessages, addMessageToThread, setThreadPersona, composeAssistantContent, generateClosing, pickOpening } = require('../lib/memory.js');
 const { fetch } = require('undici');
+const { gerarComCreditos } = require('../lib/credits.js');
 
 // arca.js — fora do handler (executa no cold start da função)
 if (!global.__ARCA_PERSONA_LOGGED__) {
@@ -39,11 +40,6 @@ async function handler(req, res) {
       res.statusCode = 400;
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify({ error: "threadId ausente" }));
-    }
-    if (!api_key) {
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: "OPENAI_API_KEY ausente" }));
     }
 
     // [NOVO] Atualiza a persona com base no modo enviado pelo frontend
@@ -103,6 +99,83 @@ async function handler(req, res) {
     const personaForSpeed = recordForSpeed?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
     const sys = messages.filter(m => m.role === 'system');
     const nonSys = messages.filter(m => m.role !== 'system');
+
+    if (modelMode === 'gemini') {
+      const systemText = sys
+        .map((m) => (m && typeof m.content === "string" ? m.content : ""))
+        .filter(Boolean)
+        .join("\n\n");
+      const systemInstruction = systemText ? { role: "system", parts: [{ text: systemText }] } : undefined;
+
+      const maxNonSysForGemini = personaForSpeed === "tecnico" ? 14 : 22;
+      const contents = nonSys
+        .slice(-maxNonSysForGemini)
+        .map((m) => {
+          const role = m.role === "assistant" ? "model" : "user";
+          const text = typeof m.content === "string" ? m.content : "";
+          return { role, parts: [{ text }] };
+        })
+        .filter((c) => c.parts && c.parts[0] && c.parts[0].text && String(c.parts[0].text).trim());
+
+      const creditResult = await gerarComCreditos({
+        userId,
+        authHeader: req.headers["authorization"],
+        prompt: userInput,
+        gemini: {
+          contents,
+          systemInstruction,
+          cacheKey: `${personaForSpeed}|${String(userInput || "").trim()}`
+        }
+      });
+
+      if (!creditResult.ok) {
+        const tipo = creditResult.tipo;
+        const msg =
+          tipo === "sem_credito"
+            ? "Seus créditos acabaram. Adicione saldo para continuar usando a Arca."
+            : tipo === "limite_gemini"
+              ? "O sistema atingiu o limite temporário de geração. Tente novamente mais tarde."
+              : "O serviço de geração está temporariamente indisponível. Tente novamente em instantes.";
+
+        res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
+        res.write(`data: [DONE]\n\n`);
+        clearInterval(keepalive);
+        return res.end();
+      }
+
+      let assistantResponse = "";
+      if (personaForSpeed !== "tecnico") {
+        const opening = pickOpening(null);
+        res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
+        assistantResponse += `_${opening}_\n\n`;
+      }
+
+      const out = String(creditResult.mensagem || "");
+      const chunkSize = 220;
+      for (let i = 0; i < out.length; i += chunkSize) {
+        const chunk = out.slice(i, i + chunkSize);
+        assistantResponse += chunk;
+        res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+      }
+
+      if (personaForSpeed !== "tecnico") {
+        const closing = `\n\n${generateClosing()}`;
+        res.write(`data: ${JSON.stringify({ content: closing })}\n\n`);
+        assistantResponse += closing;
+      }
+
+      await addMessageToThread(threadId, "assistant", assistantResponse, userId, req.headers['authorization']);
+      res.write(`data: [DONE]\n\n`);
+      clearInterval(keepalive);
+      return res.end();
+    }
+
+    if (!api_key) {
+      res.write(`data: ${JSON.stringify({ content: "⚠️ OPENAI_API_KEY ausente" })}\n\n`);
+      res.write(`data: [DONE]\n\n`);
+      clearInterval(keepalive);
+      return res.end();
+    }
 
     const shouldUseDeep = (text) => {
       const t = (text || "").trim();
@@ -374,4 +447,3 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-
