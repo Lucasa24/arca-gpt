@@ -1,0 +1,24 @@
+{
+  "user@example.com": {
+    "user_id": "user@example.com",
+    "creditos_disponiveis": 25,
+    "creditos_gastos": 0,
+    "historico_de_recargas": [
+      {
+        "valor": 25,
+        "created_at": "2026-04-25T16:31:52.639Z",
+        "origem": "webhook",
+        "referencia": "pay_1",
+        "bruto": {
+          "action": "webhook_confirm",
+          "status": "approved",
+          "userId": "user@example.com",
+          "creditos": 25,
+          "id": "pay_1"
+        }
+      }
+    ],
+    "historico_de_consumo": [],
+    "updated_at": "2026-04-25T16:31:52.640Z"
+  }
+}

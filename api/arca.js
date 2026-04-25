@@ -1,6 +1,6 @@
 const { getThreadMessages, addMessageToThread, setThreadPersona, composeAssistantContent, generateClosing, pickOpening } = require('../lib/memory.js');
 const { fetch } = require('undici');
-const { gerarMensagemGemini } = require('../lib/gemini.js');
+const { gerarComCreditos } = require('../lib/credits.js');
 
 // arca.js — fora do handler (executa no cold start da função)
 if (!global.__ARCA_PERSONA_LOGGED__) {
@@ -101,14 +101,6 @@ async function handler(req, res) {
     const nonSys = messages.filter(m => m.role !== 'system');
 
     if (modelMode === 'gemini') {
-      const geminiKeyFromBody =
-        req.body?.geminiApiKey ||
-        req.body?.gemini_api_key ||
-        req.body?.apiKeyGemini ||
-        req.body?.byok?.geminiApiKey;
-      const geminiKeyFromHeader = req.headers["x-gemini-api-key"];
-      const geminiKey = geminiKeyFromBody || geminiKeyFromHeader || process.env.GEMINI_API_KEY;
-
       const systemText = sys
         .map((m) => (m && typeof m.content === "string" ? m.content : ""))
         .filter(Boolean)
@@ -125,15 +117,26 @@ async function handler(req, res) {
         })
         .filter((c) => c.parts && c.parts[0] && c.parts[0].text && String(c.parts[0].text).trim());
 
-      const geminiResult = await gerarMensagemGemini(userInput, {
-        apiKey: geminiKey,
-        contents,
-        systemInstruction,
-        cacheKey: `${personaForSpeed}|${String(userInput || "").trim()}`
+      const creditResult = await gerarComCreditos({
+        userId,
+        authHeader: req.headers["authorization"],
+        prompt: userInput,
+        gemini: {
+          contents,
+          systemInstruction,
+          cacheKey: `${personaForSpeed}|${String(userInput || "").trim()}`
+        }
       });
 
-      if (!geminiResult.ok) {
-        const msg = geminiResult.mensagemUsuario || "⚠️ O modo Vigoroso falhou.";
+      if (!creditResult.ok) {
+        const tipo = creditResult.tipo;
+        const msg =
+          tipo === "sem_credito"
+            ? "Seus créditos acabaram. Adicione saldo para continuar usando a Arca."
+            : tipo === "limite_gemini"
+              ? "O sistema atingiu o limite temporário de geração. Tente novamente mais tarde."
+              : "O serviço de geração está temporariamente indisponível. Tente novamente em instantes.";
+
         res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
         res.write(`data: [DONE]\n\n`);
         clearInterval(keepalive);
@@ -147,7 +150,7 @@ async function handler(req, res) {
         assistantResponse += `_${opening}_\n\n`;
       }
 
-      const out = String(geminiResult.mensagem || "");
+      const out = String(creditResult.mensagem || "");
       const chunkSize = 220;
       for (let i = 0; i < out.length; i += chunkSize) {
         const chunk = out.slice(i, i + chunkSize);

@@ -112,6 +112,30 @@ using (true)
 with check (true);
 
 -- ==============================================================================
+-- 🆕 ATUALIZAÇÃO: CRÉDITOS (CONTROLE INTERNO DE USO DO GEMINI)
+-- ==============================================================================
+
+create table if not exists public.user_credits (
+  user_id text primary key,
+  creditos_disponiveis numeric not null default 0,
+  creditos_gastos numeric not null default 0,
+  historico_de_recargas jsonb not null default '[]'::jsonb,
+  historico_de_consumo jsonb not null default '[]'::jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.user_credits enable row level security;
+
+drop policy if exists "Permitir acesso total a user_credits" on public.user_credits;
+
+create policy "Permitir acesso total a user_credits"
+on public.user_credits
+for all
+to public
+using (true)
+with check (true);
+
+-- ==============================================================================
 -- 🆕 ATUALIZAÇÃO: COLUNA PROVIDER (LOGIN SOCIAL)
 -- ==============================================================================
 
