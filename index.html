@@ -2174,6 +2174,175 @@
       justify-content: center;
       align-items: center;
     }
+
+    .profile-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 11000;
+      padding: 18px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .profile-overlay.open {
+      display: flex;
+    }
+    .profile-panel {
+      width: min(820px, calc(100vw - 24px));
+      max-height: min(82vh, 740px);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      background: rgba(10,10,10,0.92);
+      border: 1px solid rgba(255, 210, 150, 0.12);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.65);
+    }
+    .profile-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(600px 420px at 18% 18%, rgba(255, 210, 150, 0.10), transparent 60%),
+        radial-gradient(560px 420px at 80% 25%, rgba(0, 191, 255, 0.08), transparent 62%),
+        linear-gradient(180deg, rgba(255, 210, 150, 0.06), transparent 35%),
+        repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 10px);
+      opacity: 1;
+      pointer-events: none;
+    }
+    .profile-header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 210, 150, 0.10);
+    }
+    .profile-title {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      color: rgba(245,245,245,0.92);
+    }
+    .profile-close {
+      background: transparent;
+      border: 0;
+      color: rgba(245,245,245,0.7);
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      padding: 0;
+      border-radius: 9999px;
+      display: grid;
+      place-items: center;
+    }
+    .profile-close:hover {
+      background: rgba(255,255,255,0.06);
+      color: rgba(245,245,245,0.92);
+    }
+    .profile-body {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(160px, 240px) 1fr;
+      gap: 14px;
+      padding: 16px;
+    }
+    .profile-nav {
+      border: 1px solid rgba(255, 210, 150, 0.10);
+      background: rgba(0,0,0,0.18);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .profile-nav button {
+      width: 100%;
+      height: 44px;
+      min-width: 0;
+      padding: 0 14px;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: rgba(245,245,245,0.82);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      justify-content: flex-start;
+      font-size: 0.72rem;
+    }
+    .profile-nav button:last-child { border-bottom: 0; }
+    .profile-nav button:hover {
+      background: rgba(0,191,255,0.06);
+      color: rgba(245,245,245,0.92);
+    }
+    .profile-card {
+      border: 1px solid rgba(255, 210, 150, 0.10);
+      background: rgba(0,0,0,0.18);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .profile-userline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(245,245,245,0.92);
+      font-size: 0.85rem;
+    }
+    .profile-userdot {
+      color: #b30000;
+      filter: drop-shadow(0 0 10px rgba(179,0,0,0.35));
+    }
+    .profile-sub {
+      margin-top: 10px;
+      color: rgba(245,245,245,0.55);
+      font-size: 0.75rem;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .profile-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .profile-actions button {
+      height: 42px;
+      min-width: 140px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid rgba(0, 191, 255, 0.22);
+      color: rgba(0,191,255,0.92);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+    .profile-actions button:hover {
+      background: rgba(0, 191, 255, 0.10);
+      border-color: rgba(0, 191, 255, 0.38);
+      transform: translateY(-1px);
+    }
+    @media (max-width: 680px) {
+      .profile-body {
+        grid-template-columns: 1fr;
+      }
+      .profile-nav {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .profile-nav button {
+        border-bottom: 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .profile-nav button:last-child { border-right: 0; }
+    }
     /* Media Queries para responsividade */
     @media (min-width: 769px) {
       body {
@@ -3006,7 +3175,7 @@
       </div>
 
       <p class="footer-note">
-        <button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="showAuthPortal()">
+        <button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="handleKeyClick()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
             <circle cx="7.5" cy="12.5" r="3.5"></circle>
             <path d="M11 12.5h11"></path>
@@ -3018,6 +3187,30 @@
     </div>
     <div id="footerResizeHandle" aria-hidden="true"></div>
   </main>
+  <div id="profileOverlay" class="profile-overlay" aria-hidden="true">
+    <div class="profile-panel" role="dialog" aria-label="Perfil">
+      <div class="profile-header">
+        <div class="profile-title">Perfil</div>
+        <button type="button" class="profile-close" aria-label="Fechar perfil" onclick="closeProfile()">✕</button>
+      </div>
+      <div class="profile-body">
+        <div class="profile-nav">
+          <button type="button" onclick="openProfile()">Conta</button>
+          <button type="button" onclick="handleLogout(); closeProfile();">Sair</button>
+        </div>
+        <div class="profile-card">
+          <div class="profile-userline">
+            <span class="profile-userdot">⦿</span>
+            <span id="profileUsername">—</span>
+          </div>
+          <div class="profile-sub" id="profileEmail"></div>
+          <div class="profile-actions">
+            <button type="button" onclick="handleLogout(); closeProfile();">Sair da Arca</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="helmOverlay" class="helm-overlay" aria-hidden="true">
     <div id="helmPanel" class="helm-panel" role="dialog" aria-label="Timão da Arca">
       <div class="helm-panel-header">
@@ -3071,6 +3264,61 @@
             console.error("Portal de autenticação não encontrado no DOM.");
         }
     }
+
+    function closeProfile() {
+      const overlay = document.getElementById('profileOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderProfile() {
+      let data = null;
+      try {
+        data = userData || JSON.parse(localStorage.getItem('userData') || 'null');
+      } catch {}
+      const usernameEl = document.getElementById('profileUsername');
+      const emailEl = document.getElementById('profileEmail');
+      if (!usernameEl || !emailEl) return;
+      if (!data || !data.email) {
+        usernameEl.textContent = 'Visitante';
+        emailEl.textContent = '';
+        return;
+      }
+      const username = String(data.email).split('@')[0] || String(data.email);
+      usernameEl.textContent = username;
+      emailEl.textContent = String(data.email);
+    }
+
+    function openProfile() {
+      const overlay = document.getElementById('profileOverlay');
+      if (!overlay) return;
+      renderProfile();
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function handleKeyClick() {
+      const isGuest = !!localStorage.getItem('isGuest');
+      if (isGuest) {
+        showAuthPortal();
+        return;
+      }
+      const storedUserData = localStorage.getItem('userData');
+      if (storedUserData) {
+        try { userData = JSON.parse(storedUserData); userLoggedIn = true; } catch {}
+        openProfile();
+        return;
+      }
+      showAuthPortal();
+    }
+
+    window.addEventListener('click', (e) => {
+      const overlay = document.getElementById('profileOverlay');
+      if (!overlay) return;
+      if (!overlay.classList.contains('open')) return;
+      if (e.target === overlay) closeProfile();
+    }, { passive: true });
 
     marked.setOptions({
       gfm: true,
@@ -5620,7 +5868,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const footerNote = document.querySelector('.footer-note');
       if (!footerNote) return;
       if (!footerNote.querySelector('#cornerReset')) {
-        footerNote.innerHTML = `<button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="showAuthPortal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="7.5" cy="12.5" r="3.5"></circle><path d="M11 12.5h11"></path><path d="M17 12.5v3"></path><path d="M20 12.5v2"></path></svg></button>`;
+        footerNote.innerHTML = `<button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="handleKeyClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="7.5" cy="12.5" r="3.5"></circle><path d="M11 12.5h11"></path><path d="M17 12.5v3"></path><path d="M20 12.5v2"></path></svg></button>`;
       }
     }
 
@@ -5640,6 +5888,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         portal.style.display = 'flex';
         portal.classList.remove('hidden');
       }
+      try { closeProfile(); } catch {}
       
       // Reseta visualização do portal para opções iniciais
       document.getElementById('authForm').style.display = 'none';
