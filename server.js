@@ -178,7 +178,7 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         req.body = JSON.parse(body);
-        const handler = require('./api/listThreads.js');
+        const handler = require('./api/threads.js');
         await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -204,7 +204,7 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         req.body = JSON.parse(body);
-        const handler = require('./api/toggleArchive.js');
+        const handler = require('./api/threads.js');
         await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -217,7 +217,7 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         req.body = JSON.parse(body);
-        const handler = require('./api/credits.js');
+        const handler = require('./api/auth.js');
         await handler(req, res);
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });

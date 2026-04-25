@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits } = require('../lib/credits.js');
 
 // --- SISTEMA DE E-MAIL HÍBRIDO (SUPABASE / RESEND) ---
 async function sendWelcomeEmail(email) {
@@ -121,7 +122,7 @@ module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Webhook-Secret, X-Payment-Webhook-Secret');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -135,6 +136,41 @@ module.exports = async function handler(req, res) {
 
   try {
     const { action, email, password, access_token } = req.body;
+
+    if (action === 'credits_get') {
+      const userId = req.body && req.body.userId;
+      const rec = await getOrCreateCredits(userId, req.headers['authorization']);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({
+        creditosDisponiveis: rec ? Number(rec.creditos_disponiveis || 0) : 0,
+        creditosGastos: rec ? Number(rec.creditos_gastos || 0) : 0,
+        historicoDeRecargas: rec ? rec.historico_de_recargas || [] : [],
+        historicoDeConsumo: rec ? rec.historico_de_consumo || [] : []
+      }));
+    }
+
+    if (action === 'credits_create_checkout') {
+      const userId = req.body && req.body.userId;
+      const valor = req.body && req.body.valor;
+      const out = await criarCheckoutCredito(userId, valor);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao criar checkout" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify(out));
+    }
+
+    if (action === 'credits_webhook_confirm') {
+      const headers = Object.fromEntries(Object.entries(req.headers || {}).map(([k, v]) => [String(k).toLowerCase(), v]));
+      const out = await confirmarPagamentoWebhook(req.body && (req.body.evento || req.body.event || req.body), headers);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha no webhook" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true, message: out.mensagem || "Créditos adicionados com sucesso." }));
+    }
 
     // Actions que não requerem email/senha
     if (action === 'get_google_url') {
