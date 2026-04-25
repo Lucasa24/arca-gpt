@@ -33,5 +33,27 @@
     ],
     "historico_de_consumo": [],
     "updated_at": "2026-04-25T16:53:40.784Z"
+  },
+  "user2@example.com": {
+    "user_id": "user2@example.com",
+    "creditos_disponiveis": 3,
+    "creditos_gastos": 0,
+    "historico_de_recargas": [
+      {
+        "valor": 3,
+        "created_at": "2026-04-25T17:21:25.479Z",
+        "origem": "webhook",
+        "referencia": "pay_x",
+        "bruto": {
+          "action": "confirmarPagamentoWebhook",
+          "status": "approved",
+          "userId": "user2@example.com",
+          "creditos": 3,
+          "id": "pay_x"
+        }
+      }
+    ],
+    "historico_de_consumo": [],
+    "updated_at": "2026-04-25T17:21:25.479Z"
   }
 }
