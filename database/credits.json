@@ -1,9 +1,22 @@
 {
   "user@example.com": {
     "user_id": "user@example.com",
-    "creditos_disponiveis": 25,
+    "creditos_disponiveis": 30,
     "creditos_gastos": 0,
     "historico_de_recargas": [
+      {
+        "valor": 5,
+        "created_at": "2026-04-25T16:53:40.784Z",
+        "origem": "webhook",
+        "referencia": "pay_2",
+        "bruto": {
+          "action": "confirmarPagamentoWebhook",
+          "status": "approved",
+          "userId": "user@example.com",
+          "creditos": 5,
+          "id": "pay_2"
+        }
+      },
       {
         "valor": 25,
         "created_at": "2026-04-25T16:31:52.639Z",
@@ -19,6 +32,6 @@
       }
     ],
     "historico_de_consumo": [],
-    "updated_at": "2026-04-25T16:31:52.640Z"
+    "updated_at": "2026-04-25T16:53:40.784Z"
   }
 }

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits } = require('../lib/credits.js');
+const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits, adicionarCreditos, debitarCreditos, registrarConsumo } = require('../lib/credits.js');
 
 // --- SISTEMA DE E-MAIL HÍBRIDO (SUPABASE / RESEND) ---
 async function sendWelcomeEmail(email) {
@@ -137,7 +137,11 @@ module.exports = async function handler(req, res) {
   try {
     const { action, email, password, access_token } = req.body;
 
-    if (action === 'credits_get') {
+    const internalSecret = process.env.INTERNAL_API_SECRET;
+    const gotInternal = req.headers["x-internal-secret"];
+    const internalOk = internalSecret && String(gotInternal || "") === String(internalSecret);
+
+    if (action === 'credits_get' || action === 'consultarCreditos') {
       const userId = req.body && req.body.userId;
       const rec = await getOrCreateCredits(userId, req.headers['authorization']);
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -149,7 +153,7 @@ module.exports = async function handler(req, res) {
       }));
     }
 
-    if (action === 'credits_create_checkout') {
+    if (action === 'credits_create_checkout' || action === 'criarCheckoutCredito') {
       const userId = req.body && req.body.userId;
       const valor = req.body && req.body.valor;
       const out = await criarCheckoutCredito(userId, valor);
@@ -161,7 +165,7 @@ module.exports = async function handler(req, res) {
       return res.end(JSON.stringify(out));
     }
 
-    if (action === 'credits_webhook_confirm') {
+    if (action === 'credits_webhook_confirm' || action === 'confirmarPagamentoWebhook') {
       const headers = Object.fromEntries(Object.entries(req.headers || {}).map(([k, v]) => [String(k).toLowerCase(), v]));
       const out = await confirmarPagamentoWebhook(req.body && (req.body.evento || req.body.event || req.body), headers);
       if (!out.ok) {
@@ -170,6 +174,48 @@ module.exports = async function handler(req, res) {
       }
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ success: true, message: out.mensagem || "Créditos adicionados com sucesso." }));
+    }
+
+    if (action === 'adicionarCreditos') {
+      if (!internalOk) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "forbidden" }));
+      }
+      const out = await adicionarCreditos(req.body && req.body.userId, req.body && req.body.valor, req.body && (req.body.meta || {}), req.headers['authorization']);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao adicionar créditos" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true, message: "Créditos adicionados com sucesso." }));
+    }
+
+    if (action === 'debitarCreditos') {
+      if (!internalOk) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "forbidden" }));
+      }
+      const out = await debitarCreditos(req.body && req.body.userId, req.body && req.body.valor, req.body && (req.body.dados || {}), req.headers['authorization']);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao debitar créditos" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true }));
+    }
+
+    if (action === 'registrarConsumo') {
+      if (!internalOk) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "forbidden" }));
+      }
+      const out = await registrarConsumo(req.body && req.body.userId, req.body && (req.body.dados || {}), req.headers['authorization']);
+      if (!out.ok) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: out.error || "Falha ao registrar consumo" }));
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ success: true }));
     }
 
     // Actions que não requerem email/senha
