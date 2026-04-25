@@ -245,10 +245,37 @@
     #chatSidebar {
       scrollbar-width: thin;
       scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.25);
-      resize: horizontal;
       overflow-x: hidden;
       min-width: 180px;
       max-width: 420px;
+    }
+
+    #sidebarResizeHandle {
+      position: fixed;
+      top: 0;
+      left: calc(var(--sidebar-width) - 6px);
+      width: 12px;
+      height: 100vh;
+      cursor: col-resize;
+      z-index: 250;
+      touch-action: none;
+    }
+    #sidebarResizeHandle::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 5px;
+      width: 2px;
+      background: rgba(179, 0, 0, 0.35);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    #sidebarResizeHandle:hover::after {
+      opacity: 1;
+    }
+    #chatSidebar.hidden + #sidebarResizeHandle {
+      display: none;
     }
 
     #chatSidebar::-webkit-scrollbar { width: 7px; }
@@ -1343,11 +1370,34 @@
       transition: left 0.3s ease, width 0.3s ease;
       height: var(--footer-height);
       overflow: auto;
-      resize: vertical;
       min-height: 90px;
       max-height: 70vh;
       scrollbar-width: thin;
       scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.25);
+    }
+    #footerResizeHandle {
+      position: fixed;
+      left: var(--sidebar-width);
+      right: 0;
+      bottom: var(--footer-height);
+      height: 12px;
+      cursor: row-resize;
+      z-index: 150;
+      touch-action: none;
+    }
+    #footerResizeHandle::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 5px;
+      height: 2px;
+      background: rgba(0, 191, 255, 0.35);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    #footerResizeHandle:hover::after {
+      opacity: 1;
     }
     .fixed-footer.peteca-open {
       overflow: visible;
@@ -1370,6 +1420,9 @@
     #mainContent.sidebar-hidden .fixed-footer {
       left: 0;
       width: 100%;
+    }
+    #mainContent.sidebar-hidden #footerResizeHandle {
+      left: 0;
     }
 
     .input-group {
@@ -2821,6 +2874,7 @@
   </div>
   <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
   <div id="chatSidebar"></div>
+  <div id="sidebarResizeHandle" aria-hidden="true"></div>
   <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
   <div id="dropOverlay"><div class="drop-msg">Solte imagens aqui</div></div>
   <div id="imageZoomOverlay" aria-live="polite">
@@ -2953,6 +3007,7 @@
 
       <p class="footer-note"><a href="#" onclick="showAuthPortal(); return false;">Fazer Login</a> • </p>
     </div>
+    <div id="footerResizeHandle" aria-hidden="true"></div>
   </main>
   <div id="helmOverlay" class="helm-overlay" aria-hidden="true">
     <div id="helmPanel" class="helm-panel" role="dialog" aria-label="Timão da Arca">
@@ -6177,7 +6232,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const root = document.documentElement;
       const sidebar = document.getElementById('chatSidebar');
       const footer = document.querySelector('.fixed-footer');
-      if (!sidebar || !footer) return;
+      const sidebarHandle = document.getElementById('sidebarResizeHandle');
+      const footerHandle = document.getElementById('footerResizeHandle');
+      if (!sidebar || !footer || !sidebarHandle || !footerHandle) return;
 
       try {
         const savedW = localStorage.getItem('arcaSidebarWidth');
@@ -6213,46 +6270,42 @@ div.innerHTML = DOMPurify.sanitize(html, {
         ro.observe(footer);
       } catch {}
 
-      sidebar.addEventListener('pointerdown', (e) => {
+      sidebarHandle.addEventListener('pointerdown', (e) => {
         if (window.innerWidth <= 768) return;
-        const rect = sidebar.getBoundingClientRect();
-        if (e.clientX < rect.right - 10) return;
-        try { sidebar.setPointerCapture(e.pointerId); } catch {}
+        try { sidebarHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
 
         const onMove = (ev) => {
           setSidebarWidthPx(ev.clientX);
         };
         const onUp = (ev) => {
-          try { sidebar.releasePointerCapture(ev.pointerId); } catch {}
-          sidebar.removeEventListener('pointermove', onMove);
-          sidebar.removeEventListener('pointerup', onUp);
-          sidebar.removeEventListener('pointercancel', onUp);
+          try { sidebarHandle.releasePointerCapture(ev.pointerId); } catch {}
+          sidebarHandle.removeEventListener('pointermove', onMove);
+          sidebarHandle.removeEventListener('pointerup', onUp);
+          sidebarHandle.removeEventListener('pointercancel', onUp);
         };
-        sidebar.addEventListener('pointermove', onMove);
-        sidebar.addEventListener('pointerup', onUp);
-        sidebar.addEventListener('pointercancel', onUp);
+        sidebarHandle.addEventListener('pointermove', onMove);
+        sidebarHandle.addEventListener('pointerup', onUp);
+        sidebarHandle.addEventListener('pointercancel', onUp);
       });
 
-      footer.addEventListener('pointerdown', (e) => {
+      footerHandle.addEventListener('pointerdown', (e) => {
         if (window.innerWidth <= 768) return;
-        const rect = footer.getBoundingClientRect();
-        if (e.clientY > rect.top + 10) return;
-        try { footer.setPointerCapture(e.pointerId); } catch {}
+        try { footerHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
 
         const onMove = (ev) => {
           setFooterHeightPx(window.innerHeight - ev.clientY);
         };
         const onUp = (ev) => {
-          try { footer.releasePointerCapture(ev.pointerId); } catch {}
-          footer.removeEventListener('pointermove', onMove);
-          footer.removeEventListener('pointerup', onUp);
-          footer.removeEventListener('pointercancel', onUp);
+          try { footerHandle.releasePointerCapture(ev.pointerId); } catch {}
+          footerHandle.removeEventListener('pointermove', onMove);
+          footerHandle.removeEventListener('pointerup', onUp);
+          footerHandle.removeEventListener('pointercancel', onUp);
         };
-        footer.addEventListener('pointermove', onMove);
-        footer.addEventListener('pointerup', onUp);
-        footer.addEventListener('pointercancel', onUp);
+        footerHandle.addEventListener('pointermove', onMove);
+        footerHandle.addEventListener('pointerup', onUp);
+        footerHandle.addEventListener('pointercancel', onUp);
       });
 
       window.addEventListener('resize', () => {
