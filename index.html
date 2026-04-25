@@ -2694,19 +2694,19 @@
       border-radius: 10px;
       background: rgba(10, 10, 10, 0.25);
       color: rgba(0,191,255,0.92);
-      border: 1px solid rgba(0, 191, 255, 0.18);
+      border: 0;
       line-height: 1;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.06);
+      box-shadow: none;
       opacity: 0.9;
       outline: none;
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
       user-select: none;
       touch-action: manipulation;
-      transition: opacity 0.16s ease, background 0.16s ease, border-color 0.16s ease, transform 0.16s ease, color 0.16s ease;
+      transition: opacity 0.16s ease, background 0.16s ease, transform 0.16s ease, color 0.16s ease;
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
@@ -2719,7 +2719,6 @@
       opacity: 1;
       color: rgba(0,191,255,1);
       background: rgba(0,191,255,0.10);
-      border-color: rgba(0, 191, 255, 0.32);
       transform: translateY(-1px);
     }
     @media (max-width: 600px) {
