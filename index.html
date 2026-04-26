@@ -2167,12 +2167,13 @@
       justify-content: center;
     }
     .corner-menu-panel {
-      position: absolute;
+      position: fixed;
       left: 50%;
-      bottom: calc(100% + 10px);
+      bottom: calc(var(--footer-height) + 16px + env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%) translateY(8px);
       opacity: 0;
       pointer-events: none;
+      z-index: 10001;
       min-width: 180px;
       padding: 10px;
       border-radius: 14px;
@@ -3413,20 +3414,23 @@
     }
 
     function closeCornerMenu() {
-      const wrap = document.getElementById('cornerMenu');
+      document.querySelectorAll('.corner-menu.open').forEach((wrap) => {
+        wrap.classList.remove('open');
+      });
       const btn = document.getElementById('cornerReset');
-      if (!wrap) return;
-      wrap.classList.remove('open');
       if (btn) btn.setAttribute('aria-expanded', 'false');
     }
 
     function toggleCornerMenu(e) {
-      if (e) e.stopPropagation();
-      const wrap = document.getElementById('cornerMenu');
-      const btn = document.getElementById('cornerReset');
+      if (e) {
+        e.stopPropagation();
+        try { e.preventDefault(); } catch {}
+      }
+      const btn = e && e.currentTarget ? e.currentTarget : document.getElementById('cornerReset');
+      const wrap = btn && btn.closest ? btn.closest('.corner-menu') : document.getElementById('cornerMenu');
       if (!wrap || !btn) return;
       const isOpen = wrap.classList.toggle('open');
-      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      try { btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); } catch {}
     }
 
     function cornerMenuAction(kind) {
@@ -3498,9 +3502,10 @@
     }
 
     window.addEventListener('click', (e) => {
-      const wrap = document.getElementById('cornerMenu');
-      if (wrap && wrap.classList.contains('open')) {
-        if (!wrap.contains(e.target)) closeCornerMenu();
+      const openMenus = document.querySelectorAll('.corner-menu.open');
+      if (openMenus.length) {
+        const insideSome = [...openMenus].some((wrap) => wrap.contains(e.target));
+        if (!insideSome) closeCornerMenu();
       }
       const overlay = document.getElementById('profileOverlay');
       if (!overlay) return;
