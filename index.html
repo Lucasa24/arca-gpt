@@ -2166,6 +2166,11 @@
       align-items: center;
       justify-content: center;
     }
+    #cornerReset {
+      list-style: none;
+    }
+    #cornerReset::-webkit-details-marker { display: none; }
+    #cornerReset::marker { content: ""; }
     .corner-menu-panel {
       position: fixed;
       left: 50%;
@@ -2194,7 +2199,8 @@
         repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 10px);
       pointer-events: none;
     }
-    .corner-menu.open .corner-menu-panel {
+    .corner-menu.open .corner-menu-panel,
+    .corner-menu[open] .corner-menu-panel {
       opacity: 1;
       pointer-events: auto;
       transform: translateX(-50%) translateY(0);
@@ -2219,12 +2225,15 @@
       opacity: 0;
       transition: opacity 0.18s ease, transform 0.22s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
     }
-    .corner-menu.open .corner-menu-link {
+    .corner-menu.open .corner-menu-link,
+    .corner-menu[open] .corner-menu-link {
       transform: translateY(0);
       opacity: 1;
     }
-    .corner-menu.open .corner-menu-link:nth-child(1) { transition-delay: 40ms; }
-    .corner-menu.open .corner-menu-link:nth-child(2) { transition-delay: 90ms; }
+    .corner-menu.open .corner-menu-link:nth-child(1),
+    .corner-menu[open] .corner-menu-link:nth-child(1) { transition-delay: 40ms; }
+    .corner-menu.open .corner-menu-link:nth-child(2),
+    .corner-menu[open] .corner-menu-link:nth-child(2) { transition-delay: 90ms; }
     .corner-menu-link:hover {
       background: rgba(0,191,255,0.08);
       border-color: rgba(0,191,255,0.20);
@@ -2979,16 +2988,20 @@
       opacity: 0.92;
       transition: opacity 0.18s ease;
     }
-    .corner-menu.open #cornerReset .corner-keyburger .corner-line--top {
+    .corner-menu.open #cornerReset .corner-keyburger .corner-line--top,
+    .corner-menu[open] #cornerReset .corner-keyburger .corner-line--top {
       transform: translateY(4.5px) rotate(45deg);
     }
-    .corner-menu.open #cornerReset .corner-keyburger .corner-line--mid {
+    .corner-menu.open #cornerReset .corner-keyburger .corner-line--mid,
+    .corner-menu[open] #cornerReset .corner-keyburger .corner-line--mid {
       opacity: 0;
     }
-    .corner-menu.open #cornerReset .corner-keyburger .corner-line--bot {
+    .corner-menu.open #cornerReset .corner-keyburger .corner-line--bot,
+    .corner-menu[open] #cornerReset .corner-keyburger .corner-line--bot {
       transform: translateY(-4.5px) rotate(-45deg);
     }
-    .corner-menu.open #cornerReset .corner-keyburger .corner-ring {
+    .corner-menu.open #cornerReset .corner-keyburger .corner-ring,
+    .corner-menu[open] #cornerReset .corner-keyburger .corner-ring {
       opacity: 0.35;
     }
 
@@ -3263,20 +3276,20 @@
       </div>
 
       <p class="footer-note">
-        <span class="corner-menu" id="cornerMenu">
-          <button id="cornerReset" type="button" aria-label="Abrir menu" aria-expanded="false" onclick="toggleCornerMenu(event)">
+        <details class="corner-menu" id="cornerMenu">
+          <summary id="cornerReset" aria-label="Abrir menu" aria-expanded="false">
             <svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <circle class="corner-ring" cx="6" cy="10" r="3.4"></circle>
               <path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path>
               <path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path>
               <path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path>
             </svg>
-          </button>
+          </summary>
           <div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu">
             <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button>
             <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button>
           </div>
-        </span>
+        </details>
       </p>
     </div>
     <div id="footerResizeHandle" aria-hidden="true"></div>
@@ -3414,8 +3427,9 @@
     }
 
     function closeCornerMenu() {
-      document.querySelectorAll('.corner-menu.open').forEach((wrap) => {
+      document.querySelectorAll('.corner-menu.open, .corner-menu[open]').forEach((wrap) => {
         wrap.classList.remove('open');
+        try { wrap.open = false; } catch {}
       });
       const btn = document.getElementById('cornerReset');
       if (btn) btn.setAttribute('aria-expanded', 'false');
@@ -3429,9 +3443,26 @@
       const btn = e && e.currentTarget ? e.currentTarget : document.getElementById('cornerReset');
       const wrap = btn && btn.closest ? btn.closest('.corner-menu') : document.getElementById('cornerMenu');
       if (!wrap || !btn) return;
-      const isOpen = wrap.classList.toggle('open');
+      const isDetails = typeof wrap.open === 'boolean';
+      const isOpen = isDetails ? !wrap.open : !wrap.classList.contains('open');
+      try { wrap.open = isOpen; } catch {}
+      wrap.classList.toggle('open', isOpen);
       try { btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); } catch {}
     }
+
+    document.addEventListener('pointerdown', (e) => {
+      const trigger = e.target && e.target.closest ? e.target.closest('#cornerReset') : null;
+      if (!trigger) return;
+      const wrap = trigger.closest ? trigger.closest('.corner-menu') : null;
+      if (!wrap) return;
+      e.stopPropagation();
+      try { e.preventDefault(); } catch {}
+      const isDetails = typeof wrap.open === 'boolean';
+      const next = isDetails ? !wrap.open : !wrap.classList.contains('open');
+      try { wrap.open = next; } catch {}
+      wrap.classList.toggle('open', next);
+      try { trigger.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
+    }, { passive: false });
 
     function cornerMenuAction(kind) {
       closeCornerMenu();
@@ -3502,7 +3533,7 @@
     }
 
     window.addEventListener('click', (e) => {
-      const openMenus = document.querySelectorAll('.corner-menu.open');
+      const openMenus = document.querySelectorAll('.corner-menu.open, .corner-menu[open]');
       if (openMenus.length) {
         const insideSome = [...openMenus].some((wrap) => wrap.contains(e.target));
         if (!insideSome) closeCornerMenu();
@@ -6068,7 +6099,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const footerNote = document.querySelector('.footer-note');
       if (!footerNote) return;
       if (!footerNote.querySelector('#cornerReset')) {
-        footerNote.innerHTML = `<span class="corner-menu" id="cornerMenu"><button id="cornerReset" type="button" aria-label="Abrir menu" aria-expanded="false" onclick="toggleCornerMenu(event)"><svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle class="corner-ring" cx="6" cy="10" r="3.4"></circle><path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path><path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path><path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path></svg></button><div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu"><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button></div></span>`;
+        footerNote.innerHTML = `<details class="corner-menu" id="cornerMenu"><summary id="cornerReset" aria-label="Abrir menu" aria-expanded="false"><svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle class="corner-ring" cx="6" cy="10" r="3.4"></circle><path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path><path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path><path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path></svg></summary><div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu"><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button></div></details>`;
       }
     }
 
