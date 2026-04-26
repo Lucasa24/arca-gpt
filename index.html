@@ -1369,11 +1369,9 @@
       z-index: 100;
       transition: left 0.3s ease, width 0.3s ease;
       height: var(--footer-height);
-      overflow: auto;
+      overflow: hidden;
       min-height: 90px;
       max-height: 70vh;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(0,191,255,0.55) rgba(0,0,0,0.25);
     }
     #footerResizeHandle {
       position: fixed;
@@ -1403,19 +1401,6 @@
       overflow: visible;
       z-index: 10000;
     }
-    .fixed-footer::-webkit-scrollbar { width: 8px; }
-    .fixed-footer::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.25);
-      border-left: 1px solid rgba(0,191,255,0.12);
-    }
-    .fixed-footer::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, rgba(0,191,255,0.20), rgba(0,191,255,0.85), rgba(179,0,0,0.22));
-      border-radius: 9999px;
-      border: 1px solid rgba(0,191,255,0.22);
-      box-shadow: 0 0 10px rgba(0,191,255,0.18);
-    }
-    .fixed-footer::-webkit-scrollbar-thumb:hover { box-shadow: 0 0 14px rgba(0,191,255,0.28); }
-    .fixed-footer::-webkit-scrollbar-corner { background: rgba(0,0,0,0.25); }
 
     #mainContent.sidebar-hidden .fixed-footer {
       left: 0;
