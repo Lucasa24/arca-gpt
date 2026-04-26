@@ -2160,6 +2160,76 @@
       align-items: center;
     }
 
+    .corner-menu {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .corner-menu-panel {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%) translateY(8px);
+      opacity: 0;
+      pointer-events: none;
+      min-width: 180px;
+      padding: 10px;
+      border-radius: 14px;
+      background: rgba(10, 10, 10, 0.88);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.65);
+      border: 1px solid rgba(255, 210, 150, 0.10);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .corner-menu-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      background:
+        radial-gradient(520px 320px at 22% 18%, rgba(255, 210, 150, 0.10), transparent 60%),
+        radial-gradient(520px 320px at 78% 28%, rgba(0, 191, 255, 0.08), transparent 62%),
+        repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 10px);
+      pointer-events: none;
+    }
+    .corner-menu.open .corner-menu-panel {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+      transition: opacity 0.18s ease, transform 0.22s ease;
+    }
+    .corner-menu-link {
+      position: relative;
+      width: 100%;
+      height: 44px;
+      min-width: 0;
+      padding: 0 14px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: rgba(245,245,245,0.86);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      justify-content: flex-start;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.22s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+    }
+    .corner-menu.open .corner-menu-link {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .corner-menu.open .corner-menu-link:nth-child(1) { transition-delay: 40ms; }
+    .corner-menu.open .corner-menu-link:nth-child(2) { transition-delay: 90ms; }
+    .corner-menu-link:hover {
+      background: rgba(0,191,255,0.08);
+      border-color: rgba(0,191,255,0.20);
+      color: rgba(245,245,245,0.92);
+    }
+
     .profile-overlay {
       position: fixed;
       inset: 0;
@@ -2888,6 +2958,38 @@
       display: block;
       filter: drop-shadow(0 0 6px rgba(0,191,255,0.20));
     }
+    #cornerReset .corner-keyburger {
+      width: clamp(20px, 2.2vw, 26px);
+      height: clamp(12px, 1.3vw, 14px);
+      filter: drop-shadow(0 0 8px rgba(0,191,255,0.18));
+    }
+    #cornerReset .corner-keyburger .corner-line {
+      stroke: currentColor;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      fill: none;
+      transform-origin: 25px 10px;
+      transition: transform 0.22s ease, opacity 0.18s ease;
+    }
+    #cornerReset .corner-keyburger .corner-ring {
+      stroke: currentColor;
+      stroke-width: 2.1;
+      fill: none;
+      opacity: 0.92;
+      transition: opacity 0.18s ease;
+    }
+    .corner-menu.open #cornerReset .corner-keyburger .corner-line--top {
+      transform: translateY(4.5px) rotate(45deg);
+    }
+    .corner-menu.open #cornerReset .corner-keyburger .corner-line--mid {
+      opacity: 0;
+    }
+    .corner-menu.open #cornerReset .corner-keyburger .corner-line--bot {
+      transform: translateY(-4.5px) rotate(-45deg);
+    }
+    .corner-menu.open #cornerReset .corner-keyburger .corner-ring {
+      opacity: 0.35;
+    }
 
     #scrollToBottomBtn {
       position: fixed;
@@ -3160,14 +3262,20 @@
       </div>
 
       <p class="footer-note">
-        <button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="handleKeyClick()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="7.5" cy="12.5" r="3.5"></circle>
-            <path d="M11 12.5h11"></path>
-            <path d="M17 12.5v3"></path>
-            <path d="M20 12.5v2"></path>
-          </svg>
-        </button>
+        <span class="corner-menu" id="cornerMenu">
+          <button id="cornerReset" type="button" aria-label="Abrir menu" aria-expanded="false" onclick="toggleCornerMenu(event)">
+            <svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle class="corner-ring" cx="6" cy="10" r="3.4"></circle>
+              <path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path>
+              <path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path>
+              <path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path>
+            </svg>
+          </button>
+          <div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu">
+            <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button>
+            <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button>
+          </div>
+        </span>
       </p>
     </div>
     <div id="footerResizeHandle" aria-hidden="true"></div>
@@ -3191,6 +3299,28 @@
           <div class="profile-sub" id="profileEmail"></div>
           <div class="profile-actions">
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="saldoOverlay" class="profile-overlay" aria-hidden="true">
+    <div class="profile-panel" role="dialog" aria-label="Saldo">
+      <div class="profile-header">
+        <div class="profile-title">Saldo</div>
+        <button type="button" class="profile-close" aria-label="Fechar saldo" onclick="closeSaldo()">✕</button>
+      </div>
+      <div class="profile-body">
+        <div class="profile-nav">
+          <button type="button" onclick="openProfile()">Perfil</button>
+          <button type="button" onclick="closeSaldo()">Fechar</button>
+        </div>
+        <div class="profile-card">
+          <div class="profile-userline">
+            <span class="profile-userdot">⦿</span>
+            <span id="saldoUsername">—</span>
+          </div>
+          <div class="profile-sub" id="saldoHint">Em breve: compra/gestão de saldo.</div>
+          <div class="profile-actions"></div>
         </div>
       </div>
     </div>
@@ -3282,6 +3412,35 @@
       overlay.setAttribute('aria-hidden', 'false');
     }
 
+    function closeCornerMenu() {
+      const wrap = document.getElementById('cornerMenu');
+      const btn = document.getElementById('cornerReset');
+      if (!wrap) return;
+      wrap.classList.remove('open');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleCornerMenu(e) {
+      if (e) e.stopPropagation();
+      const wrap = document.getElementById('cornerMenu');
+      const btn = document.getElementById('cornerReset');
+      if (!wrap || !btn) return;
+      const isOpen = wrap.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    function cornerMenuAction(kind) {
+      closeCornerMenu();
+      if (kind === 'profile') {
+        handleKeyClick();
+        return;
+      }
+      if (kind === 'saldo') {
+        openSaldo();
+        return;
+      }
+    }
+
     function handleKeyClick() {
       const isGuest = !!localStorage.getItem('isGuest');
       if (isGuest) {
@@ -3297,11 +3456,63 @@
       showAuthPortal();
     }
 
+    function closeSaldo() {
+      const overlay = document.getElementById('saldoOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderSaldo() {
+      let data = null;
+      try {
+        data = userData || JSON.parse(localStorage.getItem('userData') || 'null');
+      } catch {}
+      const usernameEl = document.getElementById('saldoUsername');
+      if (!usernameEl) return;
+      if (!data || !data.email) {
+        usernameEl.textContent = 'Visitante';
+        return;
+      }
+      const username = String(data.email).split('@')[0] || String(data.email);
+      usernameEl.textContent = username;
+    }
+
+    function openSaldo() {
+      const isGuest = !!localStorage.getItem('isGuest');
+      if (isGuest) {
+        showAuthPortal();
+        return;
+      }
+      const storedUserData = localStorage.getItem('userData');
+      if (!storedUserData) {
+        showAuthPortal();
+        return;
+      }
+      try { userData = JSON.parse(storedUserData); userLoggedIn = true; } catch {}
+      const overlay = document.getElementById('saldoOverlay');
+      if (!overlay) return;
+      renderSaldo();
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
     window.addEventListener('click', (e) => {
+      const wrap = document.getElementById('cornerMenu');
+      if (wrap && wrap.classList.contains('open')) {
+        if (!wrap.contains(e.target)) closeCornerMenu();
+      }
       const overlay = document.getElementById('profileOverlay');
       if (!overlay) return;
       if (!overlay.classList.contains('open')) return;
       if (e.target === overlay) closeProfile();
+    }, { passive: true });
+
+    window.addEventListener('click', (e) => {
+      const overlay = document.getElementById('saldoOverlay');
+      if (!overlay) return;
+      if (!overlay.classList.contains('open')) return;
+      if (e.target === overlay) closeSaldo();
     }, { passive: true });
 
     marked.setOptions({
@@ -5852,7 +6063,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const footerNote = document.querySelector('.footer-note');
       if (!footerNote) return;
       if (!footerNote.querySelector('#cornerReset')) {
-        footerNote.innerHTML = `<button id="cornerReset" type="button" aria-label="Acessar Portal" onclick="handleKeyClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="7.5" cy="12.5" r="3.5"></circle><path d="M11 12.5h11"></path><path d="M17 12.5v3"></path><path d="M20 12.5v2"></path></svg></button>`;
+        footerNote.innerHTML = `<span class="corner-menu" id="cornerMenu"><button id="cornerReset" type="button" aria-label="Abrir menu" aria-expanded="false" onclick="toggleCornerMenu(event)"><svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle class="corner-ring" cx="6" cy="10" r="3.4"></circle><path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path><path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path><path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path></svg></button><div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu"><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button></div></span>`;
       }
     }
 
