@@ -2925,6 +2925,7 @@
       min-width: 0;
       min-height: 0;
       padding: 0;
+      list-style: none;
       border-radius: 10px;
       background: rgba(10, 10, 10, 0.25);
       color: rgba(0,191,255,0.92);
@@ -2944,6 +2945,8 @@
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
+    #cornerReset::-webkit-details-marker { display: none; }
+    #cornerReset::marker { content: ""; }
     #cornerReset:focus,
     #cornerReset:focus-visible {
       outline: none;
@@ -3450,19 +3453,20 @@
       try { btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); } catch {}
     }
 
-    document.addEventListener('pointerdown', (e) => {
+    document.addEventListener('click', (e) => {
       const trigger = e.target && e.target.closest ? e.target.closest('#cornerReset') : null;
       if (!trigger) return;
       const wrap = trigger.closest ? trigger.closest('.corner-menu') : null;
       if (!wrap) return;
-      e.stopPropagation();
       try { e.preventDefault(); } catch {}
+      try { e.stopPropagation(); } catch {}
+      try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch {}
       const isDetails = typeof wrap.open === 'boolean';
       const next = isDetails ? !wrap.open : !wrap.classList.contains('open');
       try { wrap.open = next; } catch {}
       wrap.classList.toggle('open', next);
       try { trigger.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
-    }, { passive: false });
+    }, { capture: true });
 
     function cornerMenuAction(kind) {
       closeCornerMenu();
@@ -6098,9 +6102,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
     function updateLoginStatus() {
       const footerNote = document.querySelector('.footer-note');
       if (!footerNote) return;
-      if (!footerNote.querySelector('#cornerReset')) {
-        footerNote.innerHTML = `<details class="corner-menu" id="cornerMenu"><summary id="cornerReset" aria-label="Abrir menu" aria-expanded="false"><svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle class="corner-ring" cx="6" cy="10" r="3.4"></circle><path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path><path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path><path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path></svg></summary><div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu"><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button><button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button></div></details>`;
-      }
     }
 
     function handleLogout() {
