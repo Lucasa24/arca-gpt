@@ -1369,7 +1369,7 @@
       z-index: 100;
       transition: left 0.3s ease, width 0.3s ease;
       height: var(--footer-height);
-      overflow: hidden;
+      overflow: visible;
       min-height: 90px;
       max-height: 70vh;
     }
@@ -1503,14 +1503,14 @@
       min-width: 16px;
       min-height: 16px;
       border-radius: 50%;
-      border: 1px solid rgba(0,191,255,0.22);
-      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.06), rgba(0,0,0,0) 55%);
+      border: 1px solid rgba(0,191,255,0.32);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.12), rgba(0,0,0,0) 55%);
       padding: 0;
       cursor: pointer;
       position: relative;
       display: grid;
       place-items: center;
-      opacity: 0.9;
+      opacity: 1;
       box-shadow: 0 0 0 1px rgba(0,191,255,0.08), 0 0 10px rgba(0,191,255,0.12);
       transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
       letter-spacing: 0;
@@ -1653,7 +1653,7 @@
       gap: 10px;
       padding: 12px;
       background: rgba(10, 10, 10, 0.98);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 4px;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -1780,9 +1780,9 @@
     }
 
     .mode-peteca-menu .mode-btn {
-      background: #111;
-      color: #666;
-      border: 1px solid #222;
+      background: #0d0d0d;
+      color: rgba(245,245,245,0.82);
+      border: 1px solid rgba(255,255,255,0.14);
       border-radius: 2px;
       padding: 0 10px;
       font-size: 0.65rem;
@@ -2154,7 +2154,7 @@
       color: #555;
       margin-top: 2px; /* Margem superior minimizada */
       text-align: center;
-      opacity: 0.7;
+      opacity: 1;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -2174,6 +2174,7 @@
     .corner-menu-panel {
       position: fixed;
       left: 50%;
+      bottom: 96px;
       bottom: calc(var(--footer-height) + 16px + env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%) translateY(8px);
       opacity: 0;
@@ -2238,6 +2239,23 @@
       background: rgba(0,191,255,0.08);
       border-color: rgba(0,191,255,0.20);
       color: rgba(245,245,245,0.92);
+    }
+
+    .fixed-footer.corner-open {
+      z-index: 10000;
+    }
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      #cornerReset { background: rgba(10, 10, 10, 0.70); }
+      .corner-menu-panel {
+        background: rgba(10, 10, 10, 0.96);
+        border-color: rgba(255, 255, 255, 0.14);
+      }
+      .mode-peteca .mode-peteca-btn { background: rgba(10, 10, 10, 0.85); }
+      .mode-peteca-menu {
+        background: rgba(10, 10, 10, 0.98);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
     }
 
     .profile-overlay {
@@ -3435,6 +3453,8 @@
       });
       const btn = document.getElementById('cornerReset');
       if (btn) btn.setAttribute('aria-expanded', 'false');
+      const footer = document.querySelector('.fixed-footer');
+      if (footer) footer.classList.remove('corner-open');
     }
 
     function toggleCornerMenu(e) {
@@ -3452,20 +3472,60 @@
       try { btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); } catch {}
     }
 
-    document.addEventListener('click', (e) => {
-      const trigger = e.target && e.target.closest ? e.target.closest('#cornerReset') : null;
+    let __cornerLastToggleAt = 0;
+
+    function __cornerFindById(node, id) {
+      let n = node;
+      while (n && n !== document) {
+        if (n.id === id) return n;
+        n = n.parentNode;
+      }
+      return null;
+    }
+
+    function __cornerFindByClass(node, cls) {
+      let n = node;
+      while (n && n !== document) {
+        if (n.classList && n.classList.contains(cls)) return n;
+        n = n.parentNode;
+      }
+      return null;
+    }
+
+    function __cornerToggleFromEvent(e) {
+      const target = e && e.target ? e.target : null;
+      let trigger = null;
+      if (target && target.closest) trigger = target.closest('#cornerReset');
+      else trigger = __cornerFindById(target, 'cornerReset');
       if (!trigger) return;
-      const wrap = trigger.closest ? trigger.closest('.corner-menu') : null;
-      if (!wrap) return;
+
+      const now = Date.now();
+      const isDup = now - __cornerLastToggleAt < 280;
+      __cornerLastToggleAt = now;
+
       try { e.preventDefault(); } catch {}
       try { e.stopPropagation(); } catch {}
       try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch {}
+      if (isDup) return;
+
+      let wrap = null;
+      if (trigger.closest) wrap = trigger.closest('.corner-menu');
+      else wrap = __cornerFindByClass(trigger, 'corner-menu');
+      if (!wrap) return;
+
       const isDetails = typeof wrap.open === 'boolean';
       const next = isDetails ? !wrap.open : !wrap.classList.contains('open');
       try { wrap.open = next; } catch {}
       wrap.classList.toggle('open', next);
       try { trigger.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
-    }, { capture: true });
+
+      const footer = document.querySelector('.fixed-footer');
+      if (footer) footer.classList.toggle('corner-open', next);
+    }
+
+    document.addEventListener('pointerdown', __cornerToggleFromEvent, { capture: true, passive: false });
+    document.addEventListener('touchstart', __cornerToggleFromEvent, { capture: true, passive: false });
+    document.addEventListener('click', __cornerToggleFromEvent, { capture: true, passive: false });
 
     function cornerMenuAction(kind) {
       closeCornerMenu();
