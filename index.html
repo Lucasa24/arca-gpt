@@ -3064,24 +3064,55 @@
     .corner-menu--floating {
       position: fixed;
       display: none;
-      left: 50%;
-      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-      transform: translateX(-50%);
+      left: 14px;
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      transform: none;
       z-index: 20000;
-      --corner-panel-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+      --corner-panel-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     }
 
     #cornerResetFloating {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
+      width: 17px;
+      height: 17px;
+      border-radius: 6px;
       background: rgba(10, 10, 10, 0.72);
       border: 1px solid rgba(0, 191, 255, 0.22);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,191,255,0.08);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.48), 0 0 0 1px rgba(0,191,255,0.08);
       opacity: 1;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: box-shadow 140ms ease, border-color 140ms ease, background 140ms ease, filter 140ms ease;
+    }
+    #cornerResetFloating .corner-keyburger {
+      width: 12px;
+      height: 7px;
+      display: block;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      #cornerResetFloating:hover {
+        border-color: rgba(0, 191, 255, 0.34);
+        box-shadow:
+          0 12px 28px rgba(0,0,0,0.52),
+          0 0 0 1px rgba(0,191,255,0.12),
+          0 0 14px rgba(0,191,255,0.18);
+      }
+      #cornerResetFloating:hover .corner-keyburger {
+        filter: drop-shadow(0 0 8px rgba(0,191,255,0.28));
+      }
+    }
+    #cornerResetFloating:focus-visible {
+      border-color: rgba(0, 191, 255, 0.40);
+      box-shadow:
+        0 12px 28px rgba(0,0,0,0.52),
+        0 0 0 2px rgba(0,191,255,0.22),
+        0 0 16px rgba(0,191,255,0.22);
+    }
+    @media (max-width: 420px) {
+      #cornerResetFloating { width: 15px; height: 15px; border-radius: 6px; }
+      #cornerResetFloating .corner-keyburger { width: 11px; height: 6px; }
     }
 
     .corner-menu-toggle:checked + #cornerResetFloating .corner-keyburger .corner-line--top { transform: translateY(4.5px) rotate(45deg); }
@@ -3089,12 +3120,21 @@
     .corner-menu-toggle:checked + #cornerResetFloating .corner-keyburger .corner-line--bot { transform: translateY(-4.5px) rotate(-45deg); }
     .corner-menu-toggle:checked + #cornerResetFloating .corner-keyburger .corner-ring { opacity: 0.35; }
 
+    .corner-menu--floating .corner-menu-panel {
+      left: 14px;
+      transform: translateX(0) translateY(8px);
+    }
+    .corner-menu--floating .corner-menu-toggle:checked ~ .corner-menu-panel {
+      transform: translateX(0) translateY(0);
+    }
+
     @media (max-width: 900px) {
       .corner-menu--floating { display: inline-flex; align-items: center; justify-content: center; }
       .footer-note #cornerMenu { display: none; }
     }
     .arca-iab .corner-menu--floating { display: inline-flex; align-items: center; justify-content: center; }
     .arca-iab .footer-note #cornerMenu { display: none; }
+    .auth-open .corner-menu--floating { display: none !important; }
 
     #scrollToBottomBtn {
       position: fixed;
@@ -3547,6 +3587,15 @@
       const root = document.documentElement;
       const ua = String(navigator.userAgent || '');
       root.classList.toggle('arca-iab', /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua));
+      const isVisible = (el) => {
+        if (!el) return false;
+        const cs = getComputedStyle(el);
+        return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0' && cs.pointerEvents !== 'none';
+      };
+      const portal = document.getElementById('authPortal');
+      const syncAuthOpen = () => {
+        root.classList.toggle('auth-open', !!(portal && isVisible(portal)));
+      };
       const getW = () => {
         try {
           if (window.visualViewport && Number.isFinite(window.visualViewport.width)) return window.visualViewport.width;
@@ -3556,12 +3605,19 @@
       const sync = () => {
         const w = getW();
         root.classList.toggle('arca-mobile', w > 0 && w <= 768);
+        syncAuthOpen();
       };
       sync();
       window.addEventListener('resize', sync, { passive: true });
       if (window.visualViewport) {
         try { window.visualViewport.addEventListener('resize', sync, { passive: true }); } catch {}
         try { window.visualViewport.addEventListener('scroll', sync, { passive: true }); } catch {}
+      }
+      if (portal) {
+        try {
+          const mo = new MutationObserver(syncAuthOpen);
+          mo.observe(portal, { attributes: true, attributeFilter: ['class', 'style', 'aria-hidden'] });
+        } catch {}
       }
     })();
 
