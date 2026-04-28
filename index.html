@@ -3296,22 +3296,22 @@
         <div id="loadingBar"></div>
       </div>
 
-      <p class="footer-note">
-        <details class="corner-menu" id="cornerMenu">
-          <summary id="cornerReset" aria-label="Abrir menu" aria-expanded="false">
+      <div class="footer-note">
+        <div class="corner-menu" id="cornerMenu">
+          <button type="button" id="cornerReset" aria-label="Abrir menu" aria-expanded="false">
             <svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <circle class="corner-ring" cx="6" cy="10" r="3.4"></circle>
               <path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path>
               <path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path>
               <path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path>
             </svg>
-          </summary>
+          </button>
           <div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu">
             <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button>
             <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button>
           </div>
-        </details>
-      </p>
+        </div>
+      </div>
     </div>
     <div id="footerResizeHandle" aria-hidden="true"></div>
   </main>
@@ -3449,7 +3449,9 @@
     function closeCornerMenu() {
       document.querySelectorAll('.corner-menu.open, .corner-menu[open]').forEach((wrap) => {
         wrap.classList.remove('open');
-        try { wrap.open = false; } catch {}
+        if (typeof wrap.open === 'boolean') {
+          try { wrap.open = false; } catch {}
+        }
       });
       const btn = document.getElementById('cornerReset');
       if (btn) btn.setAttribute('aria-expanded', 'false');
@@ -3515,7 +3517,9 @@
 
       const isDetails = typeof wrap.open === 'boolean';
       const next = isDetails ? !wrap.open : !wrap.classList.contains('open');
-      try { wrap.open = next; } catch {}
+      if (isDetails) {
+        try { wrap.open = next; } catch {}
+      }
       wrap.classList.toggle('open', next);
       try { trigger.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
 
