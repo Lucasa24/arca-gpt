@@ -2473,6 +2473,535 @@
       }
       .profile-nav button:last-child { border-right: 0; }
     }
+
+    .saldo-panel {
+      overflow: hidden;
+    }
+    .saldo-header {
+      align-items: flex-start;
+      padding: 14px 16px 12px;
+    }
+    .saldo-header-title {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .saldo-header-sub {
+      font-size: 0.72rem;
+      color: rgba(245,245,245,0.58);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .saldo-body {
+      grid-template-columns: minmax(170px, 260px) 1fr;
+      padding: 0;
+      gap: 0;
+      height: min(82vh, 740px);
+      max-height: min(82vh, 740px);
+    }
+
+    .saldo-menu {
+      position: relative;
+      padding: 14px 12px 12px;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(0,0,0,0.14);
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .saldo-menu-item {
+      width: 100%;
+      min-width: 0;
+      text-align: left;
+      padding: 12px 12px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(245,245,245,0.84);
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+    .saldo-menu-item:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255, 210, 150, 0.16);
+      transform: translateY(-1px);
+    }
+    .saldo-menu-item.active {
+      background: rgba(255, 210, 150, 0.06);
+      border-color: rgba(255, 210, 150, 0.20);
+      color: rgba(245,245,245,0.92);
+    }
+    .saldo-menu-no {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(245,245,245,0.72);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      flex: 0 0 auto;
+    }
+    .saldo-menu-item.active .saldo-menu-no {
+      border-color: rgba(0, 191, 255, 0.22);
+      color: rgba(0, 191, 255, 0.92);
+    }
+    .saldo-menu-head {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-size: 0.84rem;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .saldo-menu-foot {
+      margin-top: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .saldo-menu-action {
+      height: 40px;
+      min-width: 0;
+      padding: 0 12px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid rgba(0, 191, 255, 0.18);
+      color: rgba(0,191,255,0.88);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      flex: 1 1 auto;
+    }
+    .saldo-menu-action:hover {
+      background: rgba(0, 191, 255, 0.08);
+      border-color: rgba(0, 191, 255, 0.30);
+    }
+
+    .saldo-stage {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 16px 18px;
+    }
+
+    .saldo-view {
+      display: none;
+      min-width: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    .saldo-view.active {
+      display: block;
+    }
+
+    .saldo-card {
+      height: 100%;
+      border: 1px solid rgba(255, 210, 150, 0.10);
+      background: rgba(0,0,0,0.18);
+      border-radius: 12px;
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    .saldo-userline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(245,245,245,0.92);
+      font-size: 0.86rem;
+      min-width: 0;
+    }
+    .saldo-userline span { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+    .saldo-userdot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(0, 191, 255, 0.88);
+      box-shadow: 0 0 16px rgba(0, 191, 255, 0.20);
+      flex: 0 0 auto;
+    }
+
+    .saldo-metrics {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      min-width: 0;
+    }
+    .saldo-metric {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 12px 12px 10px;
+      background: rgba(10,10,10,0.28);
+      min-width: 0;
+      overflow: hidden;
+    }
+    .saldo-metric-k {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(245,245,245,0.56);
+    }
+    .saldo-metric-v {
+      margin-top: 6px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.12rem;
+      letter-spacing: 1.4px;
+      color: rgba(245,245,245,0.92);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .saldo-note {
+      margin-top: 12px;
+      font-size: 0.76rem;
+      color: rgba(245,245,245,0.58);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .saldo-topup {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr minmax(140px, 180px);
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+    .saldo-input {
+      width: 100%;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.24);
+      color: rgba(245,245,245,0.92);
+      padding: 0 12px;
+      outline: none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      min-width: 0;
+    }
+    .saldo-input:focus {
+      border-color: rgba(0, 191, 255, 0.24);
+      box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.12);
+    }
+    .saldo-primary {
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 191, 255, 0.22);
+      background: rgba(0, 191, 255, 0.08);
+      color: rgba(245,245,245,0.92);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.70rem;
+      min-width: 0;
+    }
+    .saldo-primary:hover {
+      background: rgba(0, 191, 255, 0.12);
+      border-color: rgba(0, 191, 255, 0.34);
+    }
+
+    .saldo-status {
+      margin-top: 12px;
+      font-size: 0.74rem;
+      color: rgba(245,245,245,0.62);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-height: 1.2em;
+    }
+
+    .saldo-section-title {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-size: 0.84rem;
+      color: rgba(245,245,245,0.88);
+    }
+    .saldo-history {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+    .saldo-history-block {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      background: rgba(10,10,10,0.28);
+      padding: 12px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .saldo-history-title {
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(245,245,245,0.56);
+    }
+    .saldo-history-list {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: rgba(245,245,245,0.74);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      max-height: 30vh;
+      overflow: auto;
+    }
+
+    .gem-shell {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .gem-identity {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 10px 0;
+      min-width: 0;
+    }
+    .gem-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255, 210, 150, 0.88);
+      box-shadow: 0 0 18px rgba(255, 210, 150, 0.18);
+      flex: 0 0 auto;
+    }
+    .gem-identity-text {
+      font-size: 0.66rem;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: rgba(245,245,245,0.62);
+      font-family: 'Cinzel', serif;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .gem-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 10px;
+      min-width: 0;
+    }
+    .gem-title-wrap { min-width: 0; }
+    .gem-title {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      font-size: 1.05rem;
+      color: rgba(245,245,245,0.92);
+      line-height: 1.1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .gem-sub {
+      margin-top: 4px;
+      font-size: 0.72rem;
+      color: rgba(245,245,245,0.56);
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-height: 1em;
+    }
+
+    .gem-badges { display: flex; gap: 8px; flex: 0 0 auto; }
+    .gem-badge {
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.22);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.66rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(245,245,245,0.70);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      white-space: nowrap;
+    }
+
+    .gem-context {
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(10,10,10,0.22);
+      border-radius: 12px;
+      padding: 12px 12px 10px;
+      margin: 0 10px;
+      min-width: 0;
+    }
+    .gem-context-title {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      color: rgba(245,245,245,0.88);
+    }
+    .gem-context-sub {
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: rgba(245,245,245,0.58);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .gem-conversation {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0 10px 6px;
+      scroll-behavior: smooth;
+      overscroll-behavior: contain;
+    }
+    .gem-conversation .msg {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .gem-conversation pre, .gem-conversation code {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .gem-composer {
+      flex: 0 0 auto;
+      margin: 0 10px;
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.26);
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 1fr minmax(108px, 130px);
+      gap: 10px;
+      align-items: end;
+      min-width: 0;
+    }
+    .gem-input {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      max-height: 140px;
+      resize: none;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.20);
+      color: rgba(245,245,245,0.92);
+      padding: 10px 12px;
+      outline: none;
+      font-family: inherit;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .gem-input:focus {
+      border-color: rgba(255, 210, 150, 0.18);
+      box-shadow: 0 0 0 3px rgba(255, 210, 150, 0.10);
+    }
+    .gem-cta {
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 210, 150, 0.20);
+      background: rgba(255, 210, 150, 0.08);
+      color: rgba(245,245,245,0.92);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      min-width: 0;
+    }
+    .gem-cta:hover {
+      background: rgba(255, 210, 150, 0.12);
+      border-color: rgba(255, 210, 150, 0.32);
+    }
+    .gem-cta.stop {
+      border-color: rgba(179,0,0,0.30);
+      background: rgba(179,0,0,0.14);
+    }
+
+    .gem-secondary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 10px 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .gem-secondary-btn {
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: transparent;
+      color: rgba(245,245,245,0.74);
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.64rem;
+    }
+    .gem-secondary-btn:hover {
+      background: rgba(255,255,255,0.04);
+      color: rgba(245,245,245,0.90);
+    }
+    .gem-status {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: rgba(245,245,245,0.56);
+      min-height: 1.1em;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    @media (max-width: 680px) {
+      .saldo-body {
+        grid-template-columns: 1fr;
+        height: min(86vh, 760px);
+        max-height: min(86vh, 760px);
+      }
+      .saldo-menu {
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .saldo-menu-item { flex: 1 1 calc(50% - 10px); }
+      .saldo-menu-foot { width: 100%; }
+      .saldo-stage { padding: 14px 14px 16px; }
+      .saldo-topup { grid-template-columns: 1fr; }
+      .gem-composer { grid-template-columns: 1fr; }
+      .gem-status { margin-left: 0; width: 100%; }
+    }
     /* Media Queries para responsividade */
     @media (min-width: 769px) {
       body {
@@ -3503,22 +4032,106 @@
     </div>
   </div>
   <div id="saldoOverlay" class="profile-overlay" aria-hidden="true">
-    <div class="profile-panel" role="dialog" aria-label="Saldo">
-      <div class="profile-header">
-        <div class="profile-title">Saldo</div>
+    <div class="profile-panel saldo-panel" role="dialog" aria-label="Saldo & Gemini">
+      <div class="profile-header saldo-header">
+        <div class="saldo-header-title">
+          <div class="profile-title">Saldo</div>
+          <div class="saldo-header-sub" id="saldoHeaderSub">—</div>
+        </div>
         <button type="button" class="profile-close" aria-label="Fechar saldo" onclick="closeSaldo()">✕</button>
       </div>
-      <div class="profile-body">
-        <div class="profile-nav">
-          <button type="button" onclick="closeSaldo()">Fechar</button>
-        </div>
-        <div class="profile-card">
-          <div class="profile-userline">
-            <span class="profile-userdot">⦿</span>
-            <span id="saldoUsername">—</span>
+      <div class="profile-body saldo-body">
+        <div class="saldo-menu" role="tablist" aria-label="Seções">
+          <button type="button" class="saldo-menu-item active" data-saldo-tab="credits" role="tab" aria-selected="true">
+            <span class="saldo-menu-no">I</span>
+            <span class="saldo-menu-head">créditos</span>
+          </button>
+          <button type="button" class="saldo-menu-item" data-saldo-tab="gemini" role="tab" aria-selected="false">
+            <span class="saldo-menu-no">II</span>
+            <span class="saldo-menu-head">gemini</span>
+          </button>
+          <button type="button" class="saldo-menu-item" data-saldo-tab="history" role="tab" aria-selected="false">
+            <span class="saldo-menu-no">III</span>
+            <span class="saldo-menu-head">histórico</span>
+          </button>
+          <div class="saldo-menu-foot">
+            <button type="button" class="saldo-menu-action" id="saldoRefreshBtn">Atualizar</button>
+            <button type="button" class="saldo-menu-action" onclick="closeSaldo()">Fechar</button>
           </div>
-          <div class="profile-sub" id="saldoHint">Em breve: compra/gestão de saldo.</div>
-          <div class="profile-actions"></div>
+        </div>
+        <div class="saldo-stage">
+          <section class="saldo-view active" id="saldoViewCredits" role="tabpanel">
+            <div class="saldo-card">
+              <div class="saldo-userline">
+                <span class="saldo-userdot" aria-hidden="true"></span>
+                <span id="saldoUsername">—</span>
+              </div>
+              <div class="saldo-metrics">
+                <div class="saldo-metric">
+                  <div class="saldo-metric-k">Disponível</div>
+                  <div class="saldo-metric-v" id="saldoCreditsAvailable">—</div>
+                </div>
+                <div class="saldo-metric">
+                  <div class="saldo-metric-k">Gasto</div>
+                  <div class="saldo-metric-v" id="saldoCreditsSpent">—</div>
+                </div>
+              </div>
+              <div class="saldo-note" id="saldoHint">Créditos são consumidos ao usar Gemini (Vigoroso).</div>
+              <div class="saldo-topup">
+                <input id="saldoTopupValue" class="saldo-input" inputmode="numeric" pattern="[0-9]*" placeholder="Valor em créditos (ex: 50)" />
+                <button type="button" class="saldo-primary" id="saldoTopupBtn">Gerar checkout</button>
+              </div>
+              <div class="saldo-status" id="saldoCreditsStatus" aria-live="polite"></div>
+            </div>
+          </section>
+
+          <section class="saldo-view" id="saldoViewGemini" role="tabpanel">
+            <div class="gem-shell" id="geminiShell">
+              <div class="gem-identity">
+                <span class="gem-dot" aria-hidden="true"></span>
+                <span class="gem-identity-text">GEMINI</span>
+              </div>
+              <div class="gem-header">
+                <div class="gem-title-wrap">
+                  <div class="gem-title">Vigoroso</div>
+                  <div class="gem-sub" id="geminiCreditsLine">—</div>
+                </div>
+                <div class="gem-badges">
+                  <span class="gem-badge" id="geminiModelStatus">auto</span>
+                </div>
+              </div>
+              <div class="gem-context" id="geminiEmpty">
+                <div class="gem-context-title">Um rito curto, uma resposta direta.</div>
+                <div class="gem-context-sub">Conversa dedicada ao Gemini. O scroll é só da conversa; o compositor fica preso ao fundo.</div>
+              </div>
+              <div class="gem-conversation" id="geminiConversation" aria-live="polite"></div>
+              <div class="gem-composer">
+                <textarea id="geminiInput" class="gem-input" placeholder="Escreva a invocação para o Gemini."></textarea>
+                <button type="button" class="gem-cta" id="geminiSendBtn">Invocar</button>
+              </div>
+              <div class="gem-secondary">
+                <button type="button" class="gem-secondary-btn" id="geminiClearBtn">Limpar</button>
+                <button type="button" class="gem-secondary-btn" id="geminiNewThreadBtn">Nova</button>
+                <div class="gem-status" id="geminiStatus" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="saldo-view" id="saldoViewHistory" role="tabpanel">
+            <div class="saldo-card">
+              <div class="saldo-section-title">Histórico</div>
+              <div class="saldo-history">
+                <div class="saldo-history-block">
+                  <div class="saldo-history-title">Recargas</div>
+                  <div class="saldo-history-list" id="saldoHistoryTopups">—</div>
+                </div>
+                <div class="saldo-history-block">
+                  <div class="saldo-history-title">Consumo</div>
+                  <div class="saldo-history-list" id="saldoHistoryUsage">—</div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -3688,6 +4301,7 @@
     function closeSaldo() {
       const overlay = document.getElementById('saldoOverlay');
       if (!overlay) return;
+      try { if (window.geminiStopStreaming) window.geminiStopStreaming(); } catch {}
       overlay.classList.remove('open');
       overlay.setAttribute('aria-hidden', 'true');
     }
@@ -3698,13 +4312,16 @@
         data = userData || JSON.parse(localStorage.getItem('userData') || 'null');
       } catch {}
       const usernameEl = document.getElementById('saldoUsername');
+      const headerSub = document.getElementById('saldoHeaderSub');
       if (!usernameEl) return;
       if (!data || !data.email) {
         usernameEl.textContent = 'Visitante';
+        if (headerSub) headerSub.textContent = 'visitante';
         return;
       }
       const username = String(data.email).split('@')[0] || String(data.email);
       usernameEl.textContent = username;
+      if (headerSub) headerSub.textContent = String(data.email);
     }
 
     function openSaldo() {
@@ -3724,6 +4341,8 @@
       renderSaldo();
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
+      try { if (window.saldoRefreshCredits) window.saldoRefreshCredits(); } catch {}
+      try { if (window.saldoEnsureGeminiMounted) window.saldoEnsureGeminiMounted(); } catch {}
     }
 
     window.addEventListener('click', (e) => {
@@ -3770,6 +4389,14 @@
     let progress = 0;
     let userLoggedIn = false;
     let userData = null;
+
+    let geminiMessages = [];
+    let geminiStreamController = null;
+    let geminiIsInvocando = false;
+    let geminiLastAssistantIndex = -1;
+    let geminiInvocandoHintActive = false;
+    let saldoOverlayMounted = false;
+    let geminiOverlayMounted = false;
     
     function measureTextareaLineHeight(textarea) {
       const cs = window.getComputedStyle(textarea);
@@ -4194,6 +4821,15 @@
         chunk = " " + chunk; // injeta espaço se o token veio colado após pontuação
       }
       messages[idx].content += chunk;
+    }
+
+    function safeAppendTo(list, idx, chunk) {
+      if (!Array.isArray(list) || !list[idx]) return;
+      const prev = list[idx].content || "";
+      if (prev && /[.!?]$/.test(prev) && chunk && !/^\s/.test(chunk)) {
+        chunk = " " + chunk;
+      }
+      list[idx].content = (list[idx].content || "") + chunk;
     }
 
     function stripLineAsteriskEmphasis(md) {
@@ -6495,6 +7131,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       setPersonaMode(savedMode);
       const savedModelMode = localStorage.getItem('arcaModelMode') || 'auto';
       setModelMode(savedModelMode);
+      try { saldoMountOverlayUI(); } catch {}
     }
 
     async function hydrateUserFromCloud() {
@@ -6859,6 +7496,533 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const json = await res.json().catch(() => ({}));
       return json;
     }
+
+    function saldoSetTab(tab) {
+      const overlay = document.getElementById('saldoOverlay');
+      if (!overlay) return;
+
+      const btns = overlay.querySelectorAll('.saldo-menu-item[data-saldo-tab]');
+      btns.forEach((b) => {
+        const isActive = b.getAttribute('data-saldo-tab') === tab;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      const views = [
+        { key: 'credits', el: document.getElementById('saldoViewCredits') },
+        { key: 'gemini', el: document.getElementById('saldoViewGemini') },
+        { key: 'history', el: document.getElementById('saldoViewHistory') }
+      ];
+      views.forEach((v) => v.el && v.el.classList.toggle('active', v.key === tab));
+
+      if (tab !== 'gemini') {
+        try { geminiStopStreaming(); } catch {}
+      } else {
+        try { saldoEnsureGeminiMounted(); } catch {}
+      }
+    }
+
+    function saldoFormatDate(ts) {
+      if (!ts) return '';
+      try {
+        const d = new Date(ts);
+        if (Number.isNaN(d.getTime())) return String(ts);
+        return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return String(ts);
+      }
+    }
+
+    function saldoRenderHistoryList(targetId, entries) {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      if (!Array.isArray(entries) || entries.length === 0) {
+        el.textContent = '—';
+        return;
+      }
+      el.textContent = '';
+      const ul = document.createElement('div');
+      ul.style.display = 'grid';
+      ul.style.gap = '10px';
+      for (const it of entries.slice(0, 18)) {
+        const row = document.createElement('div');
+        row.style.border = '1px solid rgba(255,255,255,0.06)';
+        row.style.borderRadius = '12px';
+        row.style.padding = '10px 10px 9px';
+        row.style.background = 'rgba(0,0,0,0.14)';
+        row.style.overflowWrap = 'anywhere';
+        row.style.wordBreak = 'break-word';
+
+        const v = (it && typeof it.valor !== 'undefined') ? String(it.valor) : '—';
+        const when = saldoFormatDate(it && (it.created_at || it.createdAt));
+        const origem = it && it.origem ? String(it.origem) : '';
+
+        const top = document.createElement('div');
+        top.style.display = 'flex';
+        top.style.justifyContent = 'space-between';
+        top.style.gap = '12px';
+
+        const k = document.createElement('div');
+        k.style.fontSize = '0.68rem';
+        k.style.letterSpacing = '1px';
+        k.style.textTransform = 'uppercase';
+        k.style.color = 'rgba(245,245,245,0.56)';
+        k.textContent = when || origem || 'registro';
+
+        const val = document.createElement('div');
+        val.style.fontFamily = "'Cinzel', serif";
+        val.style.letterSpacing = '1.2px';
+        val.style.color = 'rgba(245,245,245,0.90)';
+        val.textContent = v;
+
+        top.appendChild(k);
+        top.appendChild(val);
+
+        const sub = document.createElement('div');
+        sub.style.marginTop = '6px';
+        sub.style.fontSize = '0.76rem';
+        sub.style.color = 'rgba(245,245,245,0.62)';
+        sub.textContent = origem || (it && it.referencia ? String(it.referencia) : '');
+
+        row.appendChild(top);
+        row.appendChild(sub);
+        ul.appendChild(row);
+      }
+      el.appendChild(ul);
+    }
+
+    async function saldoRefreshCredits() {
+      const availableEl = document.getElementById('saldoCreditsAvailable');
+      const spentEl = document.getElementById('saldoCreditsSpent');
+      const statusEl = document.getElementById('saldoCreditsStatus');
+      const hintEl = document.getElementById('saldoHint');
+
+      if (!availableEl || !spentEl) return;
+
+      if (!userLoggedIn || !userData || !userData.email) {
+        availableEl.textContent = '—';
+        spentEl.textContent = '—';
+        if (hintEl) hintEl.textContent = 'Faça login para ver e gerenciar créditos.';
+        if (statusEl) statusEl.textContent = '';
+        saldoRenderHistoryList('saldoHistoryTopups', []);
+        saldoRenderHistoryList('saldoHistoryUsage', []);
+        geminiSyncCreditsLine(null);
+        return;
+      }
+
+      if (statusEl) statusEl.textContent = 'Consultando...';
+      const data = await apiPost('/api/auth', { action: 'credits_get', userId: userData.email });
+      if (data && data.error) {
+        if (statusEl) statusEl.textContent = data.error || 'Falha ao consultar créditos.';
+        return;
+      }
+      const disponivel = Number(data && data.creditosDisponiveis);
+      const gastos = Number(data && data.creditosGastos);
+      availableEl.textContent = Number.isFinite(disponivel) ? String(disponivel) : '0';
+      spentEl.textContent = Number.isFinite(gastos) ? String(gastos) : '0';
+      if (statusEl) statusEl.textContent = '';
+      if (hintEl) hintEl.textContent = 'Créditos são consumidos ao usar Gemini (Vigoroso).';
+      saldoRenderHistoryList('saldoHistoryTopups', (data && data.historicoDeRecargas) || []);
+      saldoRenderHistoryList('saldoHistoryUsage', (data && data.historicoDeConsumo) || []);
+      geminiSyncCreditsLine(Number.isFinite(disponivel) ? disponivel : null);
+    }
+
+    async function saldoCreateCheckout() {
+      const statusEl = document.getElementById('saldoCreditsStatus');
+      const inputEl = document.getElementById('saldoTopupValue');
+      if (!statusEl || !inputEl) return;
+
+      if (!userLoggedIn || !userData || !userData.email) {
+        statusEl.textContent = 'Faça login para gerar checkout.';
+        return;
+      }
+
+      const raw = String(inputEl.value || '').trim();
+      const valor = Number(raw.replace(/[^\d.]/g, ''));
+      if (!Number.isFinite(valor) || valor <= 0) {
+        statusEl.textContent = 'Digite um valor válido de créditos.';
+        return;
+      }
+
+      statusEl.textContent = 'Gerando checkout...';
+      const data = await apiPost('/api/auth', { action: 'credits_create_checkout', userId: userData.email, valor });
+      if (!data || data.error || data.ok === false) {
+        statusEl.textContent = (data && data.error) ? String(data.error) : 'Falha ao gerar checkout.';
+        return;
+      }
+
+      const id = data.checkoutId ? String(data.checkoutId) : '—';
+      statusEl.textContent = `Checkout criado: ${id}. (Provider: ${data.provider || 'pendente'})`;
+    }
+
+    function saldoMountOverlayUI() {
+      if (saldoOverlayMounted) return;
+      saldoOverlayMounted = true;
+
+      const overlay = document.getElementById('saldoOverlay');
+      if (!overlay) return;
+
+      overlay.querySelectorAll('.saldo-menu-item[data-saldo-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => saldoSetTab(btn.getAttribute('data-saldo-tab')));
+      });
+
+      const refreshBtn = document.getElementById('saldoRefreshBtn');
+      if (refreshBtn) refreshBtn.addEventListener('click', () => saldoRefreshCredits());
+
+      const topupBtn = document.getElementById('saldoTopupBtn');
+      if (topupBtn) topupBtn.addEventListener('click', () => saldoCreateCheckout());
+
+      const topupInput = document.getElementById('saldoTopupValue');
+      if (topupInput) {
+        topupInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            saldoCreateCheckout();
+          }
+        });
+      }
+    }
+
+    function geminiGetThreadId() {
+      let tid = null;
+      try { tid = localStorage.getItem('geminiThreadId'); } catch {}
+      if (tid) return tid;
+      const next = generateThreadId();
+      try { localStorage.setItem('geminiThreadId', next); } catch {}
+      return next;
+    }
+
+    function geminiLoadMessages(threadId) {
+      if (!threadId) return [];
+      try {
+        const stored = localStorage.getItem(`gemini_thread_${threadId}`);
+        const parsed = stored ? JSON.parse(stored) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function geminiSaveMessages(threadId) {
+      if (!threadId) return;
+      try {
+        const sanitized = (Array.isArray(geminiMessages) ? geminiMessages : [])
+          .filter((m) => m && (m.role === 'user' || m.role === 'assistant'))
+          .map((m) => ({ role: m.role, content: m.content || '' }));
+        localStorage.setItem(`gemini_thread_${threadId}`, JSON.stringify(sanitized));
+      } catch {}
+    }
+
+    function geminiSyncCreditsLine(credits) {
+      const line = document.getElementById('geminiCreditsLine');
+      if (!line) return;
+      if (!userLoggedIn || !userData || !userData.email) {
+        line.textContent = 'login necessário';
+        return;
+      }
+      if (!Number.isFinite(Number(credits))) {
+        line.textContent = 'créditos: —';
+        return;
+      }
+      line.textContent = `créditos: ${Number(credits)}`;
+    }
+
+    function geminiUpdateSendBtn(active) {
+      const btn = document.getElementById('geminiSendBtn');
+      if (!btn) return;
+      if (active) {
+        btn.textContent = 'Parar';
+        btn.classList.add('stop');
+      } else {
+        btn.textContent = 'Invocar';
+        btn.classList.remove('stop');
+      }
+    }
+
+    function geminiRenderMessagesWithLiveMarkdown(isStreaming = false) {
+      const wrap = document.getElementById('geminiConversation');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+
+      const empty = document.getElementById('geminiEmpty');
+      const hasAny = Array.isArray(geminiMessages) && geminiMessages.some((m) => m && m.content && String(m.content).trim());
+      if (empty) empty.style.display = hasAny ? 'none' : 'block';
+
+      (Array.isArray(geminiMessages) ? geminiMessages : []).forEach((msg, index) => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '1rem';
+        div.style.padding = '0.5rem';
+        div.style.borderRadius = '5px';
+        div.classList.add('msg');
+
+        if (msg.role === 'user') {
+          div.style.fontStyle = 'italic';
+          div.style.color = '#ccc';
+          div.style.backgroundColor = '#1a1a1a';
+          div.style.borderLeft = '3px solid #666';
+          const raw = msg.content || '';
+          div.innerHTML = "<div class='msg-content'></div>";
+          const contentEl = div.querySelector('.msg-content');
+          const strong = document.createElement('strong');
+          strong.textContent = 'Você:';
+          contentEl.appendChild(strong);
+          contentEl.appendChild(document.createTextNode(' ' + raw));
+          try { attachMessageToolbar(div, raw); } catch {}
+        } else {
+          div.style.color = '#f5f5f5';
+          div.style.backgroundColor = '#1c1c1c';
+          div.style.borderLeft = '4px solid #b30000';
+
+          const isLastAssistantMessage = index === geminiMessages.length - 1 && msg.role === 'assistant';
+          const showInvocandoHint = geminiInvocandoHintActive && isLastAssistantMessage;
+          if ((isStreaming || showInvocandoHint) && isLastAssistantMessage) {
+            div.classList.add('streaming-active');
+          }
+
+          const raw = msg.content || '';
+          let content = stripLineAsteriskEmphasis(raw);
+          const looksLikeCodeOrHeadings = /```|^#{1,6}\s/m.test(content);
+          if (!looksLikeCodeOrHeadings) {
+            const looksLikeEmphasis = /[*_]{1,3}/.test(content);
+            content = content.replace(/([.!?:])(?=[A-Za-zÀ-ÿ0-9])/g, '$1 ');
+            if (!looksLikeEmphasis) {
+              content = content.replace(/([.!?])\s+(?!\*{1,3}\s*(?:\r?\n|$))/g, '$1\n\n');
+            }
+            content = content.replace(/(RITUAL DE [A-ZÀ-Ÿ]+):(?=\d)/g, '$1: ');
+          }
+
+          div.innerHTML = (showInvocandoHint ? "<div class='invocando-hint'>Invocando...</div>" : "") + "<div class='msg-content'></div>";
+          const contentEl = div.querySelector('.msg-content');
+          if (isStreaming && isLastAssistantMessage) {
+            contentEl.textContent = content || '';
+          } else {
+            const html = marked.parse(content || '');
+            const safeHtml = DOMPurify.sanitize(html, {
+              ALLOWED_TAGS: ['p','strong','em','ul','ol','li','h1','h2','h3','h4','h5','h6','br','code','pre','blockquote','hr','a'],
+              ALLOWED_ATTR: ['class','href','target','rel']
+            });
+            contentEl.innerHTML = safeHtml;
+          }
+          try { enhanceCodeBlocks(div); } catch {}
+          try { hardenLinks(div); } catch {}
+          try { attachMessageToolbar(div, raw); } catch {}
+        }
+
+        wrap.appendChild(div);
+      });
+
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function geminiStopStreaming() {
+      try { if (geminiStreamController) geminiStreamController.abort(); } catch {}
+      geminiStreamController = null;
+      geminiIsInvocando = false;
+      geminiInvocandoHintActive = false;
+      geminiUpdateSendBtn(false);
+      geminiRenderMessagesWithLiveMarkdown(false);
+      const statusEl = document.getElementById('geminiStatus');
+      if (statusEl) statusEl.textContent = '';
+    }
+
+    async function geminiSendMessage() {
+      if (geminiStreamController) return geminiStopStreaming();
+      const inputEl = document.getElementById('geminiInput');
+      const statusEl = document.getElementById('geminiStatus');
+      if (!inputEl) return;
+
+      const input = String(inputEl.value || '').trim();
+      if (!input) return;
+
+      if (!userLoggedIn || !userData || !userData.email) {
+        if (statusEl) statusEl.textContent = 'Faça login para usar Gemini.';
+        return;
+      }
+
+      const threadId = geminiGetThreadId();
+      geminiIsInvocando = true;
+      geminiMessages.push({ role: 'user', content: input });
+      geminiMessages.push({ role: 'assistant', content: '' });
+      geminiLastAssistantIndex = geminiMessages.length - 1;
+      geminiInvocandoHintActive = true;
+      geminiUpdateSendBtn(true);
+      geminiRenderMessagesWithLiveMarkdown(true);
+      if (statusEl) statusEl.textContent = 'Invocando...';
+
+      try {
+        geminiStreamController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+
+        const headers = { 'Content-Type': 'application/json' };
+        try {
+          const jwt = localStorage.getItem('sb_jwt');
+          if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
+        } catch {}
+
+        const response = await fetch('/api/arca', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            userInput: input,
+            input,
+            mode: (localStorage.getItem('arcaPersonaMode') || 'ritual'),
+            modelMode: 'gemini',
+            threadId,
+            userId: userData.email
+          }),
+          signal: geminiStreamController ? geminiStreamController.signal : undefined
+        });
+
+        if (!response.ok) {
+          const body = await response.text().catch(() => '');
+          throw new Error(`Falha ao invocar: ${response.status} ${response.statusText || ''} - ${body}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
+        const handleDone = () => {
+          geminiInvocandoHintActive = false;
+          geminiRenderMessagesWithLiveMarkdown(false);
+          geminiSaveMessages(threadId);
+          inputEl.value = '';
+          inputEl.style.height = '';
+          geminiStreamController = null;
+          geminiUpdateSendBtn(false);
+          if (statusEl) statusEl.textContent = '';
+          try { saldoRefreshCredits(); } catch {}
+        };
+
+        const handleSsePart = (part) => {
+          if (!part) return false;
+          const lines = String(part).split(/\r?\n/g);
+          for (const line of lines) {
+            if (!line) continue;
+            if (!/^data:\s*/.test(line)) continue;
+
+            const payload = line.replace(/^data:\s?/, '');
+            if (payload === '[DONE]') {
+              handleDone();
+              return true;
+            }
+
+            let content = payload;
+            try {
+              const json = JSON.parse(payload);
+              if (json && typeof json.content === 'string') content = json.content;
+            } catch {}
+
+            const idx = geminiMessages.length - 1;
+            if (!geminiMessages[idx]) return false;
+
+            if (geminiMessages[idx].content === '') {
+              geminiMessages[idx].content = content;
+            } else {
+              safeAppendTo(geminiMessages, idx, content);
+            }
+            geminiSaveMessages(threadId);
+            geminiRenderMessagesWithLiveMarkdown(true);
+          }
+          return false;
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split(/\r?\n\r?\n/g);
+          buffer = parts.pop();
+          for (const p of parts) {
+            if (handleSsePart(p)) return;
+          }
+        }
+
+        if (buffer && handleSsePart(buffer)) return;
+        handleDone();
+      } catch (err) {
+        if (err && (err.name === 'AbortError' || /abort/i.test(err.message || ''))) {
+          geminiStreamController = null;
+          geminiUpdateSendBtn(false);
+          if (statusEl) statusEl.textContent = '';
+          geminiInvocandoHintActive = false;
+          geminiRenderMessagesWithLiveMarkdown(false);
+          return;
+        }
+        const idx = geminiMessages.length - 1;
+        if (geminiMessages[idx] && geminiMessages[idx].role === 'assistant' && !geminiMessages[idx].content) {
+          geminiMessages[idx].content = `⚠️ ${err && err.message ? err.message : 'erro desconhecido'}`;
+        }
+        geminiStreamController = null;
+        geminiUpdateSendBtn(false);
+        geminiInvocandoHintActive = false;
+        geminiRenderMessagesWithLiveMarkdown(false);
+        if (statusEl) statusEl.textContent = 'falha';
+      }
+    }
+
+    function geminiNewThread() {
+      try { if (geminiStreamController) geminiStopStreaming(); } catch {}
+      const next = generateThreadId();
+      try { localStorage.setItem('geminiThreadId', next); } catch {}
+      geminiMessages = [];
+      geminiSaveMessages(next);
+      geminiRenderMessagesWithLiveMarkdown(false);
+    }
+
+    function geminiAutoResize() {
+      const inputEl = document.getElementById('geminiInput');
+      if (!inputEl) return;
+      inputEl.style.height = '44px';
+      const next = Math.min(140, Math.max(44, inputEl.scrollHeight));
+      inputEl.style.height = next + 'px';
+    }
+
+    function saldoEnsureGeminiMounted() {
+      saldoMountOverlayUI();
+      if (geminiOverlayMounted) return;
+      const inputEl = document.getElementById('geminiInput');
+      const sendBtn = document.getElementById('geminiSendBtn');
+      const clearBtn = document.getElementById('geminiClearBtn');
+      const newBtn = document.getElementById('geminiNewThreadBtn');
+      if (!inputEl || !sendBtn) return;
+
+      geminiOverlayMounted = true;
+      window.geminiStopStreaming = geminiStopStreaming;
+      window.saldoRefreshCredits = saldoRefreshCredits;
+      window.saldoEnsureGeminiMounted = saldoEnsureGeminiMounted;
+
+      sendBtn.addEventListener('click', () => geminiSendMessage());
+      inputEl.addEventListener('input', () => geminiAutoResize());
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) return;
+        if (e.shiftKey) return;
+        e.preventDefault();
+        geminiSendMessage();
+      });
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          if (geminiStreamController) return geminiStopStreaming();
+          geminiMessages = [];
+          const tid = geminiGetThreadId();
+          geminiSaveMessages(tid);
+          geminiRenderMessagesWithLiveMarkdown(false);
+        });
+      }
+      if (newBtn) newBtn.addEventListener('click', () => geminiNewThread());
+
+      const threadId = geminiGetThreadId();
+      geminiMessages = geminiLoadMessages(threadId);
+      geminiRenderMessagesWithLiveMarkdown(false);
+      geminiAutoResize();
+    }
+
+    window.saldoRefreshCredits = saldoRefreshCredits;
+    window.saldoEnsureGeminiMounted = saldoEnsureGeminiMounted;
+    window.geminiStopStreaming = geminiStopStreaming;
 
     async function refreshThreadMessagesFromCloud(threadId) {
       if (!threadId) return;
