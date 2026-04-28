@@ -1625,6 +1625,25 @@
       box-shadow: 0 0 10px rgba(0,191,255,0.25);
     }
 
+    .arca-samsung .mode-peteca .mode-peteca-btn {
+      background: rgba(10, 10, 10, 0.86);
+      border-color: rgba(0,191,255,0.42);
+      opacity: 1;
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.14), 0 0 16px rgba(0,191,255,0.22);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    .arca-samsung .mode-peteca .mode-peteca-btn::before { display: none; }
+    .arca-samsung .mode-peteca .mode-peteca-btn::after {
+      width: 6px;
+      height: 6px;
+      box-shadow: 0 0 14px rgba(0,191,255,0.30);
+    }
+    .arca-samsung .mode-peteca .mode-peteca-btn[aria-expanded="true"] {
+      border-color: rgba(0,191,255,0.55);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.18), 0 0 22px rgba(0,191,255,0.28);
+    }
+
     footer {
       position: fixed;
       bottom: 0;
@@ -3604,6 +3623,7 @@
       const root = document.documentElement;
       const ua = String(navigator.userAgent || '');
       root.classList.toggle('arca-iab', /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua));
+      root.classList.toggle('arca-samsung', /\bSamsungBrowser\b/i.test(ua));
       const isVisible = (el) => {
         if (!el) return false;
         const cs = getComputedStyle(el);
