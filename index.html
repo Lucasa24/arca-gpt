@@ -2166,6 +2166,13 @@
       align-items: center;
       justify-content: center;
     }
+    .corner-menu-toggle {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
     #cornerReset {
       list-style: none;
     }
@@ -2200,6 +2207,7 @@
         repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 10px);
       pointer-events: none;
     }
+    .corner-menu-toggle:checked ~ .corner-menu-panel,
     .corner-menu.open .corner-menu-panel,
     .corner-menu[open] .corner-menu-panel {
       opacity: 1;
@@ -2226,13 +2234,16 @@
       opacity: 0;
       transition: opacity 0.18s ease, transform 0.22s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
     }
+    .corner-menu-toggle:checked ~ .corner-menu-panel .corner-menu-link,
     .corner-menu.open .corner-menu-link,
     .corner-menu[open] .corner-menu-link {
       transform: translateY(0);
       opacity: 1;
     }
+    .corner-menu-toggle:checked ~ .corner-menu-panel .corner-menu-link:nth-child(1),
     .corner-menu.open .corner-menu-link:nth-child(1),
     .corner-menu[open] .corner-menu-link:nth-child(1) { transition-delay: 40ms; }
+    .corner-menu-toggle:checked ~ .corner-menu-panel .corner-menu-link:nth-child(2),
     .corner-menu.open .corner-menu-link:nth-child(2),
     .corner-menu[open] .corner-menu-link:nth-child(2) { transition-delay: 90ms; }
     .corner-menu-link:hover {
@@ -2243,6 +2254,17 @@
 
     .fixed-footer.corner-open {
       z-index: 10000;
+    }
+
+    .corner-menu-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: transparent;
+      z-index: 10000;
+    }
+    .corner-menu-toggle:checked ~ .corner-menu-backdrop {
+      display: block;
     }
 
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -3018,18 +3040,22 @@
       opacity: 0.92;
       transition: opacity 0.18s ease;
     }
+    .corner-menu-toggle:checked + #cornerReset .corner-keyburger .corner-line--top,
     .corner-menu.open #cornerReset .corner-keyburger .corner-line--top,
     .corner-menu[open] #cornerReset .corner-keyburger .corner-line--top {
       transform: translateY(4.5px) rotate(45deg);
     }
+    .corner-menu-toggle:checked + #cornerReset .corner-keyburger .corner-line--mid,
     .corner-menu.open #cornerReset .corner-keyburger .corner-line--mid,
     .corner-menu[open] #cornerReset .corner-keyburger .corner-line--mid {
       opacity: 0;
     }
+    .corner-menu-toggle:checked + #cornerReset .corner-keyburger .corner-line--bot,
     .corner-menu.open #cornerReset .corner-keyburger .corner-line--bot,
     .corner-menu[open] #cornerReset .corner-keyburger .corner-line--bot {
       transform: translateY(-4.5px) rotate(-45deg);
     }
+    .corner-menu-toggle:checked + #cornerReset .corner-keyburger .corner-ring,
     .corner-menu.open #cornerReset .corner-keyburger .corner-ring,
     .corner-menu[open] #cornerReset .corner-keyburger .corner-ring {
       opacity: 0.35;
@@ -3045,7 +3071,7 @@
       --corner-panel-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
     }
 
-    .corner-menu--floating #cornerResetFloating {
+    #cornerResetFloating {
       width: 38px;
       height: 38px;
       border-radius: 12px;
@@ -3053,15 +3079,22 @@
       border: 1px solid rgba(0, 191, 255, 0.22);
       box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,191,255,0.08);
       opacity: 1;
-    }
-    .arca-mobile .corner-menu--floating {
       display: inline-flex;
       align-items: center;
       justify-content: center;
     }
-    .arca-mobile .footer-note #cornerMenu {
-      display: none;
+
+    .corner-menu-toggle:checked + #cornerResetFloating .corner-keyburger .corner-line--top { transform: translateY(4.5px) rotate(45deg); }
+    .corner-menu-toggle:checked + #cornerResetFloating .corner-keyburger .corner-line--mid { opacity: 0; }
+    .corner-menu-toggle:checked + #cornerResetFloating .corner-keyburger .corner-line--bot { transform: translateY(-4.5px) rotate(-45deg); }
+    .corner-menu-toggle:checked + #cornerResetFloating .corner-keyburger .corner-ring { opacity: 0.35; }
+
+    @media (max-width: 900px) {
+      .corner-menu--floating { display: inline-flex; align-items: center; justify-content: center; }
+      .footer-note #cornerMenu { display: none; }
     }
+    .arca-iab .corner-menu--floating { display: inline-flex; align-items: center; justify-content: center; }
+    .arca-iab .footer-note #cornerMenu { display: none; }
 
     #scrollToBottomBtn {
       position: fixed;
@@ -3335,23 +3368,41 @@
 
       <div class="footer-note">
         <div class="corner-menu" id="cornerMenu">
-          <button type="button" id="cornerReset" data-corner-trigger="1" aria-label="Menu rápido" aria-expanded="false">
+          <input class="corner-menu-toggle" type="checkbox" id="cornerMenuToggle" aria-hidden="true">
+          <label id="cornerReset" for="cornerMenuToggle" aria-label="Menu rápido" role="button">
             <svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <circle class="corner-ring" cx="6" cy="10" r="3.4"></circle>
               <path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path>
               <path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path>
               <path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path>
             </svg>
-          </button>
+          </label>
           <div class="corner-menu-panel" id="cornerMenuPanel" role="menu" aria-label="Menu">
             <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button>
             <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button>
           </div>
+          <label class="corner-menu-backdrop" for="cornerMenuToggle" aria-hidden="true"></label>
         </div>
       </div>
     </div>
     <div id="footerResizeHandle" aria-hidden="true"></div>
   </main>
+  <div class="corner-menu corner-menu--floating" id="cornerMenuFloating">
+    <input class="corner-menu-toggle" type="checkbox" id="cornerMenuToggleFloating" aria-hidden="true">
+    <label id="cornerResetFloating" for="cornerMenuToggleFloating" aria-label="Menu rápido" role="button">
+      <svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle class="corner-ring" cx="6" cy="10" r="3.4"></circle>
+        <path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path>
+        <path class="corner-line corner-line--mid" d="M 12 10 L 50 10"></path>
+        <path class="corner-line corner-line--bot" d="M 12 14.5 L 50 14.5"></path>
+      </svg>
+    </label>
+    <div class="corner-menu-panel" role="menu" aria-label="Menu">
+      <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('profile')">Perfil</button>
+      <button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction('saldo')">Saldo</button>
+    </div>
+    <label class="corner-menu-backdrop" for="cornerMenuToggleFloating" aria-hidden="true"></label>
+  </div>
   <div id="profileOverlay" class="profile-overlay" aria-hidden="true">
     <div class="profile-panel" role="dialog" aria-label="Perfil">
       <div class="profile-header">
@@ -3484,111 +3535,18 @@
     }
 
     function closeCornerMenu() {
-      document.querySelectorAll('.corner-menu.open, .corner-menu[open]').forEach((wrap) => {
-        wrap.classList.remove('open');
-        if (typeof wrap.open === 'boolean') {
-          try { wrap.open = false; } catch {}
-        }
-      });
-      document.querySelectorAll('[data-corner-trigger="1"]').forEach((btn) => {
-        try { btn.setAttribute('aria-expanded', 'false'); } catch {}
+      document.querySelectorAll('.corner-menu-toggle').forEach((t) => {
+        try { t.checked = false; } catch {}
       });
       document.querySelectorAll('.fixed-footer.corner-open').forEach((footer) => {
         footer.classList.remove('corner-open');
       });
     }
 
-    function toggleCornerMenu(e) {
-      if (e) {
-        e.stopPropagation();
-        try { e.preventDefault(); } catch {}
-      }
-      const btn = e && e.currentTarget ? e.currentTarget : document.getElementById('cornerReset');
-      const wrap = btn && btn.closest ? btn.closest('.corner-menu') : document.getElementById('cornerMenu');
-      if (!wrap || !btn) return;
-      const isDetails = typeof wrap.open === 'boolean';
-      const isOpen = isDetails ? !wrap.open : !wrap.classList.contains('open');
-      try { wrap.open = isOpen; } catch {}
-      wrap.classList.toggle('open', isOpen);
-      try { btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); } catch {}
-    }
-
-    function __cornerFindById(node, id) {
-      let n = node;
-      while (n && n !== document) {
-        if (n.id === id) return n;
-        n = n.parentNode;
-      }
-      return null;
-    }
-
-    function __cornerFindByClass(node, cls) {
-      let n = node;
-      while (n && n !== document) {
-        if (n.classList && n.classList.contains(cls)) return n;
-        n = n.parentNode;
-      }
-      return null;
-    }
-
-    function __bindCornerTrigger(btn) {
-      if (!btn) return;
-      if (btn.__cornerBound) return;
-      btn.__cornerBound = true;
-      btn.addEventListener('click', (e) => {
-        try { e.preventDefault(); } catch {}
-        try { e.stopPropagation(); } catch {}
-        let wrap = null;
-        if (btn.closest) wrap = btn.closest('.corner-menu');
-        else wrap = __cornerFindByClass(btn, 'corner-menu');
-        if (!wrap) return;
-        const next = !wrap.classList.contains('open');
-        closeCornerMenu();
-        wrap.classList.toggle('open', next);
-        try { btn.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
-        const footer = wrap.closest ? wrap.closest('.fixed-footer') : null;
-        if (footer) footer.classList.toggle('corner-open', next);
-      }, { passive: false });
-    }
-
-    (function initCornerMenu() {
-      document.querySelectorAll('[data-corner-trigger="1"]').forEach((btn) => __bindCornerTrigger(btn));
-    })();
-
-    (function initFloatingCornerMenu() {
-      const origBtn = document.getElementById('cornerReset');
-      if (document.getElementById('cornerMenuFloating')) return;
-
-      const svg = origBtn ? origBtn.querySelector('svg') : null;
-
-      const wrap = document.createElement('div');
-      wrap.className = 'corner-menu corner-menu--floating';
-      wrap.id = 'cornerMenuFloating';
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.id = 'cornerResetFloating';
-      btn.setAttribute('data-corner-trigger', '1');
-      btn.setAttribute('aria-label', 'Menu rápido');
-      btn.setAttribute('aria-expanded', 'false');
-      if (svg) btn.appendChild(svg.cloneNode(true));
-      __bindCornerTrigger(btn);
-
-      const panel = document.createElement('div');
-      panel.className = 'corner-menu-panel';
-      panel.setAttribute('role', 'menu');
-      panel.setAttribute('aria-label', 'Menu');
-      panel.innerHTML =
-        '<button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction(\\'profile\\')">Perfil</button>' +
-        '<button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction(\\'saldo\\')">Saldo</button>';
-
-      wrap.appendChild(btn);
-      wrap.appendChild(panel);
-      document.body.appendChild(wrap);
-    })();
-
     (function initArcaMobileClass() {
       const root = document.documentElement;
+      const ua = String(navigator.userAgent || '');
+      root.classList.toggle('arca-iab', /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua));
       const getW = () => {
         try {
           if (window.visualViewport && Number.isFinite(window.visualViewport.width)) return window.visualViewport.width;
@@ -3676,9 +3634,12 @@
     }
 
     window.addEventListener('click', (e) => {
-      const openMenus = document.querySelectorAll('.corner-menu.open, .corner-menu[open]');
-      if (openMenus.length) {
-        const insideSome = [...openMenus].some((wrap) => wrap.contains(e.target));
+      const openToggles = document.querySelectorAll('.corner-menu-toggle:checked');
+      if (openToggles.length) {
+        const insideSome = [...openToggles].some((t) => {
+          const wrap = t.closest ? t.closest('.corner-menu') : null;
+          return wrap ? wrap.contains(e.target) : false;
+        });
         if (!insideSome) closeCornerMenu();
       }
       const overlay = document.getElementById('profileOverlay');
