@@ -1503,15 +1503,15 @@
       min-width: 16px;
       min-height: 16px;
       border-radius: 50%;
-      border: 1px solid rgba(0,191,255,0.32);
-      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.16), rgba(0,0,0,0) 55%), rgba(10, 10, 10, 0.82);
+      border: 1px solid rgba(0,191,255,0.22);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.06), rgba(0,0,0,0) 55%);
       padding: 0;
       cursor: pointer;
       position: relative;
       display: grid;
       place-items: center;
-      opacity: 1;
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.12), 0 0 14px rgba(0,191,255,0.18);
+      opacity: 0.9;
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.08), 0 0 10px rgba(0,191,255,0.12);
       transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
       letter-spacing: 0;
       outline: none;
@@ -1530,11 +1530,11 @@
     }
 
     .mode-peteca .mode-peteca-btn:hover {
-      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.22), rgba(0,0,0,0) 58%), rgba(10, 10, 10, 0.86);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.10), rgba(0,0,0,0) 58%);
       transform: scale(1.06);
       opacity: 1;
       border-color: rgba(0,191,255,0.40);
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.18), 0 0 18px rgba(0,191,255,0.26);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.14), 0 0 14px rgba(0,191,255,0.22);
     }
 
     .mode-peteca .mode-peteca-btn:active { transform: scale(0.98); }
@@ -2484,6 +2484,13 @@
         transform: translateX(0) !important;
       }
     }
+
+    .arca-mobile body { display: block; padding: 0; }
+    .arca-mobile #mainContent { margin-left: 0 !important; width: 100% !important; }
+    .arca-mobile .fixed-footer { left: 0 !important; width: 100% !important; }
+    .arca-mobile #footerResizeHandle { left: 0 !important; }
+    .arca-mobile #chatSidebar { transform: translateX(-100%) !important; width: 80%; max-width: 260px; z-index: 998; }
+    .arca-mobile #chatSidebar.open { transform: translateX(0) !important; }
     
     @media (max-width: 600px) {
       #mainContent {
@@ -3030,6 +3037,7 @@
 
     .corner-menu--floating {
       position: fixed;
+      display: none;
       left: 50%;
       bottom: calc(14px + env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%);
@@ -3046,12 +3054,13 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,191,255,0.08);
       opacity: 1;
     }
-
-    @supports not (background: conic-gradient(from 0deg, #000, #fff)) {
-      .mode-peteca .mode-peteca-btn::before { display: none; }
+    .arca-mobile .corner-menu--floating {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    @supports not ((-webkit-mask: radial-gradient(circle, transparent 52%, #000 56%)) or (mask: radial-gradient(circle, transparent 52%, #000 56%))) {
-      .mode-peteca .mode-peteca-btn::before { display: none; }
+    .arca-mobile .footer-note #cornerMenu {
+      display: none;
     }
 
     #scrollToBottomBtn {
@@ -3191,7 +3200,7 @@
       <div class="auth-toggle" onclick="hideAuthForm()" style="margin-top: 20px;">← Voltar</div>
     </form>
   </div>
-  <button id="toggleSidebar" type="button" aria-label="Abrir menu" onclick="toggleSidebar()">☰</button>
+  <button id="toggleSidebar" type="button" aria-label="Abrir sessões" onclick="toggleSidebar()">☰</button>
   <div id="chatSidebar"></div>
   <div id="sidebarResizeHandle" aria-hidden="true"></div>
   <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
@@ -3326,7 +3335,7 @@
 
       <div class="footer-note">
         <div class="corner-menu" id="cornerMenu">
-          <button type="button" id="cornerReset" data-corner-trigger="1" aria-label="Abrir menu" aria-expanded="false">
+          <button type="button" id="cornerReset" data-corner-trigger="1" aria-label="Menu rápido" aria-expanded="false">
             <svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <circle class="corner-ring" cx="6" cy="10" r="3.4"></circle>
               <path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path>
@@ -3504,8 +3513,6 @@
       try { btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); } catch {}
     }
 
-    let __cornerLastToggleAt = 0;
-
     function __cornerFindById(node, id) {
       let n = node;
       while (n && n !== document) {
@@ -3524,47 +3531,35 @@
       return null;
     }
 
-    function __cornerToggleFromEvent(e) {
-      const target = e && e.target ? e.target : null;
-      let trigger = null;
-      if (target && target.closest) trigger = target.closest('[data-corner-trigger="1"]');
-      else trigger = __cornerFindById(target, 'cornerReset');
-      if (!trigger) return;
-
-      const now = Date.now();
-      const isDup = now - __cornerLastToggleAt < 280;
-      __cornerLastToggleAt = now;
-
-      try { e.preventDefault(); } catch {}
-      try { e.stopPropagation(); } catch {}
-      try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch {}
-      if (isDup) return;
-
-      let wrap = null;
-      if (trigger.closest) wrap = trigger.closest('.corner-menu');
-      else wrap = __cornerFindByClass(trigger, 'corner-menu');
-      if (!wrap) return;
-
-      const next = !wrap.classList.contains('open');
-      wrap.classList.toggle('open', next);
-      try { trigger.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
-
-      const footer = wrap.closest ? wrap.closest('.fixed-footer') : null;
-      if (footer) footer.classList.toggle('corner-open', next);
+    function __bindCornerTrigger(btn) {
+      if (!btn) return;
+      if (btn.__cornerBound) return;
+      btn.__cornerBound = true;
+      btn.addEventListener('click', (e) => {
+        try { e.preventDefault(); } catch {}
+        try { e.stopPropagation(); } catch {}
+        let wrap = null;
+        if (btn.closest) wrap = btn.closest('.corner-menu');
+        else wrap = __cornerFindByClass(btn, 'corner-menu');
+        if (!wrap) return;
+        const next = !wrap.classList.contains('open');
+        closeCornerMenu();
+        wrap.classList.toggle('open', next);
+        try { btn.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
+        const footer = wrap.closest ? wrap.closest('.fixed-footer') : null;
+        if (footer) footer.classList.toggle('corner-open', next);
+      }, { passive: false });
     }
 
-    document.addEventListener('pointerdown', __cornerToggleFromEvent, { capture: true, passive: false });
-    document.addEventListener('touchstart', __cornerToggleFromEvent, { capture: true, passive: false });
-    document.addEventListener('click', __cornerToggleFromEvent, { capture: true, passive: false });
+    (function initCornerMenu() {
+      document.querySelectorAll('[data-corner-trigger="1"]').forEach((btn) => __bindCornerTrigger(btn));
+    })();
 
-    (function initInstagramCornerFallback() {
-      const ua = String(navigator.userAgent || '');
-      const isIab = /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua);
-      if (!isIab) return;
+    (function initFloatingCornerMenu() {
+      const origBtn = document.getElementById('cornerReset');
       if (document.getElementById('cornerMenuFloating')) return;
 
-      const orig = document.getElementById('cornerReset');
-      const svg = orig ? orig.querySelector('svg') : null;
+      const svg = origBtn ? origBtn.querySelector('svg') : null;
 
       const wrap = document.createElement('div');
       wrap.className = 'corner-menu corner-menu--floating';
@@ -3574,9 +3569,10 @@
       btn.type = 'button';
       btn.id = 'cornerResetFloating';
       btn.setAttribute('data-corner-trigger', '1');
-      btn.setAttribute('aria-label', 'Abrir menu');
+      btn.setAttribute('aria-label', 'Menu rápido');
       btn.setAttribute('aria-expanded', 'false');
       if (svg) btn.appendChild(svg.cloneNode(true));
+      __bindCornerTrigger(btn);
 
       const panel = document.createElement('div');
       panel.className = 'corner-menu-panel';
@@ -3589,6 +3585,26 @@
       wrap.appendChild(btn);
       wrap.appendChild(panel);
       document.body.appendChild(wrap);
+    })();
+
+    (function initArcaMobileClass() {
+      const root = document.documentElement;
+      const getW = () => {
+        try {
+          if (window.visualViewport && Number.isFinite(window.visualViewport.width)) return window.visualViewport.width;
+        } catch {}
+        return window.innerWidth || 0;
+      };
+      const sync = () => {
+        const w = getW();
+        root.classList.toggle('arca-mobile', w > 0 && w <= 768);
+      };
+      sync();
+      window.addEventListener('resize', sync, { passive: true });
+      if (window.visualViewport) {
+        try { window.visualViewport.addEventListener('resize', sync, { passive: true }); } catch {}
+        try { window.visualViewport.addEventListener('scroll', sync, { passive: true }); } catch {}
+      }
     })();
 
     function cornerMenuAction(kind) {
