@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits, adicionarCreditos, debitarCreditos, registrarConsumo } = require('../lib/credits.js');
+const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits, calcularSaldosCreditos, adicionarCreditos, debitarCreditos, registrarConsumo } = require('../lib/credits.js');
 
 // --- SISTEMA DE E-MAIL HÍBRIDO (SUPABASE / RESEND) ---
 async function sendWelcomeEmail(email) {
@@ -144,9 +144,12 @@ module.exports = async function handler(req, res) {
     if (action === 'credits_get' || action === 'consultarCreditos') {
       const userId = req.body && req.body.userId;
       const rec = await getOrCreateCredits(userId, req.headers['authorization']);
+      const saldos = rec ? calcularSaldosCreditos(rec) : { total: 0, free: 0, paid: 0 };
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({
-        creditosDisponiveis: rec ? Number(rec.creditos_disponiveis || 0) : 0,
+        creditosDisponiveis: saldos.total,
+        creditosGratisDisponiveis: saldos.free,
+        creditosPagosDisponiveis: saldos.paid,
         creditosGastos: rec ? Number(rec.creditos_gastos || 0) : 0,
         historicoDeRecargas: rec ? rec.historico_de_recargas || [] : [],
         historicoDeConsumo: rec ? rec.historico_de_consumo || [] : []
