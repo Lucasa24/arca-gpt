@@ -1504,14 +1504,14 @@
       min-height: 16px;
       border-radius: 50%;
       border: 1px solid rgba(0,191,255,0.32);
-      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.12), rgba(0,0,0,0) 55%);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.16), rgba(0,0,0,0) 55%), rgba(10, 10, 10, 0.82);
       padding: 0;
       cursor: pointer;
       position: relative;
       display: grid;
       place-items: center;
       opacity: 1;
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.08), 0 0 10px rgba(0,191,255,0.12);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.12), 0 0 14px rgba(0,191,255,0.18);
       transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
       letter-spacing: 0;
       outline: none;
@@ -1530,11 +1530,11 @@
     }
 
     .mode-peteca .mode-peteca-btn:hover {
-      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.10), rgba(0,0,0,0) 58%);
+      background: radial-gradient(circle at 50% 50%, rgba(0,191,255,0.22), rgba(0,0,0,0) 58%), rgba(10, 10, 10, 0.86);
       transform: scale(1.06);
       opacity: 1;
       border-color: rgba(0,191,255,0.40);
-      box-shadow: 0 0 0 1px rgba(0,191,255,0.14), 0 0 14px rgba(0,191,255,0.22);
+      box-shadow: 0 0 0 1px rgba(0,191,255,0.18), 0 0 18px rgba(0,191,255,0.26);
     }
 
     .mode-peteca .mode-peteca-btn:active { transform: scale(0.98); }
@@ -2175,7 +2175,7 @@
       position: fixed;
       left: 50%;
       bottom: 96px;
-      bottom: calc(var(--footer-height) + 16px + env(safe-area-inset-bottom, 0px));
+      bottom: var(--corner-panel-bottom, calc(var(--footer-height) + 16px + env(safe-area-inset-bottom, 0px)));
       transform: translateX(-50%) translateY(8px);
       opacity: 0;
       pointer-events: none;
@@ -2955,6 +2955,8 @@
       box-shadow: none;
       opacity: 0.9;
       outline: none;
+      -webkit-appearance: none;
+      appearance: none;
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
       user-select: none;
@@ -3024,6 +3026,32 @@
     .corner-menu.open #cornerReset .corner-keyburger .corner-ring,
     .corner-menu[open] #cornerReset .corner-keyburger .corner-ring {
       opacity: 0.35;
+    }
+
+    .corner-menu--floating {
+      position: fixed;
+      left: 50%;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      z-index: 20000;
+      --corner-panel-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .corner-menu--floating #cornerResetFloating {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(10, 10, 10, 0.72);
+      border: 1px solid rgba(0, 191, 255, 0.22);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,191,255,0.08);
+      opacity: 1;
+    }
+
+    @supports not (background: conic-gradient(from 0deg, #000, #fff)) {
+      .mode-peteca .mode-peteca-btn::before { display: none; }
+    }
+    @supports not ((-webkit-mask: radial-gradient(circle, transparent 52%, #000 56%)) or (mask: radial-gradient(circle, transparent 52%, #000 56%))) {
+      .mode-peteca .mode-peteca-btn::before { display: none; }
     }
 
     #scrollToBottomBtn {
@@ -3298,7 +3326,7 @@
 
       <div class="footer-note">
         <div class="corner-menu" id="cornerMenu">
-          <button type="button" id="cornerReset" aria-label="Abrir menu" aria-expanded="false">
+          <button type="button" id="cornerReset" data-corner-trigger="1" aria-label="Abrir menu" aria-expanded="false">
             <svg class="corner-keyburger" viewBox="0 0 50 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <circle class="corner-ring" cx="6" cy="10" r="3.4"></circle>
               <path class="corner-line corner-line--top" d="M 12 5.5 L 50 5.5"></path>
@@ -3453,10 +3481,12 @@
           try { wrap.open = false; } catch {}
         }
       });
-      const btn = document.getElementById('cornerReset');
-      if (btn) btn.setAttribute('aria-expanded', 'false');
-      const footer = document.querySelector('.fixed-footer');
-      if (footer) footer.classList.remove('corner-open');
+      document.querySelectorAll('[data-corner-trigger="1"]').forEach((btn) => {
+        try { btn.setAttribute('aria-expanded', 'false'); } catch {}
+      });
+      document.querySelectorAll('.fixed-footer.corner-open').forEach((footer) => {
+        footer.classList.remove('corner-open');
+      });
     }
 
     function toggleCornerMenu(e) {
@@ -3497,7 +3527,7 @@
     function __cornerToggleFromEvent(e) {
       const target = e && e.target ? e.target : null;
       let trigger = null;
-      if (target && target.closest) trigger = target.closest('#cornerReset');
+      if (target && target.closest) trigger = target.closest('[data-corner-trigger="1"]');
       else trigger = __cornerFindById(target, 'cornerReset');
       if (!trigger) return;
 
@@ -3515,21 +3545,51 @@
       else wrap = __cornerFindByClass(trigger, 'corner-menu');
       if (!wrap) return;
 
-      const isDetails = typeof wrap.open === 'boolean';
-      const next = isDetails ? !wrap.open : !wrap.classList.contains('open');
-      if (isDetails) {
-        try { wrap.open = next; } catch {}
-      }
+      const next = !wrap.classList.contains('open');
       wrap.classList.toggle('open', next);
       try { trigger.setAttribute('aria-expanded', next ? 'true' : 'false'); } catch {}
 
-      const footer = document.querySelector('.fixed-footer');
+      const footer = wrap.closest ? wrap.closest('.fixed-footer') : null;
       if (footer) footer.classList.toggle('corner-open', next);
     }
 
     document.addEventListener('pointerdown', __cornerToggleFromEvent, { capture: true, passive: false });
     document.addEventListener('touchstart', __cornerToggleFromEvent, { capture: true, passive: false });
     document.addEventListener('click', __cornerToggleFromEvent, { capture: true, passive: false });
+
+    (function initInstagramCornerFallback() {
+      const ua = String(navigator.userAgent || '');
+      const isIab = /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua);
+      if (!isIab) return;
+      if (document.getElementById('cornerMenuFloating')) return;
+
+      const orig = document.getElementById('cornerReset');
+      const svg = orig ? orig.querySelector('svg') : null;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'corner-menu corner-menu--floating';
+      wrap.id = 'cornerMenuFloating';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = 'cornerResetFloating';
+      btn.setAttribute('data-corner-trigger', '1');
+      btn.setAttribute('aria-label', 'Abrir menu');
+      btn.setAttribute('aria-expanded', 'false');
+      if (svg) btn.appendChild(svg.cloneNode(true));
+
+      const panel = document.createElement('div');
+      panel.className = 'corner-menu-panel';
+      panel.setAttribute('role', 'menu');
+      panel.setAttribute('aria-label', 'Menu');
+      panel.innerHTML =
+        '<button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction(\\'profile\\')">Perfil</button>' +
+        '<button type="button" class="corner-menu-link" role="menuitem" onclick="cornerMenuAction(\\'saldo\\')">Saldo</button>';
+
+      wrap.appendChild(btn);
+      wrap.appendChild(panel);
+      document.body.appendChild(wrap);
+    })();
 
     function cornerMenuAction(kind) {
       closeCornerMenu();
