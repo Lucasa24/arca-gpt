@@ -133,6 +133,8 @@ async function handler(req, res) {
         const msg =
           tipo === "sem_credito"
             ? "Seus créditos acabaram. Adicione saldo para continuar usando a Arca."
+            : tipo === "limite_gratis"
+              ? (creditResult.reason || "Limite grátis da Arca atingido. Tente novamente mais tarde.")
             : tipo === "limite_gemini"
               ? "O sistema atingiu o limite temporário de geração. Tente novamente mais tarde."
               : "O serviço de geração está temporariamente indisponível. Tente novamente em instantes.";
