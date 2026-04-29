@@ -1,6 +1,8 @@
 const { getThreadMessages, addMessageToThread, setThreadPersona, composeAssistantContent, generateClosing, pickOpening } = require('../lib/memory.js');
 const { fetch } = require('undici');
-const { gerarComCreditos, gerarComCreditosStream } = require('../lib/credits.js');
+const credits = require('../lib/credits.js');
+const gerarComCreditos = credits.gerarComCreditos;
+const gerarComCreditosStream = typeof credits.gerarComCreditosStream === 'function' ? credits.gerarComCreditosStream : null;
 
 // arca.js — fora do handler (executa no cold start da função)
 if (!global.__ARCA_PERSONA_LOGGED__) {
@@ -124,22 +126,41 @@ async function handler(req, res) {
         assistantResponse += `_${opening}_\n\n`;
       }
 
-      const creditResult = await gerarComCreditosStream({
-        userId,
-        authHeader: req.headers["authorization"],
-        prompt: userInput,
-        gemini: {
-          contents,
-          systemInstruction,
-          cacheKey: `${personaForSpeed}|${String(userInput || "").trim()}`
-        },
-        onChunk: (chunk) => {
-          const out = String(chunk || "");
-          if (!out) return;
+      const creditResult = gerarComCreditosStream
+        ? await gerarComCreditosStream({
+          userId,
+          authHeader: req.headers["authorization"],
+          prompt: userInput,
+          gemini: {
+            contents,
+            systemInstruction,
+            cacheKey: `${personaForSpeed}|${String(userInput || "").trim()}`
+          },
+          onChunk: (chunk) => {
+            const out = String(chunk || "");
+            if (!out) return;
+            assistantResponse += out;
+            res.write(`data: ${JSON.stringify({ content: out })}\n\n`);
+          }
+        })
+        : await gerarComCreditos({
+          userId,
+          authHeader: req.headers["authorization"],
+          prompt: userInput,
+          gemini: {
+            contents,
+            systemInstruction,
+            cacheKey: `${personaForSpeed}|${String(userInput || "").trim()}`
+          }
+        });
+
+      if (creditResult && creditResult.ok && !gerarComCreditosStream) {
+        const out = String(creditResult.mensagem || "");
+        if (out) {
           assistantResponse += out;
           res.write(`data: ${JSON.stringify({ content: out })}\n\n`);
         }
-      });
+      }
 
       if (!creditResult.ok) {
         const tipo = creditResult.tipo;
