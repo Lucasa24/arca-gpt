@@ -1,6 +1,6 @@
 const { getThreadMessages, addMessageToThread, setThreadPersona, composeAssistantContent, generateClosing, pickOpening } = require('../lib/memory.js');
 const { fetch } = require('undici');
-const { gerarComCreditos } = require('../lib/credits.js');
+const { gerarComCreditos, gerarComCreditosStream } = require('../lib/credits.js');
 
 // arca.js — fora do handler (executa no cold start da função)
 if (!global.__ARCA_PERSONA_LOGGED__) {
@@ -117,7 +117,14 @@ async function handler(req, res) {
         })
         .filter((c) => c.parts && c.parts[0] && c.parts[0].text && String(c.parts[0].text).trim());
 
-      const creditResult = await gerarComCreditos({
+      let assistantResponse = "";
+      if (personaForSpeed !== "tecnico") {
+        const opening = pickOpening(null);
+        res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
+        assistantResponse += `_${opening}_\n\n`;
+      }
+
+      const creditResult = await gerarComCreditosStream({
         userId,
         authHeader: req.headers["authorization"],
         prompt: userInput,
@@ -125,6 +132,12 @@ async function handler(req, res) {
           contents,
           systemInstruction,
           cacheKey: `${personaForSpeed}|${String(userInput || "").trim()}`
+        },
+        onChunk: (chunk) => {
+          const out = String(chunk || "");
+          if (!out) return;
+          assistantResponse += out;
+          res.write(`data: ${JSON.stringify({ content: out })}\n\n`);
         }
       });
 
@@ -135,29 +148,14 @@ async function handler(req, res) {
             ? "Seus créditos acabaram. Adicione saldo para continuar usando a Arca."
             : tipo === "limite_gratis"
               ? (creditResult.reason || "Limite grátis da Arca atingido. Tente novamente mais tarde.")
-            : tipo === "limite_gemini"
-              ? "O sistema atingiu o limite temporário de geração. Tente novamente mais tarde."
-              : "O serviço de geração está temporariamente indisponível. Tente novamente em instantes.";
+              : tipo === "limite_gemini"
+                ? "O sistema atingiu o limite temporário de geração. Tente novamente mais tarde."
+                : "O serviço de geração está temporariamente indisponível. Tente novamente em instantes.";
 
         res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
         res.write(`data: [DONE]\n\n`);
         clearInterval(keepalive);
         return res.end();
-      }
-
-      let assistantResponse = "";
-      if (personaForSpeed !== "tecnico") {
-        const opening = pickOpening(null);
-        res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
-        assistantResponse += `_${opening}_\n\n`;
-      }
-
-      const out = String(creditResult.mensagem || "");
-      const chunkSize = 220;
-      for (let i = 0; i < out.length; i += chunkSize) {
-        const chunk = out.slice(i, i + chunkSize);
-        assistantResponse += chunk;
-        res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
       }
 
       if (personaForSpeed !== "tecnico") {
