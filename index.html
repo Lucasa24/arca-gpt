@@ -1379,6 +1379,31 @@
       overflow: visible;
       max-height: 70vh;
     }
+    #footerResizeBar {
+      display: none;
+    }
+    .arca-mobile .fixed-footer {
+      max-height: min(52vh, calc(100dvh - 72px));
+    }
+    .arca-mobile #footerResizeBar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 18px;
+      margin: -2px 0 4px;
+      touch-action: none;
+      user-select: none;
+    }
+    .arca-mobile #footerResizeBar::before {
+      content: "";
+      width: 52px;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(0, 191, 255, 0.22);
+    }
+    .arca-mobile .fixed-footer.resizing #footerResizeBar::before {
+      background: rgba(0, 191, 255, 0.55);
+    }
     #footerResizeHandle {
       position: fixed;
       left: var(--sidebar-width);
@@ -4006,6 +4031,7 @@
     <div id="response"></div>
 
     <div class="fixed-footer">
+      <div id="footerResizeBar" aria-hidden="true"></div>
       <div class="input-group">
         <div class="textarea-container" style="flex: 1;">
           <div id="imagePreview" class="image-preview" aria-live="polite">
@@ -7871,18 +7897,28 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const sidebarHandle = document.getElementById('sidebarResizeHandle');
       const footerHandle = document.getElementById('footerResizeHandle');
       if (!sidebar || !footer || !sidebarHandle || !footerHandle) return;
+      const footerBar = document.getElementById('footerResizeBar');
+      const isMobile = window.innerWidth <= 768 || root.classList.contains('arca-mobile');
 
       try {
         const savedW = localStorage.getItem('arcaSidebarWidth');
         if (savedW) root.style.setProperty('--sidebar-width', savedW);
       } catch {}
       try {
-        const savedH = localStorage.getItem('arcaFooterHeight');
+        const key = isMobile ? 'arcaFooterHeightMobile' : 'arcaFooterHeight';
+        const savedH = localStorage.getItem(key);
         if (savedH) root.style.setProperty('--footer-height', savedH);
       } catch {}
 
       const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-      const maxFooter = () => Math.round(window.innerHeight * 0.70);
+      const maxFooter = () => {
+        let h = window.innerHeight || 0;
+        try {
+          if (window.visualViewport && Number.isFinite(window.visualViewport.height)) h = window.visualViewport.height;
+        } catch {}
+        const ratio = isMobile ? 0.52 : 0.70;
+        return Math.round(h * ratio);
+      };
 
       const setSidebarWidthPx = (w) => {
         const px = clamp(Math.round(w), 180, 420) + 'px';
@@ -7890,17 +7926,25 @@ div.innerHTML = DOMPurify.sanitize(html, {
         try { localStorage.setItem('arcaSidebarWidth', px); } catch {}
       };
 
-      const setFooterHeightPx = (h) => {
-        const px = clamp(Math.round(h), 90, maxFooter()) + 'px';
+      const setFooterHeightPx = (h, persist = true) => {
+        const minH = isMobile ? 78 : 90;
+        const px = clamp(Math.round(h), minH, maxFooter()) + 'px';
         root.style.setProperty('--footer-height', px);
-        try { localStorage.setItem('arcaFooterHeight', px); } catch {}
+        if (persist) {
+          try { localStorage.setItem(isMobile ? 'arcaFooterHeightMobile' : 'arcaFooterHeight', px); } catch {}
+        }
         try { positionVoiceBar(); } catch {}
       };
 
       try {
+        const cur = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
+        setFooterHeightPx(cur, false);
+      } catch {}
+
+      try {
         const ro = new ResizeObserver(() => {
           try { setSidebarWidthPx(sidebar.getBoundingClientRect().width); } catch {}
-          try { setFooterHeightPx(footer.getBoundingClientRect().height); } catch {}
+          try { if (isMobile) setFooterHeightPx(footer.getBoundingClientRect().height, false); } catch {}
         });
         ro.observe(sidebar);
         ro.observe(footer);
@@ -7926,12 +7970,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
       });
 
       footerHandle.addEventListener('pointerdown', (e) => {
-        if (window.innerWidth <= 768) return;
+        if (!isMobile && window.innerWidth <= 768) return;
         try { footerHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
 
         const onMove = (ev) => {
-          setFooterHeightPx(window.innerHeight - ev.clientY);
+          const vh = (window.visualViewport && Number.isFinite(window.visualViewport.height)) ? window.visualViewport.height : window.innerHeight;
+          setFooterHeightPx(vh - ev.clientY, true);
         };
         const onUp = (ev) => {
           try { footerHandle.releasePointerCapture(ev.pointerId); } catch {}
@@ -7944,9 +7989,64 @@ div.innerHTML = DOMPurify.sanitize(html, {
         footerHandle.addEventListener('pointercancel', onUp);
       });
 
+      let footerDrag = { active: false, startY: 0, startH: 0, pid: null };
+      const isInteractiveTarget = (t) => {
+        try { return !!(t && t.closest && t.closest('textarea,button,input,select,option,a,label')); } catch { return false; }
+      };
+      const shouldStartFooterDrag = (e) => {
+        if (!isMobile) return false;
+        const rect = footer.getBoundingClientRect();
+        const topZone = (e.clientY - rect.top) <= 22;
+        if (topZone) return true;
+        return !isInteractiveTarget(e.target);
+      };
+      const startFooterDrag = (e) => {
+        if (!shouldStartFooterDrag(e)) return;
+        footerDrag.active = true;
+        footerDrag.startY = e.clientY;
+        footerDrag.startH = footer.getBoundingClientRect().height;
+        footerDrag.pid = e.pointerId;
+        footer.classList.add('resizing');
+        try { footer.setPointerCapture(e.pointerId); } catch {}
+        e.preventDefault();
+      };
+      const moveFooterDrag = (e) => {
+        if (!footerDrag.active) return;
+        const delta = footerDrag.startY - e.clientY;
+        setFooterHeightPx(footerDrag.startH + delta, false);
+      };
+      const endFooterDrag = (e) => {
+        if (!footerDrag.active) return;
+        footerDrag.active = false;
+        footer.classList.remove('resizing');
+        try { footer.releasePointerCapture(footerDrag.pid); } catch {}
+        footerDrag.pid = null;
+        try {
+          const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
+          if (Number.isFinite(h) && h > 0) setFooterHeightPx(h, true);
+        } catch {}
+      };
+      if (footerBar) {
+        footerBar.addEventListener('pointerdown', startFooterDrag);
+        footerBar.addEventListener('pointermove', moveFooterDrag);
+        footerBar.addEventListener('pointerup', endFooterDrag);
+        footerBar.addEventListener('pointercancel', endFooterDrag);
+      }
+      footer.addEventListener('pointerdown', startFooterDrag);
+      footer.addEventListener('pointermove', moveFooterDrag);
+      footer.addEventListener('pointerup', endFooterDrag);
+      footer.addEventListener('pointercancel', endFooterDrag);
+
       window.addEventListener('resize', () => {
-        try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110); } catch {}
+        try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110, false); } catch {}
       }, { passive: true });
+      if (window.visualViewport && isMobile) {
+        try {
+          window.visualViewport.addEventListener('resize', () => {
+            try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110, false); } catch {}
+          }, { passive: true });
+        } catch {}
+      }
     }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
