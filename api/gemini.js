@@ -51,15 +51,24 @@ function uniq(list) {
 }
 
 async function fetchJson(url) {
-  const res = await fetch(url, { method: "GET" });
-  const text = await res.text().catch(() => "");
-  let json = {};
+  const timeoutMs = 2000;
+  const ac = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const t = ac ? setTimeout(() => ac.abort(), timeoutMs) : null;
   try {
-    json = text ? JSON.parse(text) : {};
+    const res = await fetch(url, { method: "GET", signal: ac ? ac.signal : undefined });
+    const text = await res.text().catch(() => "");
+    let json = {};
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch {
+      json = {};
+    }
+    return { ok: res.ok, status: res.status, json };
   } catch {
-    json = {};
+    return { ok: false, status: 0, json: {} };
+  } finally {
+    if (t) clearTimeout(t);
   }
-  return { ok: res.ok, status: res.status, json };
 }
 
 async function obterModelos() {
@@ -72,6 +81,17 @@ async function obterModelos() {
     MODELOS_CACHE = { estaveis: [], preview: [], atualizadoEm: agora };
     return MODELOS_CACHE;
   }
+
+  if (!MODELOS_CACHE.estaveis.length && !MODELOS_CACHE.preview.length) {
+    MODELOS_CACHE = {
+      estaveis: ["gemini-1.5-flash", "gemini-1.5-pro"],
+      preview: ["gemini-1.5-flash-preview", "gemini-1.5-pro-preview"],
+      atualizadoEm: agora
+    };
+  }
+
+  const allowFetch = String(process.env.GEMINI_FETCH_MODELS || "").trim() === "1";
+  if (!allowFetch) return MODELOS_CACHE;
 
   const endpoints = [
     `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(GEMINI_API_KEY)}`,
