@@ -1386,23 +1386,15 @@
       max-height: min(52vh, calc(100dvh - 72px));
     }
     .arca-mobile #footerResizeBar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 18px;
-      margin: -2px 0 4px;
+      display: block;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 22px;
       touch-action: none;
       user-select: none;
-    }
-    .arca-mobile #footerResizeBar::before {
-      content: "";
-      width: 52px;
-      height: 3px;
-      border-radius: 999px;
-      background: rgba(0, 191, 255, 0.22);
-    }
-    .arca-mobile .fixed-footer.resizing #footerResizeBar::before {
-      background: rgba(0, 191, 255, 0.55);
+      opacity: 0;
     }
     #footerResizeHandle {
       position: fixed;
