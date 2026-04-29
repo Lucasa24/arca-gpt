@@ -183,6 +183,122 @@ async function chamarModelo({ model, prompt, contents, systemInstruction }) {
   }
 }
 
+function extrairTextoStream(data) {
+  const parts =
+    data &&
+    data.candidates &&
+    data.candidates[0] &&
+    data.candidates[0].content &&
+    Array.isArray(data.candidates[0].content.parts)
+      ? data.candidates[0].content.parts
+      : [];
+  return parts
+    .map((p) => (p && typeof p.text === "string" ? p.text : ""))
+    .filter(Boolean)
+    .join("");
+}
+
+async function chamarModeloStream({ model, prompt, contents, systemInstruction, onChunk }) {
+  if (!GEMINI_API_KEY) {
+    return { ok: false, tipo: "servico_indisponivel" };
+  }
+
+  const body = {
+    contents: Array.isArray(contents) && contents.length
+      ? contents
+      : [{ role: "user", parts: [{ text: String(prompt || "") }] }]
+  };
+  if (systemInstruction && typeof systemInstruction === "object") body.systemInstruction = systemInstruction;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(String(model || ""))}:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_API_KEY)}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) return { ...tratarErro(res.status), status: res.status };
+    if (!res.body || typeof res.body.getReader !== "function") return { ok: false, tipo: "erro_desconhecido" };
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    let output = "";
+    let assembled = "";
+    let lastUsage;
+    let shouldStop = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split(/\r?\n\r?\n/g);
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const lines = String(part).split(/\r?\n/g);
+        const dataLines = [];
+        for (const line of lines) {
+          if (!/^data:\s*/.test(line)) continue;
+          const payload = line.replace(/^data:\s?/, "");
+          if (payload != null) dataLines.push(payload);
+        }
+
+        const payload = dataLines.join("\n").trim();
+        if (!payload) continue;
+        if (payload === "[DONE]") {
+          shouldStop = true;
+          break;
+        }
+
+        let json;
+        try {
+          json = JSON.parse(payload);
+        } catch {
+          json = null;
+        }
+
+        if (!json) continue;
+        if (json.usageMetadata) lastUsage = json.usageMetadata;
+
+        const piece = extrairTextoStream(json);
+        if (!piece) continue;
+
+        let delta = "";
+        if (piece.startsWith(assembled)) {
+          delta = piece.slice(assembled.length);
+          assembled = piece;
+        } else {
+          delta = piece;
+          assembled += piece;
+        }
+
+        output = assembled;
+
+        if (delta && typeof onChunk === "function") {
+          try {
+            onChunk(delta);
+          } catch {}
+        }
+      }
+
+      if (shouldStop) break;
+    }
+
+    return {
+      ok: true,
+      mensagem: output,
+      modelo: String(model || ""),
+      uso: lastUsage
+    };
+  } catch {
+    return { ok: false, tipo: "erro_rede" };
+  }
+}
+
 function deveContinuarFallback(tipo) {
   return (
     tipo === "limite_gemini" ||
@@ -238,8 +354,61 @@ async function gerarMensagemGemini(prompt, options = {}) {
   return { ok: false, tipo: "todos_fallbacks_falharam" };
 }
 
+async function gerarMensagemGeminiStream(prompt, options = {}) {
+  const cacheKey = String((options.cacheKey || prompt || "")).trim();
+
+  const cached = cacheKey ? CACHE.get(cacheKey) : null;
+  if (cached && Date.now() - cached.time < CACHE_TTL) {
+    const msg = String(cached.data && cached.data.mensagem ? cached.data.mensagem : "");
+    if (typeof options.onChunk === "function" && msg) {
+      try {
+        options.onChunk(msg);
+      } catch {}
+    }
+    return { ...cached.data, cache: true };
+  }
+
+  const tipo = classificarPrompt(prompt);
+  const modelos = await obterModelos();
+  const modelosOrdenados = selecionarModelosPorTipo(tipo, modelos);
+
+  for (const model of modelosOrdenados.estaveis) {
+    const r = await chamarModeloStream({
+      model,
+      prompt,
+      contents: options.contents,
+      systemInstruction: options.systemInstruction,
+      onChunk: options.onChunk
+    });
+
+    if (r.ok) {
+      if (cacheKey) CACHE.set(cacheKey, { data: r, time: Date.now() });
+      return r;
+    }
+
+    if (!deveContinuarFallback(r.tipo)) return r;
+  }
+
+  for (const model of modelosOrdenados.preview) {
+    const r = await chamarModeloStream({
+      model,
+      prompt,
+      contents: options.contents,
+      systemInstruction: options.systemInstruction,
+      onChunk: options.onChunk
+    });
+
+    if (r.ok) {
+      if (cacheKey) CACHE.set(cacheKey, { data: r, time: Date.now() });
+      return r;
+    }
+  }
+
+  return { ok: false, tipo: "todos_fallbacks_falharam" };
+}
+
 module.exports = {
   gerarMensagemGemini,
+  gerarMensagemGeminiStream,
   obterModelos
 };
-
