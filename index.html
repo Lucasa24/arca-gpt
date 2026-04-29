@@ -2648,7 +2648,7 @@
     .saldo-metrics {
       margin-top: 14px;
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 10px;
       min-width: 0;
     }
@@ -2674,6 +2674,49 @@
       color: rgba(245,245,245,0.92);
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+
+    .saldo-quota {
+      display: grid;
+      gap: 8px;
+      font-family: inherit;
+      font-size: inherit;
+      letter-spacing: inherit;
+    }
+    .saldo-quota-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .saldo-quota-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: #2ee66b;
+      box-shadow: 0 0 14px rgba(46, 230, 107, 0.20);
+      transition: width 0.35s ease, background 0.22s ease, box-shadow 0.22s ease;
+    }
+    .saldo-quota-label {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(245,245,245,0.62);
+      font-family: 'Cinzel', serif;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .saldo-quota.is-orange .saldo-quota-fill {
+      background: #ff9f1a;
+      box-shadow: 0 0 16px rgba(255, 159, 26, 0.20);
+    }
+    .saldo-quota.is-red .saldo-quota-fill {
+      background: #ff3b3b;
+      box-shadow: 0 0 16px rgba(255, 59, 59, 0.20);
+    }
+    .saldo-quota.is-empty .saldo-quota-fill {
+      box-shadow: none;
     }
 
     .saldo-note {
@@ -4128,16 +4171,13 @@
               </div>
               <div class="saldo-metrics">
                 <div class="saldo-metric">
-                  <div class="saldo-metric-k">Disponível</div>
-                  <div class="saldo-metric-v" id="saldoCreditsAvailable">—</div>
-                </div>
-                <div class="saldo-metric">
                   <div class="saldo-metric-k">Grátis</div>
-                  <div class="saldo-metric-v" id="saldoCreditsFree">—</div>
-                </div>
-                <div class="saldo-metric">
-                  <div class="saldo-metric-k">Gasto</div>
-                  <div class="saldo-metric-v" id="saldoCreditsSpent">—</div>
+                  <div class="saldo-metric-v saldo-quota" id="saldoCreditsFree" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div class="saldo-quota-track">
+                      <div class="saldo-quota-fill" id="saldoFreeQuotaFill"></div>
+                    </div>
+                    <div class="saldo-quota-label" id="saldoFreeQuotaLabel">—</div>
+                  </div>
                 </div>
               </div>
               <div class="saldo-note" id="saldoHint">Gemini usa primeiro o saldo grátis. Quando zerar, usa créditos comprados.</div>
@@ -7626,7 +7666,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       el.appendChild(ul);
     }
 
-    function updateGeminiModelBadge(freeCredits, totalCredits) {
+    function updateGeminiModelBadge(quota) {
       const btn = document.getElementById('modelGeminiBtn');
       if (!btn) return;
       const full = btn.querySelector('.label-full');
@@ -7636,31 +7676,32 @@ div.innerHTML = DOMPurify.sanitize(html, {
         if (short) short.textContent = 'Vigoroso';
         return;
       }
-      const free = Number(freeCredits);
-      const total = Number(totalCredits);
-      const hasFree = Number.isFinite(free) && free > 0;
-      const txt = hasFree ? `Vigoroso · grátis ${Math.floor(free)}` : 'Vigoroso';
+      const tone = quota && typeof quota === 'object' ? String(quota.tone || '') : '';
+      const txt =
+        tone === 'orange' ? 'Vigoroso · alto uso' :
+        tone === 'red' ? 'Vigoroso · no limite' :
+        tone === 'empty' ? 'Vigoroso · bloqueado' :
+        'Vigoroso · estável';
       if (full) full.textContent = txt;
       if (short) short.textContent = 'Vigoroso';
-      btn.title = hasFree
-        ? `Gemini (Grátis: ${Math.floor(free)} / Total: ${Number.isFinite(total) ? Math.floor(total) : '—'})`
-        : 'Gemini (Créditos)';
+      btn.title = 'Vigoroso (Gemini)';
     }
 
     async function saldoRefreshCredits() {
-      const availableEl = document.getElementById('saldoCreditsAvailable');
       const freeEl = document.getElementById('saldoCreditsFree');
-      const spentEl = document.getElementById('saldoCreditsSpent');
+      const freeFill = document.getElementById('saldoFreeQuotaFill');
+      const freeLabel = document.getElementById('saldoFreeQuotaLabel');
       const statusEl = document.getElementById('saldoCreditsStatus');
       const hintEl = document.getElementById('saldoHint');
 
-      if (!availableEl || !spentEl || !freeEl) return;
+      if (!freeEl || !freeFill || !freeLabel) return;
 
       if (!userLoggedIn || !userData || !userData.email) {
-        availableEl.textContent = '—';
-        spentEl.textContent = '—';
-        freeEl.textContent = '—';
-        if (hintEl) hintEl.textContent = 'Faça login para ver e gerenciar créditos.';
+        freeFill.style.width = '0%';
+        freeEl.classList.remove('is-orange', 'is-red', 'is-empty');
+        freeEl.setAttribute('aria-valuenow', '0');
+        freeLabel.textContent = '—';
+        if (hintEl) hintEl.textContent = 'Faça login para ver sua cota do Vigoroso e gerenciar créditos.';
         if (statusEl) statusEl.textContent = '';
         saldoRenderHistoryList('saldoHistoryTopups', []);
         saldoRenderHistoryList('saldoHistoryUsage', []);
@@ -7673,17 +7714,25 @@ div.innerHTML = DOMPurify.sanitize(html, {
         if (statusEl) statusEl.textContent = data.error || 'Falha ao consultar créditos.';
         return;
       }
-      const disponivel = Number(data && data.creditosDisponiveis);
-      const gratis = Number(data && data.creditosGratisDisponiveis);
-      const gastos = Number(data && data.creditosGastos);
-      availableEl.textContent = Number.isFinite(disponivel) ? String(disponivel) : '0';
-      spentEl.textContent = Number.isFinite(gastos) ? String(gastos) : '0';
-      freeEl.textContent = Number.isFinite(gratis) ? String(gratis) : '0';
+      const bar = data && typeof data.usageBar === 'object' ? data.usageBar : {};
+      const tone = String(bar.tone || '');
+      let ratio = Number(bar.ratio);
+      if (!Number.isFinite(ratio)) ratio = 0;
+      ratio = Math.max(0, Math.min(1, ratio));
+      const label = String(bar.label || '—');
+      const hint = String(bar.hint || 'A barra mostra sua margem de uso no Vigoroso. Quando zerar, adicione créditos para continuar.');
+
+      freeFill.style.width = `${Math.round(ratio * 1000) / 10}%`;
+      freeEl.classList.toggle('is-orange', tone === 'orange');
+      freeEl.classList.toggle('is-red', tone === 'red');
+      freeEl.classList.toggle('is-empty', tone === 'empty');
+      freeEl.setAttribute('aria-valuenow', String(Math.round(ratio * 100)));
+      freeLabel.textContent = label;
       if (statusEl) statusEl.textContent = '';
-      if (hintEl) hintEl.textContent = 'Gemini usa primeiro o saldo grátis. Quando zerar, usa créditos comprados.';
+      if (hintEl) hintEl.textContent = hint;
       saldoRenderHistoryList('saldoHistoryTopups', (data && data.historicoDeRecargas) || []);
       saldoRenderHistoryList('saldoHistoryUsage', (data && data.historicoDeConsumo) || []);
-      updateGeminiModelBadge(gratis, disponivel);
+      updateGeminiModelBadge(bar);
     }
 
     async function saldoCreateCheckout() {
