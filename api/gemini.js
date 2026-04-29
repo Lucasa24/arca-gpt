@@ -215,7 +215,7 @@ async function chamarModeloStream({ model, prompt, contents, systemInstruction, 
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
       body: JSON.stringify(body)
     });
 
@@ -227,6 +227,7 @@ async function chamarModeloStream({ model, prompt, contents, systemInstruction, 
     let buffer = "";
     let output = "";
     let lastUsage;
+    let shouldStop = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -238,36 +239,42 @@ async function chamarModeloStream({ model, prompt, contents, systemInstruction, 
 
       for (const part of parts) {
         const lines = String(part).split(/\r?\n/g);
+        const dataLines = [];
         for (const line of lines) {
           if (!/^data:\s*/.test(line)) continue;
-          const payload = line.replace(/^data:\s?/, "").trim();
-          if (!payload) continue;
-          if (payload === "[DONE]") {
-            buffer = "";
-            break;
-          }
+          const payload = line.replace(/^data:\s?/, "");
+          if (payload != null) dataLines.push(payload);
+        }
 
-          let json;
+        const payload = dataLines.join("\n").trim();
+        if (!payload) continue;
+        if (payload === "[DONE]") {
+          shouldStop = true;
+          break;
+        }
+
+        let json;
+        try {
+          json = JSON.parse(payload);
+        } catch {
+          json = null;
+        }
+
+        if (!json) continue;
+        if (json.usageMetadata) lastUsage = json.usageMetadata;
+
+        const chunk = extrairTextoStream(json);
+        if (!chunk) continue;
+
+        output += chunk;
+        if (typeof onChunk === "function") {
           try {
-            json = JSON.parse(payload);
-          } catch {
-            json = null;
-          }
-
-          if (!json) continue;
-          if (json.usageMetadata) lastUsage = json.usageMetadata;
-
-          const chunk = extrairTextoStream(json);
-          if (!chunk) continue;
-
-          output += chunk;
-          if (typeof onChunk === "function") {
-            try {
-              onChunk(chunk);
-            } catch {}
-          }
+            onChunk(chunk);
+          } catch {}
         }
       }
+
+      if (shouldStop) break;
     }
 
     return {
