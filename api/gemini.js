@@ -226,6 +226,7 @@ async function chamarModeloStream({ model, prompt, contents, systemInstruction, 
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
     let output = "";
+    let assembled = "";
     let lastUsage;
     let shouldStop = false;
 
@@ -263,13 +264,23 @@ async function chamarModeloStream({ model, prompt, contents, systemInstruction, 
         if (!json) continue;
         if (json.usageMetadata) lastUsage = json.usageMetadata;
 
-        const chunk = extrairTextoStream(json);
-        if (!chunk) continue;
+        const piece = extrairTextoStream(json);
+        if (!piece) continue;
 
-        output += chunk;
-        if (typeof onChunk === "function") {
+        let delta = "";
+        if (piece.startsWith(assembled)) {
+          delta = piece.slice(assembled.length);
+          assembled = piece;
+        } else {
+          delta = piece;
+          assembled += piece;
+        }
+
+        output = assembled;
+
+        if (delta && typeof onChunk === "function") {
           try {
-            onChunk(chunk);
+            onChunk(delta);
           } catch {}
         }
       }
