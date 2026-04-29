@@ -5039,12 +5039,25 @@
       const now = Date.now();
       const throttleMs = (window.innerWidth <= 768) ? 140 : 16;
       if (window.__arcaStreamMdPending === true) return;
-      if ((now - (window.__arcaStreamMdTs || 0)) < throttleMs) return;
+      const since = now - (window.__arcaStreamMdTs || 0);
+      if (since < throttleMs) {
+        if (!window.__arcaStreamMdTimer) {
+          window.__arcaStreamMdTimer = setTimeout(() => {
+            window.__arcaStreamMdTimer = null;
+            try { updateStreamingUI(); } catch {}
+          }, Math.max(0, throttleMs - since));
+        }
+        return;
+      }
 
       window.__arcaStreamMdPending = true;
       window.requestAnimationFrame(() => {
         window.__arcaStreamMdPending = false;
         window.__arcaStreamMdTs = Date.now();
+        if (window.__arcaStreamMdTimer) {
+          clearTimeout(window.__arcaStreamMdTimer);
+          window.__arcaStreamMdTimer = null;
+        }
 
         if (!streamingContentEl) {
           const responseDiv = document.getElementById("response");
