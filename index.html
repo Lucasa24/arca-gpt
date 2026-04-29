@@ -1379,6 +1379,29 @@
       overflow: visible;
       max-height: 70vh;
     }
+    #footerResizeBar {
+      display: none;
+    }
+    .arca-mobile .fixed-footer {
+      height: var(--footer-height);
+      min-height: 0;
+      max-height: min(52vh, calc(100dvh - 72px));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .arca-mobile #footerResizeBar {
+      display: block;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 28px;
+      opacity: 0;
+      z-index: 500;
+      touch-action: none;
+      user-select: none;
+    }
     #footerResizeHandle {
       position: fixed;
       left: var(--sidebar-width);
@@ -1388,6 +1411,9 @@
       cursor: row-resize;
       z-index: 150;
       touch-action: none;
+    }
+    .arca-mobile #footerResizeHandle {
+      pointer-events: none;
     }
     #footerResizeHandle::after {
       content: "";
@@ -4006,6 +4032,7 @@
     <div id="response"></div>
 
     <div class="fixed-footer">
+      <div id="footerResizeBar" aria-hidden="true"></div>
       <div class="input-group">
         <div class="textarea-container" style="flex: 1;">
           <div id="imagePreview" class="image-preview" aria-live="polite">
@@ -7885,17 +7912,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const footerHandle = document.getElementById('footerResizeHandle');
       if (!sidebar || !footer || !sidebarHandle || !footerHandle) return;
 
-      try {
-        const savedW = localStorage.getItem('arcaSidebarWidth');
-        if (savedW) root.style.setProperty('--sidebar-width', savedW);
-      } catch {}
-      try {
-        const savedH = localStorage.getItem('arcaFooterHeight');
-        if (savedH) root.style.setProperty('--footer-height', savedH);
-      } catch {}
-
+      const isMobileNow = () => (window.innerWidth || 0) <= 768 || root.classList.contains('arca-mobile');
+      const footerKey = () => (isMobileNow() ? 'arcaFooterHeightMobile' : 'arcaFooterHeight');
       const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-      const maxFooter = () => Math.round(window.innerHeight * 0.70);
+      const viewportH = () => {
+        let h = window.innerHeight || 0;
+        try {
+          if (window.visualViewport && Number.isFinite(window.visualViewport.height)) h = window.visualViewport.height;
+        } catch {}
+        return h || 0;
+      };
+      const minFooter = () => (isMobileNow() ? 78 : 90);
+      const maxFooter = () => Math.round(viewportH() * (isMobileNow() ? 0.52 : 0.70));
 
       const setSidebarWidthPx = (w) => {
         const px = clamp(Math.round(w), 180, 420) + 'px';
@@ -7903,24 +7931,38 @@ div.innerHTML = DOMPurify.sanitize(html, {
         try { localStorage.setItem('arcaSidebarWidth', px); } catch {}
       };
 
-      const setFooterHeightPx = (h) => {
-        const px = clamp(Math.round(h), 90, maxFooter()) + 'px';
+      const setFooterHeightPx = (h, persist = true) => {
+        const px = clamp(Math.round(h), minFooter(), maxFooter()) + 'px';
         root.style.setProperty('--footer-height', px);
-        try { localStorage.setItem('arcaFooterHeight', px); } catch {}
+        if (persist) {
+          try { localStorage.setItem(footerKey(), px); } catch {}
+        }
         try { positionVoiceBar(); } catch {}
       };
 
       try {
+        const savedW = localStorage.getItem('arcaSidebarWidth');
+        if (savedW) root.style.setProperty('--sidebar-width', savedW);
+      } catch {}
+      try {
+        const savedH = localStorage.getItem(footerKey());
+        const n = savedH ? parseInt(savedH, 10) : NaN;
+        if (Number.isFinite(n)) setFooterHeightPx(n, true);
+      } catch {}
+      try {
+        const cur = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
+        setFooterHeightPx(cur, false);
+      } catch {}
+
+      try {
         const ro = new ResizeObserver(() => {
           try { setSidebarWidthPx(sidebar.getBoundingClientRect().width); } catch {}
-          try { setFooterHeightPx(footer.getBoundingClientRect().height); } catch {}
         });
         ro.observe(sidebar);
-        ro.observe(footer);
       } catch {}
 
       sidebarHandle.addEventListener('pointerdown', (e) => {
-        if (window.innerWidth <= 768) return;
+        if (isMobileNow()) return;
         try { sidebarHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
 
@@ -7939,12 +7981,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
       });
 
       footerHandle.addEventListener('pointerdown', (e) => {
-        if (window.innerWidth <= 768) return;
+        if (isMobileNow()) return;
         try { footerHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
 
         const onMove = (ev) => {
-          setFooterHeightPx(window.innerHeight - ev.clientY);
+          setFooterHeightPx(window.innerHeight - ev.clientY, true);
         };
         const onUp = (ev) => {
           try { footerHandle.releasePointerCapture(ev.pointerId); } catch {}
@@ -7957,9 +7999,78 @@ div.innerHTML = DOMPurify.sanitize(html, {
         footerHandle.addEventListener('pointercancel', onUp);
       });
 
-      window.addEventListener('resize', () => {
-        try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110); } catch {}
-      }, { passive: true });
+      const footerBar = document.getElementById('footerResizeBar');
+      const isInteractiveTarget = (t) => {
+        try { return !!(t && t.closest && t.closest('textarea,button,input,select,option,a,label')); } catch { return false; }
+      };
+
+      const drag = { active: false, started: false, pid: null, startY: 0, startH: 0 };
+
+      const canStartDrag = (e, force = false) => {
+        if (!isMobileNow()) return false;
+        try { if (e && e.button != null && e.button !== 0) return false; } catch {}
+        if (!force && isInteractiveTarget(e.target)) return false;
+        const rect = footer.getBoundingClientRect();
+        const topZone = (e.clientY - rect.top) <= 28;
+        return force || topZone || !isInteractiveTarget(e.target);
+      };
+
+      const startDrag = (e, force = false) => {
+        if (!canStartDrag(e, force)) return;
+        drag.active = true;
+        drag.started = false;
+        drag.pid = e.pointerId;
+        drag.startY = e.clientY;
+        const cur = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
+        drag.startH = Number.isFinite(cur) ? cur : footer.getBoundingClientRect().height;
+        footer.classList.add('resizing');
+        try { footer.setPointerCapture(e.pointerId); } catch {}
+        e.preventDefault();
+      };
+
+      const moveDrag = (e) => {
+        if (!drag.active) return;
+        const dy = drag.startY - e.clientY;
+        if (!drag.started && Math.abs(dy) < 6) return;
+        drag.started = true;
+        setFooterHeightPx(drag.startH + dy, false);
+      };
+
+      const endDrag = (e) => {
+        if (!drag.active) return;
+        drag.active = false;
+        footer.classList.remove('resizing');
+        try { footer.releasePointerCapture(drag.pid); } catch {}
+        drag.pid = null;
+        try {
+          const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
+          if (Number.isFinite(h) && h > 0) setFooterHeightPx(h, true);
+        } catch {}
+      };
+
+      if (footerBar) {
+        footerBar.addEventListener('pointerdown', (e) => startDrag(e, true));
+        footerBar.addEventListener('pointermove', moveDrag);
+        footerBar.addEventListener('pointerup', endDrag);
+        footerBar.addEventListener('pointercancel', endDrag);
+      }
+      footer.addEventListener('pointerdown', (e) => startDrag(e, false));
+      footer.addEventListener('pointermove', moveDrag);
+      footer.addEventListener('pointerup', endDrag);
+      footer.addEventListener('pointercancel', endDrag);
+
+      const normalize = () => {
+        try {
+          const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
+          setFooterHeightPx(h, false);
+        } catch {}
+      };
+
+      window.addEventListener('resize', normalize, { passive: true });
+      window.addEventListener('orientationchange', () => setTimeout(normalize, 60), { passive: true });
+      if (window.visualViewport) {
+        try { window.visualViewport.addEventListener('resize', normalize, { passive: true }); } catch {}
+      }
     }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
