@@ -4890,8 +4890,6 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-        if (finePointer) return setOpen(true);
         setOpen(!wrap.classList.contains('open'));
       });
 
