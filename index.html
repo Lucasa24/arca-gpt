@@ -4347,7 +4347,9 @@
     (function initArcaMobileClass() {
       const root = document.documentElement;
       const ua = String(navigator.userAgent || '');
-      root.classList.toggle('arca-iab', /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua));
+      const isIg = /\bInstagram\b/i.test(ua);
+      root.classList.toggle('arca-ig', isIg);
+      root.classList.toggle('arca-iab', isIg || /FBAN|FBAV|FB_IAB/i.test(ua));
       root.classList.toggle('arca-samsung', /\bSamsungBrowser\b/i.test(ua));
       const isVisible = (el) => {
         if (!el) return false;
@@ -8062,9 +8064,56 @@ div.innerHTML = DOMPurify.sanitize(html, {
       footer.addEventListener('pointerup', endDrag);
       footer.addEventListener('pointercancel', endDrag);
 
+      const isInstagramNow = () => {
+        try { return isMobileNow() && document.documentElement.classList.contains('arca-ig'); } catch {}
+        return false;
+      };
+
+      let igPinned = false;
+      let igPinTimer = 0;
+      const clearIgPinTimer = () => {
+        if (!igPinTimer) return;
+        try { clearTimeout(igPinTimer); } catch {}
+        igPinTimer = 0;
+      };
+      const setIgPinned = (on) => {
+        igPinned = !!on;
+        clearIgPinTimer();
+        if (!igPinned) {
+          footer.style.removeProperty('top');
+          footer.style.removeProperty('bottom');
+          footer.style.removeProperty('transition');
+          return;
+        }
+        footer.style.bottom = 'auto';
+        footer.style.transition = 'top 0.12s ease';
+      };
+      const updateIgPinned = () => {
+        if (!igPinned) return;
+        let vb = window.innerHeight || 0;
+        try {
+          const vv = window.visualViewport;
+          if (vv && Number.isFinite(vv.height)) vb = (vv.offsetTop || 0) + vv.height;
+        } catch {}
+        const fh = Math.max(0, footer.getBoundingClientRect().height || 0);
+        const top = Math.max(0, Math.round(vb - fh));
+        footer.style.top = top + 'px';
+      };
+      const pulseIgPinned = (n = 8) => {
+        if (!igPinned) return;
+        updateIgPinned();
+        if (n <= 0) return;
+        igPinTimer = setTimeout(() => pulseIgPinned(n - 1), 60);
+      };
+
       const applyKeyboardOffset = () => {
         if (!isMobileNow()) {
           root.style.removeProperty('--kb-offset');
+          return;
+        }
+        if (igPinned) {
+          root.style.setProperty('--kb-offset', '0px');
+          updateIgPinned();
           return;
         }
         let offset = 0;
@@ -8089,9 +8138,17 @@ div.innerHTML = DOMPurify.sanitize(html, {
         }, 60);
       };
       if (inputEl) {
-        inputEl.addEventListener('focus', kickIntoView);
+        inputEl.addEventListener('focus', () => {
+          if (isInstagramNow()) {
+            setIgPinned(true);
+            pulseIgPinned(12);
+            setTimeout(updateIgPinned, 260);
+          }
+          kickIntoView();
+        });
         inputEl.addEventListener('blur', () => setTimeout(() => {
           try { window.__arcaBaseInnerH = window.innerHeight || window.__arcaBaseInnerH || 0; } catch {}
+          if (igPinned) setIgPinned(false);
           applyKeyboardOffset();
         }, 120));
       }
@@ -8125,6 +8182,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       window.addEventListener('resize', normalize, { passive: true });
       window.addEventListener('orientationchange', () => setTimeout(normalize, 60), { passive: true });
+      window.addEventListener('scroll', () => { if (igPinned) updateIgPinned(); }, { passive: true });
       if (window.visualViewport) {
         try { window.visualViewport.addEventListener('resize', normalize, { passive: true }); } catch {}
         try { window.visualViewport.addEventListener('scroll', normalize, { passive: true }); } catch {}
