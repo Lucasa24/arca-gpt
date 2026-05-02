@@ -6,7 +6,14 @@ const fs = require('fs');
 const path = require('path');
 
 const server = http.createServer((req, res) => {
-  if (req.method === 'GET' && req.url === '/') {
+  let pathname = '';
+  try {
+    pathname = new URL(req.url || '/', 'http://localhost').pathname || '';
+  } catch {
+    pathname = '';
+  }
+
+  if (req.method === 'GET' && pathname === '/') {
     // Servir o index.html
     fs.readFile(path.join(__dirname, 'index.html'), (err, data) => {
       if (err) {
@@ -17,7 +24,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(data);
     });
-  } else if (req.method === 'GET' && req.url === '/favicon.ico') {
+  } else if (req.method === 'GET' && pathname === '/favicon.ico') {
     // Servir o favicon
     fs.readFile(path.join(__dirname, 'favicon.ico'), (err, data) => {
       if (err) {
@@ -28,7 +35,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'image/x-icon' });
       res.end(data);
     });
-  } else if (req.method === 'POST' && req.url === '/api/arca') {
+  } else if (req.method === 'POST' && pathname === '/api/arca') {
     // Usar handler real da API da Arca
     let body = '';
     req.on('data', chunk => {
@@ -48,7 +55,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/vision') {
+  } else if (req.method === 'POST' && pathname === '/api/vision') {
     // Usar handler real da API de Vision
     let body = '';
     req.on('data', chunk => {
@@ -68,7 +75,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/embed') {
+  } else if (req.method === 'POST' && pathname === '/api/embed') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -81,7 +88,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/moderation') {
+  } else if (req.method === 'POST' && pathname === '/api/moderation') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -94,7 +101,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/assist') {
+  } else if (req.method === 'POST' && pathname === '/api/assist') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -107,7 +114,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/images') {
+  } else if (req.method === 'POST' && pathname === '/api/images') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -120,7 +127,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && (req.url === '/api/speech' || req.url === '/api/transcribe')) {
+  } else if (req.method === 'POST' && (pathname === '/api/speech' || pathname === '/api/transcribe')) {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -133,7 +140,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/realtimeSession') {
+  } else if (req.method === 'POST' && pathname === '/api/realtimeSession') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -146,7 +153,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/auth') {
+  } else if (req.method === 'POST' && pathname === '/api/auth') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -159,7 +166,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/getMessages') {
+  } else if (req.method === 'POST' && pathname === '/api/getMessages') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -172,7 +179,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/listThreads') {
+  } else if (req.method === 'POST' && pathname === '/api/listThreads') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -185,7 +192,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/userState') {
+  } else if (req.method === 'POST' && pathname === '/api/userState') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -198,7 +205,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/toggleArchive') {
+  } else if (req.method === 'POST' && pathname === '/api/toggleArchive') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -211,7 +218,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: 'Body JSON inválido' }));
       }
     });
-  } else if (req.method === 'POST' && req.url === '/api/credits') {
+  } else if (req.method === 'POST' && pathname === '/api/credits') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
