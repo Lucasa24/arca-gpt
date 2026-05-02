@@ -8077,8 +8077,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const updateBaseLayoutH = () => {
         try {
           if (!isMobileNow()) return;
-          if (inputEl && document.activeElement === inputEl) return;
-          let base = Math.max(0, Number(window.innerHeight || 0));
+          const prev = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
+          let base = Math.max(prev, Math.max(0, Number(window.innerHeight || 0)));
           try { base = Math.max(base, Number(document.documentElement && document.documentElement.clientHeight || 0)); } catch {}
           try {
             const vv = window.visualViewport;
@@ -8090,8 +8090,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const computeKeyboardOffset = () => {
         let offset = 0;
-        if (!window.__arcaBaseLayoutH) updateBaseLayoutH();
-        const base = Number(window.__arcaBaseLayoutH || 0);
+        updateBaseLayoutH();
+        const base = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
 
         try {
           const vk = navigator && navigator.virtualKeyboard;
@@ -8100,6 +8100,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
             const ih = Number(window.innerHeight || 0);
             const by = Number(rect.y || 0);
             offset = Math.max(0, Math.round(Math.max(rect.height, ih ? (ih - by) : rect.height)));
+            return offset;
+          }
+        } catch {}
+
+        try {
+          const ih = Number(window.innerHeight || 0);
+          if (base > 0 && ih > 0 && (base - ih) > 40) {
+            offset = Math.max(0, base - ih);
             return offset;
           }
         } catch {}
@@ -8195,6 +8203,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
           try { vk.addEventListener('geometrychange', normalize, { passive: true }); } catch {}
         }
       } catch {}
+      updateBaseLayoutH();
+      try { applyKeyboardOffset(); } catch {}
     }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
