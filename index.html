@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"/>
   <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
@@ -1391,6 +1391,11 @@
       -webkit-overflow-scrolling: touch;
       will-change: bottom;
       bottom: var(--kb-offset, 0px);
+    }
+    .arca-ig.arca-mobile .fixed-footer {
+      bottom: 0 !important;
+      will-change: transform;
+      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
     }
     .arca-mobile #footerResizeBar {
       display: block;
@@ -4347,7 +4352,7 @@
     (function initArcaMobileClass() {
       const root = document.documentElement;
       const ua = String(navigator.userAgent || '');
-      const isIg = /\bInstagram\b/i.test(ua);
+      const isIg = /\bInstagram\b/i.test(ua) || /\big=1\b/i.test(String(location.search || ''));
       root.classList.toggle('arca-ig', isIg);
       root.classList.toggle('arca-iab', isIg || /FBAN|FBAV|FB_IAB/i.test(ua));
       root.classList.toggle('arca-samsung', /\bSamsungBrowser\b/i.test(ua));
@@ -8069,41 +8074,57 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return false;
       };
 
-      let igPinned = false;
-      let igPinTimer = 0;
-      const clearIgPinTimer = () => {
-        if (!igPinTimer) return;
-        try { clearTimeout(igPinTimer); } catch {}
-        igPinTimer = 0;
+      const updateBaseLayoutH = () => {
+        try {
+          if (!isMobileNow()) return;
+          if (inputEl && document.activeElement === inputEl) return;
+          let base = Math.max(0, Number(window.innerHeight || 0));
+          try { base = Math.max(base, Number(document.documentElement && document.documentElement.clientHeight || 0)); } catch {}
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) base = Math.max(base, (vv.offsetTop || 0) + vv.height);
+          } catch {}
+          if (base > 0) window.__arcaBaseLayoutH = base;
+        } catch {}
       };
-      const setIgPinned = (on) => {
-        igPinned = !!on;
-        clearIgPinTimer();
-        if (!igPinned) {
-          footer.style.removeProperty('top');
-          footer.style.removeProperty('bottom');
-          footer.style.removeProperty('transition');
-          return;
-        }
-        footer.style.bottom = 'auto';
-        footer.style.transition = 'top 0.12s ease';
-      };
-      const updateIgPinned = () => {
-        if (!igPinned) return;
-        let vb = window.innerHeight || 0;
+
+      const computeKeyboardOffset = () => {
+        let offset = 0;
+        if (!window.__arcaBaseLayoutH) updateBaseLayoutH();
+        const base = Number(window.__arcaBaseLayoutH || 0);
+
+        try {
+          const vk = navigator && navigator.virtualKeyboard;
+          const rect = vk && vk.boundingRect;
+          if (rect && Number.isFinite(rect.height) && rect.height > 0) {
+            const ih = Number(window.innerHeight || 0);
+            const by = Number(rect.y || 0);
+            offset = Math.max(0, Math.round(Math.max(rect.height, ih ? (ih - by) : rect.height)));
+            return offset;
+          }
+        } catch {}
+
         try {
           const vv = window.visualViewport;
-          if (vv && Number.isFinite(vv.height)) vb = (vv.offsetTop || 0) + vv.height;
+          if (vv && Number.isFinite(vv.height)) {
+            const visibleBottom = (vv.offsetTop || 0) + vv.height;
+            if (base > 0) offset = Math.max(0, base - visibleBottom);
+            if (offset <= 0) offset = Math.max(0, (window.innerHeight || 0) - visibleBottom);
+          }
         } catch {}
-        const fh = Math.max(0, footer.getBoundingClientRect().height || 0);
-        const top = Math.max(0, Math.round(vb - fh));
-        footer.style.top = top + 'px';
-      };
-      const pulseIgPinned = (n = 8) => {
-        if (!igPinned) return;
-        updateIgPinned();
-        if (n <= 0) return;
-        igPinTimer = setTimeout(() => pulseIgPinned(n - 1), 60);
+
+        if (!Number.isFinite(offset) || offset < 0) offset = 0;
+        if (offset > 0) return offset;
+
+        try {
+          const ih = Number(window.innerHeight || 0);
+          const ch = Number(document.documentElement && document.documentElement.clientHeight || 0);
+          const visible = Math.min(ih || 0, ch || ih || 0);
+          if (base > 0 && visible > 0 && (base - visible) > 40) offset = Math.max(0, base - visible);
+        } catch {}
+
+        if (!Number.isFinite(offset) || offset < 0) offset = 0;
+        return offset;
       };
 
       const applyKeyboardOffset = () => {
@@ -8111,23 +8132,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           root.style.removeProperty('--kb-offset');
           return;
         }
-        if (igPinned) {
-          root.style.setProperty('--kb-offset', '0px');
-          updateIgPinned();
-          return;
-        }
-        let offset = 0;
-        try {
-          const vv = window.visualViewport;
-          if (vv && Number.isFinite(vv.height)) {
-            offset = Math.max(0, (window.innerHeight - vv.height - (vv.offsetTop || 0)));
-          }
-        } catch {}
-        if (!Number.isFinite(offset) || offset < 0) offset = 0;
-        if (!window.__arcaBaseInnerH) window.__arcaBaseInnerH = window.innerHeight || 0;
-        const base = Number(window.__arcaBaseInnerH || 0);
-        const ih = Number(window.innerHeight || 0);
-        if (offset <= 0 && base > 0 && ih > 0 && (base - ih) > 40) offset = Math.max(0, base - ih);
+        const offset = computeKeyboardOffset();
         root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
       };
       const kickIntoView = () => {
@@ -8139,16 +8144,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
       };
       if (inputEl) {
         inputEl.addEventListener('focus', () => {
+          updateBaseLayoutH();
           if (isInstagramNow()) {
-            setIgPinned(true);
-            pulseIgPinned(12);
-            setTimeout(updateIgPinned, 260);
+            [0, 60, 160, 260, 420, 620].forEach((d) => setTimeout(() => { try { applyKeyboardOffset(); } catch {} }, d));
           }
           kickIntoView();
         });
         inputEl.addEventListener('blur', () => setTimeout(() => {
-          try { window.__arcaBaseInnerH = window.innerHeight || window.__arcaBaseInnerH || 0; } catch {}
-          if (igPinned) setIgPinned(false);
+          updateBaseLayoutH();
           applyKeyboardOffset();
         }, 120));
       }
@@ -8174,19 +8177,24 @@ div.innerHTML = DOMPurify.sanitize(html, {
           const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
           setFooterHeightPx(h, false);
         } catch {}
-        try {
-          if (!inputEl || document.activeElement !== inputEl) window.__arcaBaseInnerH = window.innerHeight || window.__arcaBaseInnerH || 0;
-        } catch {}
+        updateBaseLayoutH();
         try { applyKeyboardOffset(); } catch {}
       };
 
       window.addEventListener('resize', normalize, { passive: true });
       window.addEventListener('orientationchange', () => setTimeout(normalize, 60), { passive: true });
-      window.addEventListener('scroll', () => { if (igPinned) updateIgPinned(); }, { passive: true });
+      window.addEventListener('scroll', normalize, { passive: true });
       if (window.visualViewport) {
         try { window.visualViewport.addEventListener('resize', normalize, { passive: true }); } catch {}
         try { window.visualViewport.addEventListener('scroll', normalize, { passive: true }); } catch {}
       }
+      try {
+        const vk = navigator && navigator.virtualKeyboard;
+        if (vk) {
+          try { vk.overlaysContent = true; } catch {}
+          try { vk.addEventListener('geometrychange', normalize, { passive: true }); } catch {}
+        }
+      } catch {}
     }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
