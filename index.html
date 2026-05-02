@@ -1389,6 +1389,7 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      will-change: transform;
     }
     .arca-mobile #footerResizeBar {
       display: block;
@@ -7998,6 +7999,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       });
 
       const footerBar = document.getElementById('footerResizeBar');
+      const inputEl = document.getElementById('userInput');
       const isInteractiveTarget = (t) => {
         try { return !!(t && t.closest && t.closest('textarea,button,input,select,option,a,label')); } catch { return false; }
       };
@@ -8007,10 +8009,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const canStartDrag = (e, force = false) => {
         if (!isMobileNow()) return false;
         try { if (e && e.button != null && e.button !== 0) return false; } catch {}
-        if (!force && isInteractiveTarget(e.target)) return false;
         const rect = footer.getBoundingClientRect();
         const topZone = (e.clientY - rect.top) <= 28;
-        return force || topZone || !isInteractiveTarget(e.target);
+        if (force) return true;
+        if (isInteractiveTarget(e.target)) return false;
+        return topZone;
       };
 
       const startDrag = (e, force = false) => {
@@ -8021,29 +8024,34 @@ div.innerHTML = DOMPurify.sanitize(html, {
         drag.startY = e.clientY;
         const cur = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
         drag.startH = Number.isFinite(cur) ? cur : footer.getBoundingClientRect().height;
-        footer.classList.add('resizing');
-        try { footer.setPointerCapture(e.pointerId); } catch {}
-        e.preventDefault();
       };
 
       const moveDrag = (e) => {
         if (!drag.active) return;
         const dy = drag.startY - e.clientY;
         if (!drag.started && Math.abs(dy) < 6) return;
-        drag.started = true;
+        if (!drag.started) {
+          drag.started = true;
+          footer.classList.add('resizing');
+          try { footer.setPointerCapture(drag.pid); } catch {}
+          try { e.preventDefault(); } catch {}
+        }
         setFooterHeightPx(drag.startH + dy, false);
       };
 
       const endDrag = (e) => {
         if (!drag.active) return;
         drag.active = false;
-        footer.classList.remove('resizing');
-        try { footer.releasePointerCapture(drag.pid); } catch {}
+        if (drag.started) {
+          footer.classList.remove('resizing');
+          try { footer.releasePointerCapture(drag.pid); } catch {}
+          try {
+            const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
+            if (Number.isFinite(h) && h > 0) setFooterHeightPx(h, true);
+          } catch {}
+        }
+        drag.started = false;
         drag.pid = null;
-        try {
-          const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
-          if (Number.isFinite(h) && h > 0) setFooterHeightPx(h, true);
-        } catch {}
       };
 
       if (footerBar) {
@@ -8057,17 +8065,53 @@ div.innerHTML = DOMPurify.sanitize(html, {
       footer.addEventListener('pointerup', endDrag);
       footer.addEventListener('pointercancel', endDrag);
 
+      const applyKeyboardOffset = () => {
+        if (!isMobileNow()) {
+          footer.style.transform = '';
+          root.style.removeProperty('--kb-offset');
+          return;
+        }
+        let offset = 0;
+        try {
+          const vv = window.visualViewport;
+          if (vv && Number.isFinite(vv.height)) {
+            offset = Math.max(0, (window.innerHeight - vv.height - (vv.offsetTop || 0)));
+          }
+        } catch {}
+        root.style.setProperty('--kb-offset', offset + 'px');
+        footer.style.transform = offset ? `translateY(${-offset}px)` : '';
+      };
+      const kickIntoView = () => {
+        if (!isMobileNow() || !inputEl) return;
+        setTimeout(() => {
+          try { applyKeyboardOffset(); } catch {}
+          try { inputEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
+        }, 60);
+      };
+      if (inputEl) {
+        inputEl.addEventListener('focus', kickIntoView);
+        inputEl.addEventListener('blur', () => setTimeout(applyKeyboardOffset, 80));
+        inputEl.addEventListener('pointerdown', () => {
+          if (!isMobileNow()) return;
+          if (document.activeElement !== inputEl) {
+            setTimeout(() => { try { inputEl.focus(); } catch {} }, 0);
+          }
+        }, { passive: true });
+      }
+
       const normalize = () => {
         try {
           const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
           setFooterHeightPx(h, false);
         } catch {}
+        try { applyKeyboardOffset(); } catch {}
       };
 
       window.addEventListener('resize', normalize, { passive: true });
       window.addEventListener('orientationchange', () => setTimeout(normalize, 60), { passive: true });
       if (window.visualViewport) {
         try { window.visualViewport.addEventListener('resize', normalize, { passive: true }); } catch {}
+        try { window.visualViewport.addEventListener('scroll', normalize, { passive: true }); } catch {}
       }
     }
     async function arcaImage(prompt, size) {
