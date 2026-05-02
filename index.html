@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
@@ -1396,6 +1396,10 @@
       bottom: 0 !important;
       will-change: transform;
       transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
+    }
+    .arca-ig.ig-scrollfix.arca-mobile .fixed-footer {
+      transform: none !important;
+      will-change: top;
     }
     .arca-mobile #footerResizeBar {
       display: block;
@@ -8074,6 +8078,88 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return false;
       };
 
+      const igScrollFix = { on: false, raf: 0, until: 0, prev: null };
+      const setIgScrollFix = (on) => {
+        if (!isInstagramNow()) on = false;
+        const next = !!on;
+        if (igScrollFix.on === next) return;
+        igScrollFix.on = next;
+        try { if (igScrollFix.raf) cancelAnimationFrame(igScrollFix.raf); } catch {}
+        igScrollFix.raf = 0;
+        igScrollFix.until = 0;
+
+        if (!next) {
+          try { document.documentElement.classList.remove('ig-scrollfix'); } catch {}
+          try {
+            footer.style.removeProperty('position');
+            footer.style.removeProperty('top');
+            footer.style.removeProperty('bottom');
+            footer.style.removeProperty('left');
+            footer.style.removeProperty('right');
+            footer.style.removeProperty('width');
+            footer.style.removeProperty('transform');
+            footer.style.removeProperty('will-change');
+          } catch {}
+          return;
+        }
+
+        try { document.documentElement.classList.add('ig-scrollfix'); } catch {}
+        try {
+          footer.style.position = 'absolute';
+          footer.style.bottom = 'auto';
+          footer.style.left = '0';
+          footer.style.right = '0';
+          footer.style.width = '100%';
+          footer.style.transform = 'none';
+          footer.style.willChange = 'top';
+        } catch {}
+
+        const main = document.getElementById('mainContent') || (footer && footer.parentElement) || null;
+        const getMainTop = () => {
+          if (!main) return 0;
+          try { return (main.getBoundingClientRect().top || 0) + (window.scrollY || 0); } catch {}
+          return 0;
+        };
+        const getScrollY = () => {
+          try { return Number(window.scrollY || 0); } catch {}
+          try { return Number(document.documentElement && document.documentElement.scrollTop || 0); } catch {}
+          try { return Number(document.body && document.body.scrollTop || 0); } catch {}
+          return 0;
+        };
+        const getVisibleBottom = () => {
+          let vb = getScrollY() + (window.innerHeight || 0);
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) vb = getScrollY() + (vv.offsetTop || 0) + vv.height;
+          } catch {}
+          return vb;
+        };
+        const update = () => {
+          if (!igScrollFix.on) return;
+          let fh = 0;
+          try { fh = Math.max(0, footer.getBoundingClientRect().height || 0); } catch {}
+          if (!fh) {
+            try { fh = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110; } catch {}
+          }
+          const topAbs = Math.max(0, Math.round(getVisibleBottom() - fh));
+          const topRel = Math.max(0, Math.round(topAbs - getMainTop()));
+          try { footer.style.top = topRel + 'px'; } catch {}
+        };
+        const loop = () => {
+          if (!igScrollFix.on) return;
+          update();
+          if ((Date.now ? Date.now() : +new Date()) < igScrollFix.until) {
+            igScrollFix.raf = requestAnimationFrame(loop);
+          } else {
+            igScrollFix.raf = 0;
+          }
+        };
+
+        update();
+        igScrollFix.until = (Date.now ? Date.now() : +new Date()) + 1200;
+        igScrollFix.raf = requestAnimationFrame(loop);
+      };
+
       const updateBaseLayoutH = () => {
         try {
           if (!isMobileNow()) return;
@@ -8140,6 +8226,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
           root.style.removeProperty('--kb-offset');
           return;
         }
+        if (igScrollFix.on) {
+          root.style.setProperty('--kb-offset', '0px');
+          return;
+        }
         const offset = computeKeyboardOffset();
         root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
       };
@@ -8154,12 +8244,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
         inputEl.addEventListener('focus', () => {
           updateBaseLayoutH();
           if (isInstagramNow()) {
+            setIgScrollFix(true);
             [0, 60, 160, 260, 420, 620].forEach((d) => setTimeout(() => { try { applyKeyboardOffset(); } catch {} }, d));
           }
           kickIntoView();
         });
         inputEl.addEventListener('blur', () => setTimeout(() => {
           updateBaseLayoutH();
+          setIgScrollFix(false);
           applyKeyboardOffset();
         }, 120));
       }
@@ -8186,6 +8278,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           setFooterHeightPx(h, false);
         } catch {}
         updateBaseLayoutH();
+        try {
+          if (igScrollFix.on) {
+            setIgScrollFix(false);
+            setIgScrollFix(true);
+          }
+        } catch {}
         try { applyKeyboardOffset(); } catch {}
       };
 
