@@ -1389,7 +1389,8 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      will-change: transform;
+      will-change: bottom;
+      bottom: var(--kb-offset, 0px);
     }
     .arca-mobile #footerResizeBar {
       display: block;
@@ -1402,6 +1403,7 @@
       z-index: 500;
       touch-action: none;
       user-select: none;
+      pointer-events: none;
     }
     #footerResizeHandle {
       position: fixed;
@@ -8000,6 +8002,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const footerBar = document.getElementById('footerResizeBar');
       const inputEl = document.getElementById('userInput');
+      const inputWrap = inputEl && inputEl.closest ? inputEl.closest('.textarea-container') : null;
       const isInteractiveTarget = (t) => {
         try { return !!(t && t.closest && t.closest('textarea,button,input,select,option,a,label')); } catch { return false; }
       };
@@ -8054,12 +8057,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
         drag.pid = null;
       };
 
-      if (footerBar) {
-        footerBar.addEventListener('pointerdown', (e) => startDrag(e, true));
-        footerBar.addEventListener('pointermove', moveDrag);
-        footerBar.addEventListener('pointerup', endDrag);
-        footerBar.addEventListener('pointercancel', endDrag);
-      }
       footer.addEventListener('pointerdown', (e) => startDrag(e, false));
       footer.addEventListener('pointermove', moveDrag);
       footer.addEventListener('pointerup', endDrag);
@@ -8067,7 +8064,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const applyKeyboardOffset = () => {
         if (!isMobileNow()) {
-          footer.style.transform = '';
           root.style.removeProperty('--kb-offset');
           return;
         }
@@ -8078,8 +8074,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
             offset = Math.max(0, (window.innerHeight - vv.height - (vv.offsetTop || 0)));
           }
         } catch {}
-        root.style.setProperty('--kb-offset', offset + 'px');
-        footer.style.transform = offset ? `translateY(${-offset}px)` : '';
+        if (!Number.isFinite(offset) || offset < 0) offset = 0;
+        if (!window.__arcaBaseInnerH) window.__arcaBaseInnerH = window.innerHeight || 0;
+        const base = Number(window.__arcaBaseInnerH || 0);
+        const ih = Number(window.innerHeight || 0);
+        if (offset <= 0 && base > 0 && ih > 0 && (base - ih) > 40) offset = Math.max(0, base - ih);
+        root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
       };
       const kickIntoView = () => {
         if (!isMobileNow() || !inputEl) return;
@@ -8090,19 +8090,35 @@ div.innerHTML = DOMPurify.sanitize(html, {
       };
       if (inputEl) {
         inputEl.addEventListener('focus', kickIntoView);
-        inputEl.addEventListener('blur', () => setTimeout(applyKeyboardOffset, 80));
-        inputEl.addEventListener('pointerdown', () => {
+        inputEl.addEventListener('blur', () => setTimeout(() => {
+          try { window.__arcaBaseInnerH = window.innerHeight || window.__arcaBaseInnerH || 0; } catch {}
+          applyKeyboardOffset();
+        }, 120));
+      }
+      if (inputWrap && inputEl) {
+        const tryFocus = () => {
           if (!isMobileNow()) return;
-          if (document.activeElement !== inputEl) {
-            setTimeout(() => { try { inputEl.focus(); } catch {} }, 0);
-          }
+          if (document.activeElement === inputEl) return;
+          setTimeout(() => { try { inputEl.focus(); } catch {} }, 0);
+        };
+        inputWrap.addEventListener('pointerdown', (e) => {
+          if (!isMobileNow()) return;
+          try {
+            if (e.target && e.target.closest && e.target.closest('button,a,input,select,textarea')) return;
+            if (e.target && e.target.closest && e.target.closest('.image-remove-btn,.image-remove-all-btn')) return;
+          } catch {}
+          tryFocus();
         }, { passive: true });
+        inputWrap.addEventListener('click', () => tryFocus(), { passive: true });
       }
 
       const normalize = () => {
         try {
           const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
           setFooterHeightPx(h, false);
+        } catch {}
+        try {
+          if (!inputEl || document.activeElement !== inputEl) window.__arcaBaseInnerH = window.innerHeight || window.__arcaBaseInnerH || 0;
         } catch {}
         try { applyKeyboardOffset(); } catch {}
       };
