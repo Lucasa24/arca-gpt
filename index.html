@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"/>
   <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
@@ -27,8 +27,6 @@
     :root {
       --sidebar-width: 220px;
       --footer-height: 110px;
-      --kb-offset: 0px;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
       --corner-btn-size: 28px;
       --corner-btn-radius: 10px;
       --corner-panel-min: 160px;
@@ -214,7 +212,7 @@
       align-items: stretch;
       transition: margin-left 0.3s ease, width 0.3s ease;
       margin-left: var(--sidebar-width);
-      padding: 22px 1rem calc(var(--footer-height) + 40px + var(--kb-offset, 0px) + var(--safe-bottom, 0px));
+      padding: 22px 1rem calc(var(--footer-height) + 40px);
       width: calc(100% - var(--sidebar-width));
       position: relative;
       min-height: 100vh;
@@ -1369,56 +1367,17 @@
       left: var(--sidebar-width);
       right: 0;
       background: #0e0e0e;
-      padding: 6px 1rem calc(6px + var(--safe-bottom, 0px));
+      padding: 6px 1rem calc(6px + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid #333;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
       font-size: 0.85rem;
       width: calc(100% - var(--sidebar-width));
       z-index: 100;
-      transition: left 0.3s ease, width 0.3s ease, transform 120ms ease-out;
+      transition: left 0.3s ease, width 0.3s ease;
       height: auto;
       min-height: var(--footer-height);
       overflow: visible;
       max-height: 70vh;
-    }
-    #footerResizeBar {
-      display: none;
-    }
-    .arca-mobile .fixed-footer {
-      height: var(--footer-height);
-      min-height: 0;
-      max-height: min(52vh, calc(100dvh - 72px));
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      will-change: transform;
-      bottom: var(--safe-bottom, 0px);
-      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
-    }
-    .kb-open .fixed-footer {
-      transition: left 0.3s ease, width 0.3s ease;
-    }
-    .arca-ig.arca-mobile .fixed-footer {
-      bottom: var(--safe-bottom, 0px) !important;
-      will-change: transform;
-      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
-    }
-    .arca-ig.ig-scrollfix.arca-mobile .fixed-footer {
-      transform: none !important;
-      will-change: top;
-    }
-    .arca-mobile #footerResizeBar {
-      display: block;
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      height: 28px;
-      opacity: 0;
-      z-index: 500;
-      touch-action: none;
-      user-select: none;
-      pointer-events: none;
     }
     #footerResizeHandle {
       position: fixed;
@@ -1429,9 +1388,6 @@
       cursor: row-resize;
       z-index: 150;
       touch-action: none;
-    }
-    .arca-mobile #footerResizeHandle {
-      pointer-events: none;
     }
     #footerResizeHandle::after {
       content: "";
@@ -2612,6 +2568,58 @@
       white-space: nowrap;
     }
 
+    .saldo-menu-item--credits {
+      align-items: flex-start;
+    }
+
+    .saldo-menu-stack {
+      min-width: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .saldo-menu-consumo {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.68rem;
+      line-height: 1.25;
+      color: rgba(245,245,245,0.62);
+    }
+
+    .saldo-menu-consumo-row {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .saldo-menu-consumo-k,
+    .saldo-menu-consumo-v {
+      min-width: 0;
+    }
+
+    .saldo-menu-consumo-k {
+      white-space: nowrap;
+      opacity: 0.9;
+    }
+
+    .saldo-menu-consumo-v {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: rgba(245,245,245,0.80);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .saldo-menu-foot {
       margin-top: auto;
       display: flex;
@@ -3220,6 +3228,62 @@
     .arca-mobile #footerResizeHandle { left: 0 !important; }
     .arca-mobile #chatSidebar { transform: translateX(-100%) !important; width: 80%; max-width: 260px; z-index: 998; }
     .arca-mobile #chatSidebar.open { transform: translateX(0) !important; }
+
+    html.arca-mobile:not(.arca-iab),
+    html.arca-mobile:not(.arca-iab) body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    html.arca-mobile:not(.arca-iab) body {
+      min-height: 100%;
+      display: block;
+      justify-content: initial;
+    }
+
+    html.arca-mobile:not(.arca-iab) #mainContent {
+      height: 100dvh;
+      max-height: 100dvh;
+      min-height: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) #response {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 12px;
+      max-width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) #footerResizeHandle {
+      position: relative;
+      left: 0 !important;
+      right: auto;
+      bottom: auto;
+      width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) .fixed-footer {
+      position: relative;
+      left: 0 !important;
+      right: auto;
+      bottom: auto;
+      width: 100% !important;
+      transition: none;
+      max-height: none;
+      max-width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) textarea#userInput {
+      max-height: 30vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     
     @media (max-width: 600px) {
       #mainContent {
@@ -4050,7 +4114,6 @@
     <div id="response"></div>
 
     <div class="fixed-footer">
-      <div id="footerResizeBar" aria-hidden="true"></div>
       <div class="input-group">
         <div class="textarea-container" style="flex: 1;">
           <div id="imagePreview" class="image-preview" aria-live="polite">
@@ -4094,12 +4157,12 @@
               <div class="mode-group">
                 <button id="modelAutoBtn" onclick="setModelMode('auto')" class="mode-btn model active" data-model="auto">Auto</button>
                 <button id="modelFastBtn" onclick="setModelMode('fast')" class="mode-btn model" data-model="fast">
-                  <span class="label-full">4o-mini (rápido)</span>
-                  <span class="label-short">4o-mini Rápido</span>
+                  <span class="label-full">5.3 (rápido)</span>
+                  <span class="label-short">5.3 Rápido</span>
                 </button>
                 <button id="modelDeepBtn" onclick="setModelMode('deep')" class="mode-btn model" data-model="deep">
-                  <span class="label-full">5.5 (Profundo)</span>
-                  <span class="label-short">5.5 Profundo</span>
+                  <span class="label-full">5.4 (Profundo)</span>
+                  <span class="label-short">5.4 Profundo</span>
                 </button>
               </div>
             </div>
@@ -4196,8 +4259,24 @@
       </div>
       <div class="profile-body saldo-body">
         <div class="saldo-menu" role="tablist" aria-label="Seções">
-          <button type="button" class="saldo-menu-item active" data-saldo-tab="credits" role="tab" aria-selected="true">
-            <span class="saldo-menu-head">Créditos</span>
+          <button type="button" class="saldo-menu-item saldo-menu-item--credits active" data-saldo-tab="credits" role="tab" aria-selected="true">
+            <span class="saldo-menu-stack">
+              <span class="saldo-menu-head">Créditos</span>
+              <div class="saldo-menu-consumo" id="saldoMenuConsumo" data-saldo-consumo="summary">
+                <div class="saldo-menu-consumo-row" data-metric="free_today">
+                  <span class="saldo-menu-consumo-k">Hoje grátis</span>
+                  <span class="saldo-menu-consumo-v"><span id="saldoUsageFreeTodayUsed">—</span>/<span id="saldoUsageFreeTodayLimit">—</span> tokens</span>
+                </div>
+                <div class="saldo-menu-consumo-row" data-metric="paid_since_topup">
+                  <span class="saldo-menu-consumo-k">Desde recarga</span>
+                  <span class="saldo-menu-consumo-v"><span id="saldoUsagePaidSinceTopup">—</span> créditos</span>
+                </div>
+                <div class="saldo-menu-consumo-row" data-metric="total_tokens">
+                  <span class="saldo-menu-consumo-k">Total histórico</span>
+                  <span class="saldo-menu-consumo-v"><span id="saldoUsageTotalTokens">—</span> tokens</span>
+                </div>
+              </div>
+            </span>
           </button>
           <button type="button" class="saldo-menu-item" data-saldo-tab="history" role="tab" aria-selected="false">
             <span class="saldo-menu-head">Histórico</span>
@@ -4362,9 +4441,7 @@
     (function initArcaMobileClass() {
       const root = document.documentElement;
       const ua = String(navigator.userAgent || '');
-      const isIg = /\bInstagram\b/i.test(ua) || /\big=1\b/i.test(String(location.search || ''));
-      root.classList.toggle('arca-ig', isIg);
-      root.classList.toggle('arca-iab', isIg || /FBAN|FBAV|FB_IAB/i.test(ua));
+      root.classList.toggle('arca-iab', /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua));
       root.classList.toggle('arca-samsung', /\bSamsungBrowser\b/i.test(ua));
       const isVisible = (el) => {
         if (!el) return false;
@@ -4910,6 +4987,8 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        const finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (finePointer) return setOpen(true);
         setOpen(!wrap.classList.contains('open'));
       });
 
@@ -4962,10 +5041,51 @@
       return parts.join('```');
     }
 
+    function isMobileShell() {
+      const root = document.documentElement;
+      return !!(root && root.classList && root.classList.contains('arca-mobile') && !root.classList.contains('arca-iab'));
+    }
+
+    function getChatScroller() {
+      if (!isMobileShell()) return null;
+      return document.getElementById('response');
+    }
+
+    function getScrollTopY() {
+      const scroller = getChatScroller();
+      if (scroller) return scroller.scrollTop || 0;
+      const doc = document.documentElement;
+      return window.scrollY || doc.scrollTop || 0;
+    }
+
+    function getScrollHeightY() {
+      const scroller = getChatScroller();
+      if (scroller) return scroller.scrollHeight || 0;
+      const doc = document.documentElement;
+      return Math.max(doc.scrollHeight || 0, document.body ? document.body.scrollHeight : 0);
+    }
+
+    function getViewportH() {
+      const scroller = getChatScroller();
+      if (scroller) return scroller.clientHeight || 0;
+      const doc = document.documentElement;
+      return window.innerHeight || doc.clientHeight || 0;
+    }
+
+    function scrollToY(y) {
+      const target = Math.max(0, Math.round(Number(y) || 0));
+      const scroller = getChatScroller();
+      if (scroller && typeof scroller.scrollTo === 'function') {
+        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        return;
+      }
+      try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
     function saveThreadViewport(threadId) {
       if (!threadId) return;
       try {
-        localStorage.setItem(`arcaView_${threadId}`, JSON.stringify({ y: Math.max(0, window.scrollY | 0), ts: Date.now() }));
+        localStorage.setItem(`arcaView_${threadId}`, JSON.stringify({ y: Math.max(0, getScrollTopY() | 0), ts: Date.now() }));
       } catch {}
       scheduleUserStateSave(threadId);
     }
@@ -4978,7 +5098,7 @@
       let tries = 0;
       const targetY = Math.max(0, data.y | 0);
       const attempt = () => {
-        window.scrollTo(0, targetY);
+        scrollToY(targetY);
         if (++tries < 6) setTimeout(attempt, 60);
       };
       attempt();
@@ -4992,15 +5112,16 @@
       const msgEls = Array.from(responseDiv.querySelectorAll('.msg'));
       if (!msgEls.length) return;
 
+      const rootRect = responseDiv.getBoundingClientRect();
       let idx = 0;
       for (let i = 0; i < msgEls.length; i++) {
         const r = msgEls[i].getBoundingClientRect();
-        if (r.bottom > 0) { idx = i; break; }
+        if (r.bottom > rootRect.top) { idx = i; break; }
         idx = i;
       }
 
       const r = msgEls[idx].getBoundingClientRect();
-      const offset = Math.max(0, Math.round(-r.top));
+      const offset = Math.max(0, Math.round(rootRect.top - r.top));
       try {
         localStorage.setItem(`arcaScroll_${threadId}`, JSON.stringify({ i: idx, o: offset, ts: Date.now() }));
       } catch {}
@@ -5022,6 +5143,14 @@
 
       const idx = Math.max(0, Math.min(msgEls.length - 1, data.i | 0));
       const el = msgEls[idx];
+      const scroller = getChatScroller();
+      if (scroller) {
+        const maxOff = Math.max(0, (el.offsetHeight || 0) - 8);
+        const off = Math.max(0, Math.min(maxOff, data.o | 0));
+        const target = Math.max(0, Math.round((el.offsetTop || 0) - off));
+        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        return;
+      }
       const docTop = el.getBoundingClientRect().top + window.scrollY;
       const maxOff = Math.max(0, (el.offsetHeight || 0) - 8);
       const off = Math.max(0, Math.min(maxOff, data.o | 0));
@@ -5050,10 +5179,9 @@
 
     function isNearBottom(thresholdPx) {
       const t = typeof thresholdPx === 'number' ? thresholdPx : 140;
-      const doc = document.documentElement;
-      const scrollTop = window.scrollY || doc.scrollTop || 0;
-      const viewport = window.innerHeight || doc.clientHeight || 0;
-      const height = Math.max(doc.scrollHeight || 0, document.body ? document.body.scrollHeight : 0);
+      const scrollTop = getScrollTopY();
+      const viewport = getViewportH();
+      const height = getScrollHeightY();
       return (scrollTop + viewport) >= (height - t);
     }
 
@@ -5062,6 +5190,12 @@
       if (!responseDiv || !responseDiv.children) return;
       const el = responseDiv.children[idx];
       if (!el) return;
+      const scroller = getChatScroller();
+      if (scroller) {
+        const target = Math.max(0, Math.round((el.offsetTop || 0) - 12));
+        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        return;
+      }
       const top = el.getBoundingClientRect().top + window.scrollY;
       const target = Math.max(0, Math.round(top - 12));
       try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
@@ -5074,7 +5208,11 @@
       const msgEl = responseDiv && responseDiv.children ? responseDiv.children[streamingMsgIndex] : null;
       streamingContentEl = msgEl ? msgEl.querySelector('.msg-content') : null;
       if (streamAutoFollow) {
-        try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        const scroller = getChatScroller();
+        if (scroller) scroller.scrollTop = scroller.scrollHeight || 0;
+        else {
+          try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        }
       }
     }
 
@@ -5160,7 +5298,11 @@
         }
       });
       if (streamAutoFollow) {
-        try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        const scroller = getChatScroller();
+        if (scroller) scroller.scrollTop = scroller.scrollHeight || 0;
+        else {
+          try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        }
       }
     }
 
@@ -5940,7 +6082,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
         responseDiv.appendChild(div);
       });
 
-      responseDiv.scrollTop = responseDiv.scrollHeight;
+      if (!isMobileShell()) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      } else if (streamAutoFollow) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      }
     }
 
     function renderMessagesWithLiveMarkdown(isStreaming = false) {
@@ -6025,7 +6171,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
         responseDiv.appendChild(div);
       });
 
-      responseDiv.scrollTop = responseDiv.scrollHeight;
+      if (!isMobileShell()) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      } else if (isStreaming || streamAutoFollow) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      }
     }
 
     function saveToHistory(userInput, threadId) {
@@ -6741,7 +6891,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       loadSidebar();
 
-      window.addEventListener('scroll', () => {
+      const scrollHandler = () => {
         const tid = localStorage.getItem('threadId');
         if (!tid) return;
         if (currentStreamController) {
@@ -6752,7 +6902,21 @@ div.innerHTML = DOMPurify.sanitize(html, {
           saveThreadViewport(tid);
           saveScrollPositionForThread(tid);
         }, 120);
-      }, { passive: true });
+      };
+
+      const bindChatScroll = () => {
+        const target = isMobileShell() ? document.getElementById('response') : window;
+        if (!target) return;
+        if (window.__arcaChatScrollTarget && window.__arcaChatScrollHandler) {
+          try { window.__arcaChatScrollTarget.removeEventListener('scroll', window.__arcaChatScrollHandler); } catch {}
+        }
+        window.__arcaChatScrollTarget = target;
+        window.__arcaChatScrollHandler = scrollHandler;
+        try { target.addEventListener('scroll', scrollHandler, { passive: true }); } catch { try { target.addEventListener('scroll', scrollHandler); } catch {} }
+      };
+
+      bindChatScroll();
+      window.addEventListener('resize', bindChatScroll, { passive: true });
       
       // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
       const currentThreadId = localStorage.getItem("threadId");
@@ -7930,18 +8094,17 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const footerHandle = document.getElementById('footerResizeHandle');
       if (!sidebar || !footer || !sidebarHandle || !footerHandle) return;
 
-      const isMobileNow = () => (window.innerWidth || 0) <= 768 || root.classList.contains('arca-mobile');
-      const footerKey = () => (isMobileNow() ? 'arcaFooterHeightMobile' : 'arcaFooterHeight');
+      try {
+        const savedW = localStorage.getItem('arcaSidebarWidth');
+        if (savedW) root.style.setProperty('--sidebar-width', savedW);
+      } catch {}
+      try {
+        const savedH = localStorage.getItem('arcaFooterHeight');
+        if (savedH) root.style.setProperty('--footer-height', savedH);
+      } catch {}
+
       const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-      const viewportH = () => {
-        let h = window.innerHeight || 0;
-        try {
-          if (window.visualViewport && Number.isFinite(window.visualViewport.height)) h = window.visualViewport.height;
-        } catch {}
-        return h || 0;
-      };
-      const minFooter = () => (isMobileNow() ? 78 : 90);
-      const maxFooter = () => Math.round(viewportH() * (isMobileNow() ? 0.52 : 0.70));
+      const maxFooter = () => Math.round(window.innerHeight * 0.70);
 
       const setSidebarWidthPx = (w) => {
         const px = clamp(Math.round(w), 180, 420) + 'px';
@@ -7949,38 +8112,24 @@ div.innerHTML = DOMPurify.sanitize(html, {
         try { localStorage.setItem('arcaSidebarWidth', px); } catch {}
       };
 
-      const setFooterHeightPx = (h, persist = true) => {
-        const px = clamp(Math.round(h), minFooter(), maxFooter()) + 'px';
+      const setFooterHeightPx = (h) => {
+        const px = clamp(Math.round(h), 90, maxFooter()) + 'px';
         root.style.setProperty('--footer-height', px);
-        if (persist) {
-          try { localStorage.setItem(footerKey(), px); } catch {}
-        }
+        try { localStorage.setItem('arcaFooterHeight', px); } catch {}
         try { positionVoiceBar(); } catch {}
       };
 
       try {
-        const savedW = localStorage.getItem('arcaSidebarWidth');
-        if (savedW) root.style.setProperty('--sidebar-width', savedW);
-      } catch {}
-      try {
-        const savedH = localStorage.getItem(footerKey());
-        const n = savedH ? parseInt(savedH, 10) : NaN;
-        if (Number.isFinite(n)) setFooterHeightPx(n, true);
-      } catch {}
-      try {
-        const cur = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
-        setFooterHeightPx(cur, false);
-      } catch {}
-
-      try {
         const ro = new ResizeObserver(() => {
           try { setSidebarWidthPx(sidebar.getBoundingClientRect().width); } catch {}
+          try { setFooterHeightPx(footer.getBoundingClientRect().height); } catch {}
         });
         ro.observe(sidebar);
+        ro.observe(footer);
       } catch {}
 
       sidebarHandle.addEventListener('pointerdown', (e) => {
-        if (isMobileNow()) return;
+        if (window.innerWidth <= 768) return;
         try { sidebarHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
 
@@ -7999,12 +8148,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
       });
 
       footerHandle.addEventListener('pointerdown', (e) => {
-        if (isMobileNow()) return;
+        if (window.innerWidth <= 768) return;
         try { footerHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
 
         const onMove = (ev) => {
-          setFooterHeightPx(window.innerHeight - ev.clientY, true);
+          setFooterHeightPx(window.innerHeight - ev.clientY);
         };
         const onUp = (ev) => {
           try { footerHandle.releasePointerCapture(ev.pointerId); } catch {}
@@ -8017,301 +8166,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
         footerHandle.addEventListener('pointercancel', onUp);
       });
 
-      const footerBar = document.getElementById('footerResizeBar');
-      const inputEl = document.getElementById('userInput');
-      const inputWrap = inputEl && inputEl.closest ? inputEl.closest('.textarea-container') : null;
-      const isInteractiveTarget = (t) => {
-        try { return !!(t && t.closest && t.closest('textarea,button,input,select,option,a,label')); } catch { return false; }
-      };
-
-      const drag = { active: false, started: false, pid: null, startY: 0, startH: 0 };
-
-      const canStartDrag = (e, force = false) => {
-        if (!isMobileNow()) return false;
-        try { if (e && e.button != null && e.button !== 0) return false; } catch {}
-        const rect = footer.getBoundingClientRect();
-        const topZone = (e.clientY - rect.top) <= 28;
-        if (force) return true;
-        if (isInteractiveTarget(e.target)) return false;
-        return topZone;
-      };
-
-      const startDrag = (e, force = false) => {
-        if (!canStartDrag(e, force)) return;
-        drag.active = true;
-        drag.started = false;
-        drag.pid = e.pointerId;
-        drag.startY = e.clientY;
-        const cur = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
-        drag.startH = Number.isFinite(cur) ? cur : footer.getBoundingClientRect().height;
-      };
-
-      const moveDrag = (e) => {
-        if (!drag.active) return;
-        const dy = drag.startY - e.clientY;
-        if (!drag.started && Math.abs(dy) < 6) return;
-        if (!drag.started) {
-          drag.started = true;
-          footer.classList.add('resizing');
-          try { footer.setPointerCapture(drag.pid); } catch {}
-          try { e.preventDefault(); } catch {}
-        }
-        setFooterHeightPx(drag.startH + dy, false);
-      };
-
-      const endDrag = (e) => {
-        if (!drag.active) return;
-        drag.active = false;
-        if (drag.started) {
-          footer.classList.remove('resizing');
-          try { footer.releasePointerCapture(drag.pid); } catch {}
-          try {
-            const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
-            if (Number.isFinite(h) && h > 0) setFooterHeightPx(h, true);
-          } catch {}
-        }
-        drag.started = false;
-        drag.pid = null;
-      };
-
-      footer.addEventListener('pointerdown', (e) => startDrag(e, false));
-      footer.addEventListener('pointermove', moveDrag);
-      footer.addEventListener('pointerup', endDrag);
-      footer.addEventListener('pointercancel', endDrag);
-
-      const isInstagramNow = () => {
-        try { return isMobileNow() && document.documentElement.classList.contains('arca-ig'); } catch {}
-        return false;
-      };
-
-      const igScrollFix = { on: false, raf: 0, until: 0, prev: null };
-      const setIgScrollFix = (on) => {
-        if (!isInstagramNow()) on = false;
-        const next = !!on;
-        if (igScrollFix.on === next) return;
-        igScrollFix.on = next;
-        try { if (igScrollFix.raf) cancelAnimationFrame(igScrollFix.raf); } catch {}
-        igScrollFix.raf = 0;
-        igScrollFix.until = 0;
-
-        if (!next) {
-          try { document.documentElement.classList.remove('ig-scrollfix'); } catch {}
-          try {
-            footer.style.removeProperty('position');
-            footer.style.removeProperty('top');
-            footer.style.removeProperty('bottom');
-            footer.style.removeProperty('left');
-            footer.style.removeProperty('right');
-            footer.style.removeProperty('width');
-            footer.style.removeProperty('transform');
-            footer.style.removeProperty('will-change');
-          } catch {}
-          return;
-        }
-
-        try { document.documentElement.classList.add('ig-scrollfix'); } catch {}
-        try {
-          footer.style.position = 'absolute';
-          footer.style.bottom = 'auto';
-          footer.style.left = '0';
-          footer.style.right = '0';
-          footer.style.width = '100%';
-          footer.style.transform = 'none';
-          footer.style.willChange = 'top';
-        } catch {}
-
-        const main = document.getElementById('mainContent') || (footer && footer.parentElement) || null;
-        const getMainTop = () => {
-          if (!main) return 0;
-          try { return (main.getBoundingClientRect().top || 0) + (window.scrollY || 0); } catch {}
-          return 0;
-        };
-        const getScrollY = () => {
-          try { return Number(window.scrollY || 0); } catch {}
-          try { return Number(document.documentElement && document.documentElement.scrollTop || 0); } catch {}
-          try { return Number(document.body && document.body.scrollTop || 0); } catch {}
-          return 0;
-        };
-        const getVisibleBottom = () => {
-          let vb = getScrollY() + (window.innerHeight || 0);
-          try {
-            const vv = window.visualViewport;
-            if (vv && Number.isFinite(vv.height)) vb = getScrollY() + (vv.offsetTop || 0) + vv.height;
-          } catch {}
-          return vb;
-        };
-        const update = () => {
-          if (!igScrollFix.on) return;
-          let fh = 0;
-          try { fh = Math.max(0, footer.getBoundingClientRect().height || 0); } catch {}
-          if (!fh) {
-            try { fh = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110; } catch {}
-          }
-          const topAbs = Math.max(0, Math.round(getVisibleBottom() - fh));
-          const topRel = Math.max(0, Math.round(topAbs - getMainTop()));
-          try { footer.style.top = topRel + 'px'; } catch {}
-        };
-        const loop = () => {
-          if (!igScrollFix.on) return;
-          update();
-          if ((Date.now ? Date.now() : +new Date()) < igScrollFix.until) {
-            igScrollFix.raf = requestAnimationFrame(loop);
-          } else {
-            igScrollFix.raf = 0;
-          }
-        };
-
-        update();
-        igScrollFix.until = (Date.now ? Date.now() : +new Date()) + 1200;
-        igScrollFix.raf = requestAnimationFrame(loop);
-      };
-
-      const kbState = { active: false, baseVh: 0, baseIh: 0, last: -1 };
-      const readSafeBottomPx = () => {
-        try { return Math.max(0, parseFloat(getComputedStyle(root).getPropertyValue('--safe-bottom')) || 0); } catch {}
-        return 0;
-      };
-      const isAndroid = () => {
-        try { return /\bAndroid\b/i.test(String(navigator.userAgent || '')); } catch {}
-        return false;
-      };
-      const isTextActive = () => {
-        const a = document.activeElement;
-        if (!a) return false;
-        try {
-          if (a === inputEl) return true;
-          if (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT') return true;
-          if (a.isContentEditable) return true;
-        } catch {}
-        return false;
-      };
-      const computeKbOffsetVV = () => {
-        if (!isMobileNow() || !kbState.active) return 0;
-        const safe = readSafeBottomPx();
-        let raw = 0;
-        try {
-          const vv = window.visualViewport;
-          if (vv && Number.isFinite(vv.height)) {
-            raw = Math.max(0, (window.innerHeight || 0) - vv.height - (vv.offsetTop || 0));
-          }
-        } catch {}
-        raw = Math.max(0, Math.round(raw || 0));
-        let off = Math.max(0, raw - safe);
-
-        if (off <= 0 && isAndroid()) {
-          let vb = 0;
-          try {
-            const vv = window.visualViewport;
-            if (vv && Number.isFinite(vv.height)) vb = vv.height;
-          } catch {}
-          if (kbState.baseVh > 0 && vb > 0 && (kbState.baseVh - vb) > 40) {
-            const safeGuess = 320;
-            off = Math.max(280, Math.min(340, safeGuess));
-          }
-        }
-        if (!Number.isFinite(off) || off < 0) off = 0;
-        return off;
-      };
-      const setKbOffset = (px) => {
-        const n = Math.max(0, Math.round(px || 0));
-        if (n === kbState.last) return;
-        kbState.last = n;
-        try { root.style.setProperty('--kb-offset', n + 'px'); } catch {}
-      };
-      const applyKeyboardOffset = () => {
-        if (!isMobileNow()) {
-          kbState.active = false;
-          kbState.baseVh = 0;
-          kbState.baseIh = 0;
-          setKbOffset(0);
-          try { document.body.classList.remove('kb-open'); } catch {}
-          return;
-        }
-        if (igScrollFix.on) {
-          setKbOffset(0);
-          try { document.body.classList.remove('kb-open'); } catch {}
-          return;
-        }
-        const off = computeKbOffsetVV();
-        setKbOffset(off);
-        try { document.body.classList.toggle('kb-open', kbState.active && off > 0); } catch {}
-      };
-      const kickIntoView = () => {
-        if (!isMobileNow() || !inputEl) return;
-        setTimeout(() => {
-          try { applyKeyboardOffset(); } catch {}
-          try { inputEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
-        }, 60);
-      };
-      if (inputEl) {
-        inputEl.addEventListener('focusin', () => {
-          kbState.active = true;
-          kbState.baseIh = Math.max(0, Math.round(window.innerHeight || 0));
-          try {
-            const vv = window.visualViewport;
-            kbState.baseVh = vv && Number.isFinite(vv.height) ? Math.max(0, Math.round(vv.height || 0)) : 0;
-          } catch { kbState.baseVh = 0; }
-          if (isInstagramNow()) {
-            setIgScrollFix(true);
-          }
-          [0, 80, 180, 350, 600].forEach((d) => setTimeout(() => { try { applyKeyboardOffset(); } catch {} }, d));
-          kickIntoView();
-        });
-        inputEl.addEventListener('focusout', () => setTimeout(() => {
-          if (isTextActive()) return;
-          kbState.active = false;
-          kbState.baseIh = 0;
-          kbState.baseVh = 0;
-          setIgScrollFix(false);
-          applyKeyboardOffset();
-        }, 150));
-      }
-      if (inputWrap && inputEl) {
-        const tryFocus = () => {
-          if (!isMobileNow()) return;
-          if (document.activeElement === inputEl) return;
-          setTimeout(() => { try { inputEl.focus(); } catch {} }, 0);
-        };
-        inputWrap.addEventListener('pointerdown', (e) => {
-          if (!isMobileNow()) return;
-          try {
-            if (e.target && e.target.closest && e.target.closest('button,a,input,select,textarea')) return;
-            if (e.target && e.target.closest && e.target.closest('.image-remove-btn,.image-remove-all-btn')) return;
-          } catch {}
-          tryFocus();
-        }, { passive: true });
-        inputWrap.addEventListener('click', () => tryFocus(), { passive: true });
-      }
-
-      const normalize = () => {
-        try {
-          const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
-          setFooterHeightPx(h, false);
-        } catch {}
-        try {
-          if (igScrollFix.on) {
-            setIgScrollFix(false);
-            setIgScrollFix(true);
-          }
-        } catch {}
-        try { applyKeyboardOffset(); } catch {}
-      };
-
-      window.addEventListener('resize', normalize, { passive: true });
-      window.addEventListener('orientationchange', () => setTimeout(normalize, 60), { passive: true });
-      window.addEventListener('scroll', normalize, { passive: true });
-      if (window.visualViewport) {
-        try { window.visualViewport.addEventListener('resize', normalize, { passive: true }); } catch {}
-        try { window.visualViewport.addEventListener('scroll', normalize, { passive: true }); } catch {}
-      }
-      try {
-        const vk = navigator && navigator.virtualKeyboard;
-        if (vk) {
-          try { vk.overlaysContent = true; } catch {}
-          try { vk.addEventListener('geometrychange', normalize, { passive: true }); } catch {}
-        }
-      } catch {}
-      try { applyKeyboardOffset(); } catch {}
+      window.addEventListener('resize', () => {
+        try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110); } catch {}
+      }, { passive: true });
     }
     async function arcaImage(prompt, size) {
       const r = await apiPost('/api/images', { prompt, size });
