@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits, calcularSaldosCreditos, adicionarCreditos, debitarCreditos, registrarConsumo } = require('../lib/credits.js');
+const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits, calcularSaldosCreditos, calcularResumoUso, adicionarCreditos, debitarCreditos, registrarConsumo } = require('../lib/credits.js');
 
 // --- SISTEMA DE E-MAIL HÍBRIDO (SUPABASE / RESEND) ---
 async function sendWelcomeEmail(email) {
@@ -145,12 +145,17 @@ module.exports = async function handler(req, res) {
       const userId = req.body && req.body.userId;
       const rec = await getOrCreateCredits(userId, req.headers['authorization']);
       const saldos = rec ? calcularSaldosCreditos(rec) : { total: 0, free: 0, paid: 0 };
+      const uso = rec ? calcularResumoUso(rec) : { todayFreeTokensUsed: 0, todayFreeTokensLimit: 0, sinceRechargePaidCreditsSpent: 0, totalTokensUsed: 0 };
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({
         creditosDisponiveis: saldos.total,
         creditosGratisDisponiveis: saldos.free,
         creditosPagosDisponiveis: saldos.paid,
         creditosGastos: rec ? Number(rec.creditos_gastos || 0) : 0,
+        hojeGratisTokensUsados: uso.todayFreeTokensUsed,
+        hojeGratisTokensLimite: uso.todayFreeTokensLimit,
+        desdeRecargaCreditosGastos: uso.sinceRechargePaidCreditsSpent,
+        totalHistoricoTokensUsados: uso.totalTokensUsed,
         historicoDeRecargas: rec ? rec.historico_de_recargas || [] : [],
         historicoDeConsumo: rec ? rec.historico_de_consumo || [] : []
       }));
