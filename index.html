@@ -1389,8 +1389,17 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      will-change: bottom;
-      bottom: var(--kb-offset, 0px);
+      bottom: 0;
+      transform: translate3d(0, 0, 0);
+    }
+    body.kb-open .fixed-footer {
+      will-change: transform;
+      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
+    }
+    body.arca-iab.kb-open .fixed-footer,
+    html.arca-iab body.kb-open .fixed-footer {
+      transform: none !important;
+      will-change: auto !important;
     }
     #iabEditDock {
       position: fixed;
@@ -4396,11 +4405,19 @@
 
     (function initArcaMobileClass() {
       const root = document.documentElement;
+      const body = document.body;
       const ua = String(navigator.userAgent || '');
       const isIg = /\bInstagram\b/i.test(ua);
       root.classList.toggle('arca-ig', isIg);
       root.classList.toggle('arca-iab', isIg || /FBAN|FBAV|FB_IAB/i.test(ua));
       root.classList.toggle('arca-samsung', /\bSamsungBrowser\b/i.test(ua));
+      try {
+        if (body) {
+          body.classList.toggle('arca-ig', root.classList.contains('arca-ig'));
+          body.classList.toggle('arca-iab', root.classList.contains('arca-iab'));
+          body.classList.toggle('arca-samsung', root.classList.contains('arca-samsung'));
+        }
+      } catch {}
       const isVisible = (el) => {
         if (!el) return false;
         const cs = getComputedStyle(el);
@@ -4419,6 +4436,7 @@
       const sync = () => {
         const w = getW();
         root.classList.toggle('arca-mobile', w > 0 && w <= 768);
+        try { if (body) body.classList.toggle('arca-mobile', root.classList.contains('arca-mobile')); } catch {}
         syncAuthOpen();
       };
       sync();
@@ -8119,6 +8137,104 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return false;
       };
 
+      const initNormalMobileKeyboardFooter = (() => {
+        let wired = false;
+        const state = { active: false, last: -1, outTimer: 0 };
+        const pulses = [0, 80, 180, 350, 600];
+        const isTextTarget = (t) => {
+          try {
+            if (!t) return false;
+            if (t.tagName === 'TEXTAREA') return true;
+            if (t.tagName === 'INPUT') return true;
+            if (t.isContentEditable) return true;
+          } catch {}
+          return false;
+        };
+        const isNormalMobile = () => {
+          const body = document.body;
+          if (body && body.classList.contains('arca-iab')) return false;
+          if (document.documentElement.classList.contains('arca-iab')) return false;
+          const ua = String(navigator.userAgent || '');
+          if (!/(Android|iPhone|iPad|iPod)/i.test(ua)) return false;
+          if (/\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua)) return false;
+          return true;
+        };
+        const setOpen = (on) => {
+          try { document.body && document.body.classList.toggle('kb-open', !!on); } catch {}
+        };
+        const setOffset = (px) => {
+          const n = Math.max(0, Math.round(px || 0));
+          if (n === state.last) return;
+          state.last = n;
+          try { root.style.setProperty('--kb-offset', n + 'px'); } catch {}
+        };
+        const computeOffset = () => {
+          let off = 0;
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) {
+              off = Math.max(0, (window.innerHeight - vv.height - (vv.offsetTop || 0)));
+            }
+          } catch {}
+          if (!Number.isFinite(off) || off < 0) off = 0;
+          if (state.active && off <= 0) {
+            const safe = Math.max(280, Math.min(340, Math.round((window.innerHeight || 0) * 0.33) || 320));
+            off = safe;
+            const cap = Math.max(0, (window.innerHeight || 0) - 120);
+            if (cap > 0) off = Math.min(off, cap);
+          }
+          return off;
+        };
+        const update = () => {
+          if (!wired) return;
+          if (!isNormalMobile()) return;
+          if (!state.active) {
+            setOpen(false);
+            setOffset(0);
+            return;
+          }
+          const off = computeOffset();
+          setOffset(off);
+          setOpen(true);
+        };
+        const pulse = () => {
+          pulses.forEach((d) => setTimeout(update, d));
+        };
+        const onIn = (e) => {
+          if (!isNormalMobile()) return;
+          if (!isTextTarget(e.target)) return;
+          state.active = true;
+          setOpen(true);
+          pulse();
+        };
+        const onOut = () => {
+          if (!isNormalMobile()) return;
+          try { if (state.outTimer) clearTimeout(state.outTimer); } catch {}
+          state.outTimer = setTimeout(() => {
+            state.outTimer = 0;
+            const a = document.activeElement;
+            if (a && isTextTarget(a)) return;
+            state.active = false;
+            setOpen(false);
+            setOffset(0);
+          }, 180);
+        };
+        const attach = () => {
+          if (wired) return;
+          wired = true;
+          document.addEventListener('focusin', onIn, true);
+          document.addEventListener('focusout', onOut, true);
+          if (window.visualViewport) {
+            try { window.visualViewport.addEventListener('resize', update, { passive: true }); } catch {}
+            try { window.visualViewport.addEventListener('scroll', update, { passive: true }); } catch {}
+          }
+          window.addEventListener('resize', update, { passive: true });
+          window.addEventListener('orientationchange', () => setTimeout(update, 80), { passive: true });
+          update();
+        };
+        return attach;
+      })();
+
       const iabEdit = { active: false, ts: 0, dock: null, moved: null, placeholder: null, openingUntil: 0, closeTimer: 0 };
       const ensureIabDock = () => {
         let dock = document.getElementById('iabEditDock');
@@ -8265,9 +8381,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           root.style.setProperty('--kb-offset', '0px');
           return;
         }
-        updateBaseInnerH();
-        const offset = computeKeyboardOffsetDefault();
-        root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
+        return;
       };
       const kickIntoView = () => {
         if (!isMobileNow() || !inputEl) return;
@@ -8353,6 +8467,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         }
       } catch {}
       updateBaseInnerH();
+      try { initNormalMobileKeyboardFooter(); } catch {}
       try { applyKeyboardOffset(); } catch {}
     }
     async function arcaImage(prompt, size) {
