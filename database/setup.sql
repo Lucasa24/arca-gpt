@@ -136,6 +136,32 @@ using (true)
 with check (true);
 
 -- ==============================================================================
+-- 🆕 OPCIONAL: EVENTOS DE CONSUMO (UNIQUE consumption_id)
+-- Uma proteção física contra duplicatas em cenários de concorrência/retry.
+-- ==============================================================================
+
+create table if not exists public.credit_consumption_events (
+  consumption_id text primary key,
+  user_id text not null,
+  tipo text,
+  bucket text,
+  tokens numeric not null default 0,
+  creditos numeric not null default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.credit_consumption_events enable row level security;
+
+drop policy if exists "Permitir acesso total a credit_consumption_events" on public.credit_consumption_events;
+
+create policy "Permitir acesso total a credit_consumption_events"
+on public.credit_consumption_events
+for all
+to public
+using (true)
+with check (true);
+
+-- ==============================================================================
 -- 🆕 ATUALIZAÇÃO: COLUNA PROVIDER (LOGIN SOCIAL)
 -- ==============================================================================
 

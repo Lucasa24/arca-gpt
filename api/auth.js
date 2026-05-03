@@ -152,7 +152,7 @@ module.exports = async function handler(req, res) {
         creditosDisponiveis: saldos.total,
         creditosGratisDisponiveis: saldos.free,
         creditosPagosDisponiveis: saldos.paid,
-        creditosGastos: clampNonNegInt(rec ? rec.creditos_gastos : 0),
+        creditosGastos: clampNonNegInt(rec ? rec.creditos_gastos : 0, "creditosGastos"),
         hojeGratisTokensUsados: uso.hojeGratisTokensUsados,
         hojeGratisTokensLimite: uso.hojeGratisTokensLimite,
         desdeRecargaCreditosGastos: uso.desdeRecargaCreditosGastos,
