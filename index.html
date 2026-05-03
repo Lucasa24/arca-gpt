@@ -2568,6 +2568,58 @@
       white-space: nowrap;
     }
 
+    .saldo-menu-item--credits {
+      align-items: flex-start;
+    }
+
+    .saldo-menu-stack {
+      min-width: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .saldo-menu-consumo {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.68rem;
+      line-height: 1.25;
+      color: rgba(245,245,245,0.62);
+    }
+
+    .saldo-menu-consumo-row {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .saldo-menu-consumo-k,
+    .saldo-menu-consumo-v {
+      min-width: 0;
+    }
+
+    .saldo-menu-consumo-k {
+      white-space: nowrap;
+      opacity: 0.9;
+    }
+
+    .saldo-menu-consumo-v {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: rgba(245,245,245,0.80);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .saldo-menu-foot {
       margin-top: auto;
       display: flex;
@@ -4151,8 +4203,24 @@
       </div>
       <div class="profile-body saldo-body">
         <div class="saldo-menu" role="tablist" aria-label="Seções">
-          <button type="button" class="saldo-menu-item active" data-saldo-tab="credits" role="tab" aria-selected="true">
-            <span class="saldo-menu-head">Créditos</span>
+          <button type="button" class="saldo-menu-item saldo-menu-item--credits active" data-saldo-tab="credits" role="tab" aria-selected="true">
+            <span class="saldo-menu-stack">
+              <span class="saldo-menu-head">Créditos</span>
+              <div class="saldo-menu-consumo" id="saldoMenuConsumo" data-saldo-consumo="summary">
+                <div class="saldo-menu-consumo-row" data-metric="free_today">
+                  <span class="saldo-menu-consumo-k">Hoje grátis</span>
+                  <span class="saldo-menu-consumo-v"><span id="saldoUsageFreeTodayUsed">—</span>/<span id="saldoUsageFreeTodayLimit">—</span> tokens</span>
+                </div>
+                <div class="saldo-menu-consumo-row" data-metric="paid_since_topup">
+                  <span class="saldo-menu-consumo-k">Desde recarga</span>
+                  <span class="saldo-menu-consumo-v"><span id="saldoUsagePaidSinceTopup">—</span> créditos</span>
+                </div>
+                <div class="saldo-menu-consumo-row" data-metric="total_tokens">
+                  <span class="saldo-menu-consumo-k">Total histórico</span>
+                  <span class="saldo-menu-consumo-v"><span id="saldoUsageTotalTokens">—</span> tokens</span>
+                </div>
+              </div>
+            </span>
           </button>
           <button type="button" class="saldo-menu-item" data-saldo-tab="history" role="tab" aria-selected="false">
             <span class="saldo-menu-head">Histórico</span>
