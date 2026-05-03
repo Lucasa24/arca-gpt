@@ -1395,6 +1395,7 @@
     body.kb-open .fixed-footer {
       will-change: transform;
       transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
+      transition: none !important;
     }
     body.arca-iab.kb-open .fixed-footer,
     html.arca-iab body.kb-open .fixed-footer {
@@ -8139,8 +8140,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const initNormalMobileKeyboardFooter = (() => {
         let wired = false;
-        const state = { active: false, last: -1, outTimer: 0 };
-        const pulses = [0, 80, 180, 350, 600];
+        const state = { focused: false, last: -1, outTimer: 0, baseInnerH: 0, baseVb: 0 };
+        const pulses = [0, 80, 180, 350, 600, 900];
         const isTextTarget = (t) => {
           try {
             if (!t) return false;
@@ -8168,6 +8169,14 @@ div.innerHTML = DOMPurify.sanitize(html, {
           state.last = n;
           try { root.style.setProperty('--kb-offset', n + 'px'); } catch {}
         };
+        const getVb = () => {
+          let vb = window.innerHeight || 0;
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) vb = (vv.offsetTop || 0) + vv.height;
+          } catch {}
+          return Math.max(0, Math.round(vb || 0));
+        };
         const computeOffset = () => {
           let off = 0;
           try {
@@ -8177,25 +8186,60 @@ div.innerHTML = DOMPurify.sanitize(html, {
             }
           } catch {}
           if (!Number.isFinite(off) || off < 0) off = 0;
-          if (state.active && off <= 0) {
-            const safe = Math.max(280, Math.min(340, Math.round((window.innerHeight || 0) * 0.33) || 320));
+          return off;
+        };
+        const computeOffsetWithFallback = () => {
+          let off = computeOffset();
+          const vb = getVb();
+          const innerH = Math.max(0, Math.round(window.innerHeight || 0));
+          const baseInnerH = Math.max(0, Math.round(state.baseInnerH || innerH));
+          const baseVb = Math.max(0, Math.round(state.baseVb || vb));
+          const keyboardLikelyOpen = (baseVb > 0 && vb > 0 && (baseVb - vb) > 40) || (baseInnerH > 0 && innerH > 0 && (baseInnerH - innerH) > 40);
+
+          if (state.focused && keyboardLikelyOpen && off <= 0) {
+            const safe = Math.max(280, Math.min(340, Math.round((baseInnerH || innerH || 0) * 0.33) || 320));
             off = safe;
-            const cap = Math.max(0, (window.innerHeight || 0) - 120);
+            const cap = Math.max(0, (baseInnerH || innerH || 0) - 120);
             if (cap > 0) off = Math.min(off, cap);
           }
+          if (!Number.isFinite(off) || off < 0) off = 0;
+          return off;
+        };
+        const validateAndCorrect = (off) => {
+          if (!off || off <= 0) return off;
+          const margin = 12;
+          let vb = 0;
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) vb = (vv.offsetTop || 0) + vv.height;
+            else vb = window.innerHeight || 0;
+          } catch { vb = window.innerHeight || 0; }
+          vb = Math.max(0, vb);
+          let bottom = 0;
+          try { bottom = (footer.getBoundingClientRect().bottom || 0); } catch {}
+          if (!bottom || !vb) return off;
+          const overflow = bottom - (vb - margin);
+          if (overflow > 0) return off + overflow;
           return off;
         };
         const update = () => {
           if (!wired) return;
           if (!isNormalMobile()) return;
-          if (!state.active) {
+          if (!state.focused) {
             setOpen(false);
             setOffset(0);
             return;
           }
-          const off = computeOffset();
-          setOffset(off);
+          let off = computeOffsetWithFallback();
+          if (off <= 0) {
+            setOpen(false);
+            setOffset(0);
+            return;
+          }
           setOpen(true);
+          setOffset(off);
+          off = validateAndCorrect(off);
+          setOffset(off);
         };
         const pulse = () => {
           pulses.forEach((d) => setTimeout(update, d));
@@ -8203,8 +8247,9 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const onIn = (e) => {
           if (!isNormalMobile()) return;
           if (!isTextTarget(e.target)) return;
-          state.active = true;
-          setOpen(true);
+          state.focused = true;
+          state.baseInnerH = Math.max(0, Math.round(window.innerHeight || 0));
+          state.baseVb = getVb();
           pulse();
         };
         const onOut = () => {
@@ -8214,10 +8259,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
             state.outTimer = 0;
             const a = document.activeElement;
             if (a && isTextTarget(a)) return;
-            state.active = false;
-            setOpen(false);
+            state.focused = false;
+            state.baseInnerH = 0;
+            state.baseVb = 0;
             setOffset(0);
-          }, 180);
+            setOpen(false);
+          }, 120);
         };
         const attach = () => {
           if (wired) return;
