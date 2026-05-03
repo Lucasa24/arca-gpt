@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { criarCheckoutCredito, confirmarPagamentoWebhook, getOrCreateCredits, calcularSaldosCreditos, calcularResumoUso, adicionarCreditos, debitarCreditos, registrarConsumo } = require('../lib/credits.js');
-const { normalizarMetricasConsumo } = require('../lib/creditsMetrics.js');
+const { clampNonNegInt, normalizarMetricasConsumo } = require('../lib/creditsMetrics.js');
 
 // --- SISTEMA DE E-MAIL HÍBRIDO (SUPABASE / RESEND) ---
 async function sendWelcomeEmail(email) {
@@ -152,7 +152,7 @@ module.exports = async function handler(req, res) {
         creditosDisponiveis: saldos.total,
         creditosGratisDisponiveis: saldos.free,
         creditosPagosDisponiveis: saldos.paid,
-        creditosGastos: rec ? Number(rec.creditos_gastos || 0) : 0,
+        creditosGastos: clampNonNegInt(rec ? rec.creditos_gastos : 0),
         hojeGratisTokensUsados: uso.hojeGratisTokensUsados,
         hojeGratisTokensLimite: uso.hojeGratisTokensLimite,
         desdeRecargaCreditosGastos: uso.desdeRecargaCreditosGastos,

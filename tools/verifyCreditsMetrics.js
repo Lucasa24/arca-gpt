@@ -113,6 +113,34 @@ function run() {
     assert(out.totalHistoricoTokensUsados === 500, "custo 0 deve contar tokens no total");
     assert(out.desdeRecargaCreditosGastos === 0, "custo 0 não pode aumentar desde recarga");
   }
+
+  {
+    const rec = {
+      historico_de_recargas: [],
+      historico_de_consumo: [
+        { consumption_id: "dup:1", tipo: "gemini", bucket: "free", tokens: 200, created_at: iso(now) },
+        { consumption_id: "dup:1", tipo: "gemini", bucket: "free", tokens: 200, created_at: iso(now) }
+      ]
+    };
+    const out = normalizarMetricasConsumo(calcularResumoUso(rec, now));
+    mustHaveNumbers(out);
+    assert(out.totalHistoricoTokensUsados === 200, "duplicidade de consumption_id deve ser ignorada");
+    assert(out.hojeGratisTokensUsados === 200, "duplicidade de hoje grátis deve ser ignorada");
+  }
+
+  {
+    const rec = {
+      historico_de_recargas: [],
+      historico_de_consumo: [
+        { consumption_id: "mix:base:free", tipo: "gemini", bucket: "free", tokens: 300, valor: 2, created_at: iso(now) },
+        { consumption_id: "mix:base:paid", tipo: "gemini", bucket: "paid", tokens: 700, valor: 5, created_at: iso(now) }
+      ]
+    };
+    const out = normalizarMetricasConsumo(calcularResumoUso(rec, now));
+    mustHaveNumbers(out);
+    assert(out.totalHistoricoTokensUsados === 1000, "misto free/paid deve somar tokens sem duplicar");
+    assert(out.desdeRecargaCreditosGastos === 5, "desde recarga só pode somar créditos paid (valor)");
+  }
 }
 
 try {
@@ -122,4 +150,3 @@ try {
   console.error("verifyCreditsMetrics: FAIL:", e && e.message ? e.message : e);
   process.exit(1);
 }
-
