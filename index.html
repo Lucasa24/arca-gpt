@@ -3192,7 +3192,7 @@
         align-items: stretch;
         min-height: 100dvh;
         background: #1c1c1c;
-        border-left: 4px solid #b30000;
+        border-left: 0 !important;
       }
 
       #response {
@@ -3906,6 +3906,14 @@
     .arca-iab .corner-menu--floating { display: inline-flex; align-items: center; justify-content: center; }
     .arca-iab .footer-note #cornerMenu { display: none; }
     .auth-open .corner-menu--floating { display: none !important; }
+
+    html.arca-mobile #chatSidebar.open ~ #cornerMenuFloating {
+      display: none !important;
+    }
+
+    html:not(.arca-mobile) #chatSidebar:not(.hidden) ~ #cornerMenuFloating {
+      display: none !important;
+    }
 
     @media (max-width: 600px) {
       :root {
