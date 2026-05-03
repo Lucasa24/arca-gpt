@@ -8086,7 +8086,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return false;
       };
 
-      const iabEdit = { active: false, ts: 0, dock: null, moved: null, placeholder: null };
+      const iabEdit = { active: false, ts: 0, dock: null, moved: null, placeholder: null, openingUntil: 0, closeTimer: 0 };
       const ensureIabDock = () => {
         let dock = document.getElementById('iabEditDock');
         if (dock) return dock;
@@ -8115,16 +8115,24 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
         iabEdit.active = true;
         iabEdit.ts = Date.now ? Date.now() : +new Date();
+        iabEdit.openingUntil = iabEdit.ts + 800;
         iabEdit.dock = dock;
         iabEdit.moved = moved;
         iabEdit.placeholder = ph;
 
-        setTimeout(() => {
-          try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} }
-        }, 0);
+        try {
+          requestAnimationFrame(() => {
+            try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} }
+          });
+        } catch {
+          setTimeout(() => { try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} } }, 0);
+        }
       };
-      const exitIabEditMode = () => {
+      const exitIabEditMode = (force = false) => {
         if (!iabEdit.active) return;
+        const now = Date.now ? Date.now() : +new Date();
+        if (!force && iabEdit.openingUntil && now < iabEdit.openingUntil) return;
+        if (!force && inputEl && document.activeElement === inputEl) return;
         try { document.documentElement.classList.remove('iab-edit'); } catch {}
 
         const moved = iabEdit.moved;
@@ -8139,9 +8147,29 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
         iabEdit.active = false;
         iabEdit.ts = 0;
+        iabEdit.openingUntil = 0;
         iabEdit.dock = null;
         iabEdit.moved = null;
         iabEdit.placeholder = null;
+        if (iabEdit.closeTimer) {
+          try { clearTimeout(iabEdit.closeTimer); } catch {}
+          iabEdit.closeTimer = 0;
+        }
+      };
+
+      const scheduleIabClose = (reason = '') => {
+        if (!iabEdit.active) return;
+        const now = Date.now ? Date.now() : +new Date();
+        if (iabEdit.openingUntil && now < iabEdit.openingUntil) return;
+        if (iabEdit.closeTimer) return;
+        iabEdit.closeTimer = setTimeout(() => {
+          iabEdit.closeTimer = 0;
+          if (!iabEdit.active) return;
+          const now2 = Date.now ? Date.now() : +new Date();
+          if (iabEdit.openingUntil && now2 < iabEdit.openingUntil) return;
+          if (inputEl && document.activeElement === inputEl) return;
+          exitIabEditMode(false);
+        }, 160);
       };
 
       const updateBaseInnerH = () => {
@@ -8195,9 +8223,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
         });
         inputEl.addEventListener('blur', () => setTimeout(() => {
           updateBaseInnerH();
-          if (isIabNow()) exitIabEditMode();
+          if (isIabNow()) scheduleIabClose('blur');
           applyKeyboardOffset();
         }, 120));
+        inputEl.addEventListener('focusout', () => {
+          if (!isIabNow()) return;
+          scheduleIabClose('focusout');
+        });
       }
       if (inputWrap && inputEl) {
         const tryFocus = () => {
@@ -8218,11 +8250,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       document.addEventListener('pointerdown', (e) => {
         if (!iabEdit.active) return;
+        const now = Date.now ? Date.now() : +new Date();
+        if (iabEdit.openingUntil && now < iabEdit.openingUntil) return;
         try {
           if (iabEdit.dock && iabEdit.dock.contains(e.target)) return;
           if (inputEl && (e.target === inputEl || (e.target && e.target.closest && e.target.closest('#iabEditDock')))) return;
         } catch {}
-        exitIabEditMode();
+        scheduleIabClose('outside-pointerdown');
       }, { passive: true });
 
       try {
@@ -8230,7 +8264,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         if (invBtn) {
           invBtn.addEventListener('pointerdown', () => {
             if (!iabEdit.active) return;
-            exitIabEditMode();
+            exitIabEditMode(true);
           }, { capture: true, passive: true });
         }
       } catch {}
