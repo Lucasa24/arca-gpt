@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
@@ -1400,6 +1400,24 @@
     .arca-ig.ig-scrollfix.arca-mobile .fixed-footer {
       transform: none !important;
       will-change: top;
+    }
+    .arca-ig.kb-flow.arca-mobile .fixed-footer {
+      position: static !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      bottom: auto !important;
+      top: auto !important;
+      transform: none !important;
+      will-change: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    .arca-ig.kb-flow.arca-mobile #mainContent {
+      padding-bottom: 16px !important;
+    }
+    .arca-ig.kb-flow.arca-mobile #footerResizeHandle {
+      display: none !important;
     }
     .arca-mobile #footerResizeBar {
       display: block;
@@ -4356,7 +4374,7 @@
     (function initArcaMobileClass() {
       const root = document.documentElement;
       const ua = String(navigator.userAgent || '');
-      const isIg = /\bInstagram\b/i.test(ua) || /\big=1\b/i.test(String(location.search || ''));
+      const isIg = /\bInstagram\b/i.test(ua);
       root.classList.toggle('arca-ig', isIg);
       root.classList.toggle('arca-iab', isIg || /FBAN|FBAV|FB_IAB/i.test(ua));
       root.classList.toggle('arca-samsung', /\bSamsungBrowser\b/i.test(ua));
@@ -8078,6 +8096,38 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return false;
       };
 
+      const kbFlowFix = { on: false, mainPad: null };
+      const setKbFlowFix = (on) => {
+        const next = !!on;
+        if (!isInstagramNow()) on = false;
+        if (kbFlowFix.on === next) return;
+        kbFlowFix.on = next;
+        const main = document.getElementById('mainContent');
+        if (next) {
+          try { setIgScrollFix(false); } catch {}
+          try { document.documentElement.classList.add('kb-flow'); } catch {}
+          try {
+            if (main) {
+              kbFlowFix.mainPad = main.style.paddingBottom || null;
+              main.style.paddingBottom = '16px';
+            }
+          } catch {}
+          [0, 60, 160, 260, 420].forEach((d) => setTimeout(() => {
+            try { inputEl && inputEl.scrollIntoView && inputEl.scrollIntoView({ block: 'end' }); } catch {}
+            try { window.scrollTo(0, document.body.scrollHeight); } catch {}
+          }, d));
+          return;
+        }
+        try { document.documentElement.classList.remove('kb-flow'); } catch {}
+        try {
+          if (main) {
+            if (kbFlowFix.mainPad == null) main.style.removeProperty('padding-bottom');
+            else main.style.paddingBottom = kbFlowFix.mainPad;
+          }
+        } catch {}
+        kbFlowFix.mainPad = null;
+      };
+
       const igScrollFix = { on: false, raf: 0, until: 0, prev: null };
       const setIgScrollFix = (on) => {
         if (!isInstagramNow()) on = false;
@@ -8221,12 +8271,42 @@ div.innerHTML = DOMPurify.sanitize(html, {
         return offset;
       };
 
+      const updateBaseInnerH = () => {
+        try {
+          if (!isMobileNow()) return;
+          if (inputEl && document.activeElement === inputEl) return;
+          window.__arcaBaseInnerH = window.innerHeight || window.__arcaBaseInnerH || 0;
+        } catch {}
+      };
+      const computeKeyboardOffsetDefault = () => {
+        let offset = 0;
+        try {
+          const vv = window.visualViewport;
+          if (vv && Number.isFinite(vv.height)) {
+            offset = Math.max(0, (window.innerHeight - vv.height - (vv.offsetTop || 0)));
+          }
+        } catch {}
+        if (!Number.isFinite(offset) || offset < 0) offset = 0;
+        if (!window.__arcaBaseInnerH) window.__arcaBaseInnerH = window.innerHeight || 0;
+        const base = Number(window.__arcaBaseInnerH || 0);
+        const ih = Number(window.innerHeight || 0);
+        if (offset <= 0 && base > 0 && ih > 0 && (base - ih) > 40) offset = Math.max(0, base - ih);
+        if (!Number.isFinite(offset) || offset < 0) offset = 0;
+        return offset;
+      };
+
       const applyKeyboardOffset = () => {
         if (!isMobileNow()) {
           root.style.removeProperty('--kb-offset');
           return;
         }
-        if (igScrollFix.on) {
+        if (!isInstagramNow()) {
+          updateBaseInnerH();
+          const offset = computeKeyboardOffsetDefault();
+          root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
+          return;
+        }
+        if (kbFlowFix.on || igScrollFix.on) {
           root.style.setProperty('--kb-offset', '0px');
           return;
         }
@@ -8243,15 +8323,23 @@ div.innerHTML = DOMPurify.sanitize(html, {
       if (inputEl) {
         inputEl.addEventListener('focus', () => {
           updateBaseLayoutH();
-          if (isInstagramNow()) {
-            setIgScrollFix(true);
-            [0, 60, 160, 260, 420, 620].forEach((d) => setTimeout(() => { try { applyKeyboardOffset(); } catch {} }, d));
-          }
+          if (isInstagramNow()) setKbFlowFix(true);
           kickIntoView();
+          const maybeEnableFlow = () => {
+            if (!isMobileNow()) return;
+            if (kbFlowFix.on) return;
+            let off = 0;
+            try { off = parseInt(getComputedStyle(root).getPropertyValue('--kb-offset'), 10) || 0; } catch {}
+            if (off <= 0 && isInstagramNow()) setKbFlowFix(true);
+          };
+          setTimeout(maybeEnableFlow, 420);
+          setTimeout(maybeEnableFlow, 720);
         });
         inputEl.addEventListener('blur', () => setTimeout(() => {
           updateBaseLayoutH();
+          updateBaseInnerH();
           setIgScrollFix(false);
+          setKbFlowFix(false);
           applyKeyboardOffset();
         }, 120));
       }
@@ -8278,6 +8366,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           setFooterHeightPx(h, false);
         } catch {}
         updateBaseLayoutH();
+        updateBaseInnerH();
         try {
           if (igScrollFix.on) {
             setIgScrollFix(false);
