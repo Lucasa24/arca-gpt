@@ -3907,6 +3907,14 @@
     .arca-iab .footer-note #cornerMenu { display: none; }
     .auth-open .corner-menu--floating { display: none !important; }
 
+    html.arca-mobile #chatSidebar.open ~ #cornerMenuFloating {
+      display: none !important;
+    }
+
+    html:not(.arca-mobile) #chatSidebar:not(.hidden) ~ #cornerMenuFloating {
+      display: none !important;
+    }
+
     @media (max-width: 600px) {
       :root {
         --corner-btn-size: 26px;
