@@ -1406,6 +1406,39 @@
     .arca-iab.iab-edit #iabEditDock .textarea-container {
       box-shadow: 0 20px 50px rgba(0,0,0,0.72);
     }
+    .arca-top-invocar {
+      display: none;
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 191, 255, 0.22);
+      background: rgba(10,10,10,0.92);
+      color: rgba(245,245,245,0.92);
+      font-family: 'Cinzel', serif;
+      font-size: 0.64rem;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      line-height: 1;
+      z-index: 3;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .arca-iab.iab-edit #iabEditDock .arca-top-invocar {
+      display: inline-flex;
+    }
+    .arca-top-invocar:active {
+      transform: translateY(1px);
+    }
+    .arca-iab.iab-edit #iabEditDock textarea#userInput {
+      padding-right: 94px !important;
+      padding-bottom: 58px !important;
+    }
     .arca-iab.iab-edit.arca-mobile .fixed-footer {
       bottom: 0 !important;
     }
@@ -8120,6 +8153,32 @@ div.innerHTML = DOMPurify.sanitize(html, {
         iabEdit.moved = moved;
         iabEdit.placeholder = ph;
 
+        try { moved.classList.add('arca-textarea-top-active'); } catch {}
+        try {
+          let topBtn = moved.querySelector('.arca-top-invocar');
+          if (!topBtn) {
+            topBtn = document.createElement('button');
+            topBtn.type = 'button';
+            topBtn.className = 'arca-top-invocar';
+            topBtn.textContent = 'INVOCAR';
+            topBtn.tabIndex = -1;
+            topBtn.addEventListener('pointerdown', (e) => {
+              if (!iabEdit.active) return;
+              try { e.preventDefault(); } catch {}
+              try { e.stopPropagation(); } catch {}
+              try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} }
+            }, { passive: false });
+            topBtn.addEventListener('click', (e) => {
+              if (!iabEdit.active) return;
+              try { e.preventDefault(); } catch {}
+              try { e.stopPropagation(); } catch {}
+              try { handleInvokeClick(); } catch {}
+              setTimeout(() => exitIabEditMode(true), 50);
+            }, { passive: false });
+            moved.appendChild(topBtn);
+          }
+        } catch {}
+
         try {
           requestAnimationFrame(() => {
             try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} }
@@ -8144,6 +8203,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           try { if (ph) ph.remove(); } catch {}
         }
         try { if (iabEdit.dock) iabEdit.dock.textContent = ''; } catch {}
+        try { if (moved) moved.classList.remove('arca-textarea-top-active'); } catch {}
 
         iabEdit.active = false;
         iabEdit.ts = 0;
