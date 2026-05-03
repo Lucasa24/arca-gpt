@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
@@ -1383,70 +1383,23 @@
       display: none;
     }
     .arca-mobile .fixed-footer {
-      position: relative !important;
       height: var(--footer-height);
       min-height: 0;
       max-height: min(52vh, calc(100dvh - 72px));
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      bottom: auto !important;
-      top: auto !important;
-      left: 0 !important;
-      right: 0 !important;
-      width: 100% !important;
-      transform: none !important;
-      will-change: auto;
+      will-change: bottom;
+      bottom: var(--kb-offset, 0px);
     }
-    #iabEditDock {
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      top: calc(env(safe-area-inset-top, 0px) + 10px);
-      z-index: 20000;
-      display: none;
-    }
-    .arca-iab.iab-edit #iabEditDock {
-      display: block;
-    }
-    .arca-iab.iab-edit #iabEditDock .textarea-container {
-      box-shadow: 0 20px 50px rgba(0,0,0,0.72);
-    }
-    .arca-top-invocar {
-      display: none;
-      position: absolute;
-      right: 8px;
-      bottom: 8px;
-      height: 30px;
-      padding: 0 10px;
-      border-radius: 8px;
-      border: 1px solid rgba(0, 191, 255, 0.22);
-      background: rgba(10,10,10,0.92);
-      color: rgba(245,245,245,0.92);
-      font-family: 'Cinzel', serif;
-      font-size: 0.64rem;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      line-height: 1;
-      z-index: 3;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .arca-iab.iab-edit #iabEditDock .arca-top-invocar {
-      display: inline-flex;
-    }
-    .arca-top-invocar:active {
-      transform: translateY(1px);
-    }
-    .arca-iab.iab-edit #iabEditDock textarea#userInput {
-      padding-right: 94px !important;
-      padding-bottom: 58px !important;
-    }
-    .arca-iab.iab-edit.arca-mobile .fixed-footer {
+    .arca-ig.arca-mobile .fixed-footer {
       bottom: 0 !important;
+      will-change: transform;
+      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
+    }
+    .arca-ig.ig-scrollfix.arca-mobile .fixed-footer {
+      transform: none !important;
+      will-change: top;
     }
     .arca-mobile #footerResizeBar {
       display: block;
@@ -3213,10 +3166,6 @@
     }
     
     @media (max-width: 768px) {
-      html, body {
-        height: 100%;
-        overflow: hidden;
-      }
       body {
         display: block;
         padding: 0;
@@ -3225,12 +3174,9 @@
       #mainContent {
         margin-left: 0 !important;
         width: 100% !important;
-        padding: 20px 0.75rem 0;
+        padding: 20px 0.75rem 250px;
         align-items: stretch;
         min-height: 100dvh;
-        height: 100dvh;
-        max-height: 100dvh;
-        overflow: hidden;
         background: #1c1c1c;
         border-left: 4px solid #b30000;
       }
@@ -3242,10 +3188,7 @@
         margin-top: 0.9rem;
         max-width: none;
         max-height: none;
-        min-height: 0;
-        flex: 1 1 auto;
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow: visible;
       }
       
       .fixed-footer {
@@ -3266,7 +3209,7 @@
     }
 
     .arca-mobile body { display: block; padding: 0; }
-    .arca-mobile #mainContent { margin-left: 0 !important; width: 100% !important; overflow: hidden; }
+    .arca-mobile #mainContent { margin-left: 0 !important; width: 100% !important; }
     .arca-mobile .fixed-footer { left: 0 !important; width: 100% !important; }
     .arca-mobile #footerResizeHandle { left: 0 !important; }
     .arca-mobile #chatSidebar { transform: translateX(-100%) !important; width: 80%; max-width: 260px; z-index: 998; }
@@ -4412,19 +4355,11 @@
 
     (function initArcaMobileClass() {
       const root = document.documentElement;
-      const body = document.body;
       const ua = String(navigator.userAgent || '');
-      const isIg = /\bInstagram\b/i.test(ua);
+      const isIg = /\bInstagram\b/i.test(ua) || /\big=1\b/i.test(String(location.search || ''));
       root.classList.toggle('arca-ig', isIg);
       root.classList.toggle('arca-iab', isIg || /FBAN|FBAV|FB_IAB/i.test(ua));
       root.classList.toggle('arca-samsung', /\bSamsungBrowser\b/i.test(ua));
-      try {
-        if (body) {
-          body.classList.toggle('arca-ig', root.classList.contains('arca-ig'));
-          body.classList.toggle('arca-iab', root.classList.contains('arca-iab'));
-          body.classList.toggle('arca-samsung', root.classList.contains('arca-samsung'));
-        }
-      } catch {}
       const isVisible = (el) => {
         if (!el) return false;
         const cs = getComputedStyle(el);
@@ -4443,7 +4378,6 @@
       const sync = () => {
         const w = getW();
         root.classList.toggle('arca-mobile', w > 0 && w <= 768);
-        try { if (body) body.classList.toggle('arca-mobile', root.classList.contains('arca-mobile')); } catch {}
         syncAuthOpen();
       };
       sync();
@@ -8139,144 +8073,150 @@ div.innerHTML = DOMPurify.sanitize(html, {
       footer.addEventListener('pointerup', endDrag);
       footer.addEventListener('pointercancel', endDrag);
 
-      const isIabNow = () => {
-        try { return isMobileNow() && document.documentElement.classList.contains('arca-iab'); } catch {}
+      const isInstagramNow = () => {
+        try { return isMobileNow() && document.documentElement.classList.contains('arca-ig'); } catch {}
         return false;
       };
 
-      const iabEdit = { active: false, ts: 0, dock: null, moved: null, placeholder: null, openingUntil: 0, closeTimer: 0 };
-      const ensureIabDock = () => {
-        let dock = document.getElementById('iabEditDock');
-        if (dock) return dock;
-        dock = document.createElement('div');
-        dock.id = 'iabEditDock';
-        document.body.appendChild(dock);
-        return dock;
-      };
-      const enterIabEditMode = () => {
-        if (!isIabNow() || !inputEl || iabEdit.active) return;
-        let moved = null;
-        try { moved = inputEl.closest && inputEl.closest('.textarea-container'); } catch {}
-        if (!moved || !moved.parentNode) return;
+      const igScrollFix = { on: false, raf: 0, until: 0, prev: null };
+      const setIgScrollFix = (on) => {
+        if (!isInstagramNow()) on = false;
+        const next = !!on;
+        if (igScrollFix.on === next) return;
+        igScrollFix.on = next;
+        try { if (igScrollFix.raf) cancelAnimationFrame(igScrollFix.raf); } catch {}
+        igScrollFix.raf = 0;
+        igScrollFix.until = 0;
 
-        const ph = document.createElement('div');
-        ph.style.flex = '1';
-        ph.style.minWidth = '0';
-        try { ph.style.minHeight = Math.max(0, Math.round(moved.getBoundingClientRect().height || 0)) + 'px'; } catch {}
-        ph.setAttribute('aria-hidden', 'true');
+        if (!next) {
+          try { document.documentElement.classList.remove('ig-scrollfix'); } catch {}
+          try {
+            footer.style.removeProperty('position');
+            footer.style.removeProperty('top');
+            footer.style.removeProperty('bottom');
+            footer.style.removeProperty('left');
+            footer.style.removeProperty('right');
+            footer.style.removeProperty('width');
+            footer.style.removeProperty('transform');
+            footer.style.removeProperty('will-change');
+          } catch {}
+          return;
+        }
 
-        try { moved.parentNode.insertBefore(ph, moved); } catch { return; }
-
-        const dock = ensureIabDock();
-        try { dock.appendChild(moved); } catch { try { ph.remove(); } catch {} return; }
-        try { document.documentElement.classList.add('iab-edit'); } catch {}
-
-        iabEdit.active = true;
-        iabEdit.ts = Date.now ? Date.now() : +new Date();
-        iabEdit.openingUntil = iabEdit.ts + 800;
-        iabEdit.dock = dock;
-        iabEdit.moved = moved;
-        iabEdit.placeholder = ph;
-
-        try { moved.classList.add('arca-textarea-top-active'); } catch {}
+        try { document.documentElement.classList.add('ig-scrollfix'); } catch {}
         try {
-          let topBtn = moved.querySelector('.arca-top-invocar');
-          if (!topBtn) {
-            topBtn = document.createElement('button');
-            topBtn.type = 'button';
-            topBtn.className = 'arca-top-invocar';
-            topBtn.textContent = 'INVOCAR';
-            topBtn.tabIndex = -1;
-            topBtn.addEventListener('pointerdown', (e) => {
-              if (!iabEdit.active) return;
-              try { e.preventDefault(); } catch {}
-              try { e.stopPropagation(); } catch {}
-              try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} }
-            }, { passive: false });
-            topBtn.addEventListener('click', (e) => {
-              if (!iabEdit.active) return;
-              try { e.preventDefault(); } catch {}
-              try { e.stopPropagation(); } catch {}
-              try { handleInvokeClick(); } catch {}
-              setTimeout(() => exitIabEditMode(true), 50);
-            }, { passive: false });
-            moved.appendChild(topBtn);
+          footer.style.position = 'absolute';
+          footer.style.bottom = 'auto';
+          footer.style.left = '0';
+          footer.style.right = '0';
+          footer.style.width = '100%';
+          footer.style.transform = 'none';
+          footer.style.willChange = 'top';
+        } catch {}
+
+        const main = document.getElementById('mainContent') || (footer && footer.parentElement) || null;
+        const getMainTop = () => {
+          if (!main) return 0;
+          try { return (main.getBoundingClientRect().top || 0) + (window.scrollY || 0); } catch {}
+          return 0;
+        };
+        const getScrollY = () => {
+          try { return Number(window.scrollY || 0); } catch {}
+          try { return Number(document.documentElement && document.documentElement.scrollTop || 0); } catch {}
+          try { return Number(document.body && document.body.scrollTop || 0); } catch {}
+          return 0;
+        };
+        const getVisibleBottom = () => {
+          let vb = getScrollY() + (window.innerHeight || 0);
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) vb = getScrollY() + (vv.offsetTop || 0) + vv.height;
+          } catch {}
+          return vb;
+        };
+        const update = () => {
+          if (!igScrollFix.on) return;
+          let fh = 0;
+          try { fh = Math.max(0, footer.getBoundingClientRect().height || 0); } catch {}
+          if (!fh) {
+            try { fh = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110; } catch {}
+          }
+          const topAbs = Math.max(0, Math.round(getVisibleBottom() - fh));
+          const topRel = Math.max(0, Math.round(topAbs - getMainTop()));
+          try { footer.style.top = topRel + 'px'; } catch {}
+        };
+        const loop = () => {
+          if (!igScrollFix.on) return;
+          update();
+          if ((Date.now ? Date.now() : +new Date()) < igScrollFix.until) {
+            igScrollFix.raf = requestAnimationFrame(loop);
+          } else {
+            igScrollFix.raf = 0;
+          }
+        };
+
+        update();
+        igScrollFix.until = (Date.now ? Date.now() : +new Date()) + 1200;
+        igScrollFix.raf = requestAnimationFrame(loop);
+      };
+
+      const updateBaseLayoutH = () => {
+        try {
+          if (!isMobileNow()) return;
+          const prev = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
+          let base = Math.max(prev, Math.max(0, Number(window.innerHeight || 0)));
+          try { base = Math.max(base, Number(document.documentElement && document.documentElement.clientHeight || 0)); } catch {}
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) base = Math.max(base, (vv.offsetTop || 0) + vv.height);
+          } catch {}
+          if (base > 0) window.__arcaBaseLayoutH = base;
+        } catch {}
+      };
+
+      const computeKeyboardOffset = () => {
+        let offset = 0;
+        updateBaseLayoutH();
+        const base = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
+
+        try {
+          const vk = navigator && navigator.virtualKeyboard;
+          const rect = vk && vk.boundingRect;
+          if (rect && Number.isFinite(rect.height) && rect.height > 0) {
+            const ih = Number(window.innerHeight || 0);
+            const by = Number(rect.y || 0);
+            offset = Math.max(0, Math.round(Math.max(rect.height, ih ? (ih - by) : rect.height)));
+            return offset;
           }
         } catch {}
 
         try {
-          requestAnimationFrame(() => {
-            try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} }
-          });
-        } catch {
-          setTimeout(() => { try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} } }, 0);
-        }
-      };
-      const exitIabEditMode = (force = false) => {
-        if (!iabEdit.active) return;
-        const now = Date.now ? Date.now() : +new Date();
-        if (!force && iabEdit.openingUntil && now < iabEdit.openingUntil) return;
-        if (!force && inputEl && document.activeElement === inputEl) return;
-        try { document.documentElement.classList.remove('iab-edit'); } catch {}
-
-        const moved = iabEdit.moved;
-        const ph = iabEdit.placeholder;
-        try {
-          if (ph && ph.parentNode && moved) ph.parentNode.replaceChild(moved, ph);
-        } catch {
-          try { if (moved && footer) footer.querySelector('.input-group').prepend(moved); } catch {}
-          try { if (ph) ph.remove(); } catch {}
-        }
-        try { if (iabEdit.dock) iabEdit.dock.textContent = ''; } catch {}
-        try { if (moved) moved.classList.remove('arca-textarea-top-active'); } catch {}
-
-        iabEdit.active = false;
-        iabEdit.ts = 0;
-        iabEdit.openingUntil = 0;
-        iabEdit.dock = null;
-        iabEdit.moved = null;
-        iabEdit.placeholder = null;
-        if (iabEdit.closeTimer) {
-          try { clearTimeout(iabEdit.closeTimer); } catch {}
-          iabEdit.closeTimer = 0;
-        }
-      };
-
-      const scheduleIabClose = (reason = '') => {
-        if (!iabEdit.active) return;
-        const now = Date.now ? Date.now() : +new Date();
-        if (iabEdit.openingUntil && now < iabEdit.openingUntil) return;
-        if (iabEdit.closeTimer) return;
-        iabEdit.closeTimer = setTimeout(() => {
-          iabEdit.closeTimer = 0;
-          if (!iabEdit.active) return;
-          const now2 = Date.now ? Date.now() : +new Date();
-          if (iabEdit.openingUntil && now2 < iabEdit.openingUntil) return;
-          if (inputEl && document.activeElement === inputEl) return;
-          exitIabEditMode(false);
-        }, 160);
-      };
-
-      const updateBaseInnerH = () => {
-        try {
-          if (!isMobileNow()) return;
-          if (inputEl && document.activeElement === inputEl) return;
-          window.__arcaBaseInnerH = window.innerHeight || window.__arcaBaseInnerH || 0;
+          const ih = Number(window.innerHeight || 0);
+          if (base > 0 && ih > 0 && (base - ih) > 40) {
+            offset = Math.max(0, base - ih);
+            return offset;
+          }
         } catch {}
-      };
-      const computeKeyboardOffsetDefault = () => {
-        let offset = 0;
+
         try {
           const vv = window.visualViewport;
           if (vv && Number.isFinite(vv.height)) {
-            offset = Math.max(0, (window.innerHeight - vv.height - (vv.offsetTop || 0)));
+            const visibleBottom = (vv.offsetTop || 0) + vv.height;
+            if (base > 0) offset = Math.max(0, base - visibleBottom);
+            if (offset <= 0) offset = Math.max(0, (window.innerHeight || 0) - visibleBottom);
           }
         } catch {}
+
         if (!Number.isFinite(offset) || offset < 0) offset = 0;
-        if (!window.__arcaBaseInnerH) window.__arcaBaseInnerH = window.innerHeight || 0;
-        const base = Number(window.__arcaBaseInnerH || 0);
-        const ih = Number(window.innerHeight || 0);
-        if (offset <= 0 && base > 0 && ih > 0 && (base - ih) > 40) offset = Math.max(0, base - ih);
+        if (offset > 0) return offset;
+
+        try {
+          const ih = Number(window.innerHeight || 0);
+          const ch = Number(document.documentElement && document.documentElement.clientHeight || 0);
+          const visible = Math.min(ih || 0, ch || ih || 0);
+          if (base > 0 && visible > 0 && (base - visible) > 40) offset = Math.max(0, base - visible);
+        } catch {}
+
         if (!Number.isFinite(offset) || offset < 0) offset = 0;
         return offset;
       };
@@ -8286,11 +8226,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           root.style.removeProperty('--kb-offset');
           return;
         }
-        if (isIabNow() || iabEdit.active) {
+        if (igScrollFix.on) {
           root.style.setProperty('--kb-offset', '0px');
           return;
         }
-        return;
+        const offset = computeKeyboardOffset();
+        root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
       };
       const kickIntoView = () => {
         if (!isMobileNow() || !inputEl) return;
@@ -8301,18 +8242,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
       };
       if (inputEl) {
         inputEl.addEventListener('focus', () => {
-          if (isIabNow()) enterIabEditMode();
+          updateBaseLayoutH();
+          if (isInstagramNow()) {
+            setIgScrollFix(true);
+            [0, 60, 160, 260, 420, 620].forEach((d) => setTimeout(() => { try { applyKeyboardOffset(); } catch {} }, d));
+          }
           kickIntoView();
         });
         inputEl.addEventListener('blur', () => setTimeout(() => {
-          updateBaseInnerH();
-          if (isIabNow()) scheduleIabClose('blur');
+          updateBaseLayoutH();
+          setIgScrollFix(false);
           applyKeyboardOffset();
         }, 120));
-        inputEl.addEventListener('focusout', () => {
-          if (!isIabNow()) return;
-          scheduleIabClose('focusout');
-        });
       }
       if (inputWrap && inputEl) {
         const tryFocus = () => {
@@ -8331,33 +8272,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
         inputWrap.addEventListener('click', () => tryFocus(), { passive: true });
       }
 
-      document.addEventListener('pointerdown', (e) => {
-        if (!iabEdit.active) return;
-        const now = Date.now ? Date.now() : +new Date();
-        if (iabEdit.openingUntil && now < iabEdit.openingUntil) return;
-        try {
-          if (iabEdit.dock && iabEdit.dock.contains(e.target)) return;
-          if (inputEl && (e.target === inputEl || (e.target && e.target.closest && e.target.closest('#iabEditDock')))) return;
-        } catch {}
-        scheduleIabClose('outside-pointerdown');
-      }, { passive: true });
-
-      try {
-        const invBtn = footer.querySelector('.invocar-btn');
-        if (invBtn) {
-          invBtn.addEventListener('pointerdown', () => {
-            if (!iabEdit.active) return;
-            exitIabEditMode(true);
-          }, { capture: true, passive: true });
-        }
-      } catch {}
-
       const normalize = () => {
         try {
           const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
           setFooterHeightPx(h, false);
         } catch {}
-        updateBaseInnerH();
+        updateBaseLayoutH();
+        try {
+          if (igScrollFix.on) {
+            setIgScrollFix(false);
+            setIgScrollFix(true);
+          }
+        } catch {}
         try { applyKeyboardOffset(); } catch {}
       };
 
@@ -8375,7 +8301,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           try { vk.addEventListener('geometrychange', normalize, { passive: true }); } catch {}
         }
       } catch {}
-      updateBaseInnerH();
+      updateBaseLayoutH();
       try { applyKeyboardOffset(); } catch {}
     }
     async function arcaImage(prompt, size) {
