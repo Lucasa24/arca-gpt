@@ -26,7 +26,7 @@
 
     :root {
       --sidebar-width: 220px;
-      --footer-height: 110px;
+      --footer-height: 90px;
       --corner-btn-size: 28px;
       --corner-btn-radius: 10px;
       --corner-panel-min: 160px;
@@ -4063,7 +4063,7 @@
       <div class="auth-toggle" onclick="hideAuthForm()" style="margin-top: 20px;">← Voltar</div>
     </form>
   </div>
-  <button id="toggleSidebar" type="button" aria-label="Abrir sessões" onclick="toggleSidebar()">☰</button>
+  <button id="toggleSidebar" type="button" aria-label="Abrir sessões" onclick="toggleSidebar(event); return false;">☰</button>
   <div id="chatSidebar"></div>
   <div id="sidebarResizeHandle" aria-hidden="true"></div>
   <div id="itemMenu" class="actions-menu" role="menu" aria-label="Ações da sessão" style="display:none;"></div>
@@ -6705,7 +6705,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
       loadSidebar();
     }
 
-    function toggleSidebar() {
+    function toggleSidebar(e) {
+      try { e && e.preventDefault && e.preventDefault(); } catch {}
+      try { e && e.stopPropagation && e.stopPropagation(); } catch {}
+
+      const prevY = getScrollTopY();
       const sidebar = document.getElementById("chatSidebar");
       const main = document.getElementById("mainContent");
       const btn = document.getElementById("toggleSidebar");
@@ -6737,6 +6741,17 @@ div.innerHTML = DOMPurify.sanitize(html, {
         }
         btn.setAttribute("aria-expanded", !sidebar.classList.contains("hidden") ? "true" : "false");
       }
+
+      try {
+        requestAnimationFrame(() => {
+          try { scrollToY(prevY); } catch {}
+          setTimeout(() => { try { scrollToY(prevY); } catch {} }, 0);
+        });
+      } catch {
+        setTimeout(() => { try { scrollToY(prevY); } catch {} }, 0);
+      }
+
+      try { btn && btn.blur && btn.blur(); } catch {}
     }
 
     function openItemMenu(e, sessionId, btn, title) {
@@ -8113,6 +8128,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
       const maxFooter = () => Math.round(window.innerHeight * 0.70);
+      const minFooter = () => (window.innerWidth <= 768 ? 78 : 90);
 
       const setSidebarWidthPx = (w) => {
         const px = clamp(Math.round(w), 180, 420) + 'px';
@@ -8121,7 +8137,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       };
 
       const setFooterHeightPx = (h) => {
-        const px = clamp(Math.round(h), 90, maxFooter()) + 'px';
+        const px = clamp(Math.round(h), minFooter(), maxFooter()) + 'px';
         root.style.setProperty('--footer-height', px);
         try { localStorage.setItem('arcaFooterHeight', px); } catch {}
         try { positionVoiceBar(); } catch {}
