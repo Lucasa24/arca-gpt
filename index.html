@@ -27,6 +27,8 @@
     :root {
       --sidebar-width: 220px;
       --footer-height: 110px;
+      --kb-offset: 0px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
       --corner-btn-size: 28px;
       --corner-btn-radius: 10px;
       --corner-panel-min: 160px;
@@ -212,7 +214,7 @@
       align-items: stretch;
       transition: margin-left 0.3s ease, width 0.3s ease;
       margin-left: var(--sidebar-width);
-      padding: 22px 1rem calc(var(--footer-height) + 40px);
+      padding: 22px 1rem calc(var(--footer-height) + 40px + var(--kb-offset, 0px) + var(--safe-bottom, 0px));
       width: calc(100% - var(--sidebar-width));
       position: relative;
       min-height: 100vh;
@@ -1367,13 +1369,13 @@
       left: var(--sidebar-width);
       right: 0;
       background: #0e0e0e;
-      padding: 6px 1rem calc(6px + env(safe-area-inset-bottom, 0px));
+      padding: 6px 1rem calc(6px + var(--safe-bottom, 0px));
       border-top: 1px solid #333;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
       font-size: 0.85rem;
       width: calc(100% - var(--sidebar-width));
       z-index: 100;
-      transition: left 0.3s ease, width 0.3s ease;
+      transition: left 0.3s ease, width 0.3s ease, transform 120ms ease-out;
       height: auto;
       min-height: var(--footer-height);
       overflow: visible;
@@ -1389,11 +1391,15 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      will-change: bottom;
-      bottom: var(--kb-offset, 0px);
+      will-change: transform;
+      bottom: var(--safe-bottom, 0px);
+      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
+    }
+    .kb-open .fixed-footer {
+      transition: left 0.3s ease, width 0.3s ease;
     }
     .arca-ig.arca-mobile .fixed-footer {
-      bottom: 0 !important;
+      bottom: var(--safe-bottom, 0px) !important;
       will-change: transform;
       transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
     }
@@ -8160,78 +8166,75 @@ div.innerHTML = DOMPurify.sanitize(html, {
         igScrollFix.raf = requestAnimationFrame(loop);
       };
 
-      const updateBaseLayoutH = () => {
-        try {
-          if (!isMobileNow()) return;
-          const prev = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
-          let base = Math.max(prev, Math.max(0, Number(window.innerHeight || 0)));
-          try { base = Math.max(base, Number(document.documentElement && document.documentElement.clientHeight || 0)); } catch {}
-          try {
-            const vv = window.visualViewport;
-            if (vv && Number.isFinite(vv.height)) base = Math.max(base, (vv.offsetTop || 0) + vv.height);
-          } catch {}
-          if (base > 0) window.__arcaBaseLayoutH = base;
-        } catch {}
+      const kbState = { active: false, baseVh: 0, baseIh: 0, last: -1 };
+      const readSafeBottomPx = () => {
+        try { return Math.max(0, parseFloat(getComputedStyle(root).getPropertyValue('--safe-bottom')) || 0); } catch {}
+        return 0;
       };
-
-      const computeKeyboardOffset = () => {
-        let offset = 0;
-        updateBaseLayoutH();
-        const base = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
-
+      const isAndroid = () => {
+        try { return /\bAndroid\b/i.test(String(navigator.userAgent || '')); } catch {}
+        return false;
+      };
+      const isTextActive = () => {
+        const a = document.activeElement;
+        if (!a) return false;
         try {
-          const vk = navigator && navigator.virtualKeyboard;
-          const rect = vk && vk.boundingRect;
-          if (rect && Number.isFinite(rect.height) && rect.height > 0) {
-            const ih = Number(window.innerHeight || 0);
-            const by = Number(rect.y || 0);
-            offset = Math.max(0, Math.round(Math.max(rect.height, ih ? (ih - by) : rect.height)));
-            return offset;
-          }
+          if (a === inputEl) return true;
+          if (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT') return true;
+          if (a.isContentEditable) return true;
         } catch {}
-
-        try {
-          const ih = Number(window.innerHeight || 0);
-          if (base > 0 && ih > 0 && (base - ih) > 40) {
-            offset = Math.max(0, base - ih);
-            return offset;
-          }
-        } catch {}
-
+        return false;
+      };
+      const computeKbOffsetVV = () => {
+        if (!isMobileNow() || !kbState.active) return 0;
+        const safe = readSafeBottomPx();
+        let raw = 0;
         try {
           const vv = window.visualViewport;
           if (vv && Number.isFinite(vv.height)) {
-            const visibleBottom = (vv.offsetTop || 0) + vv.height;
-            if (base > 0) offset = Math.max(0, base - visibleBottom);
-            if (offset <= 0) offset = Math.max(0, (window.innerHeight || 0) - visibleBottom);
+            raw = Math.max(0, (window.innerHeight || 0) - vv.height - (vv.offsetTop || 0));
           }
         } catch {}
+        raw = Math.max(0, Math.round(raw || 0));
+        let off = Math.max(0, raw - safe);
 
-        if (!Number.isFinite(offset) || offset < 0) offset = 0;
-        if (offset > 0) return offset;
-
-        try {
-          const ih = Number(window.innerHeight || 0);
-          const ch = Number(document.documentElement && document.documentElement.clientHeight || 0);
-          const visible = Math.min(ih || 0, ch || ih || 0);
-          if (base > 0 && visible > 0 && (base - visible) > 40) offset = Math.max(0, base - visible);
-        } catch {}
-
-        if (!Number.isFinite(offset) || offset < 0) offset = 0;
-        return offset;
+        if (off <= 0 && isAndroid()) {
+          let vb = 0;
+          try {
+            const vv = window.visualViewport;
+            if (vv && Number.isFinite(vv.height)) vb = vv.height;
+          } catch {}
+          if (kbState.baseVh > 0 && vb > 0 && (kbState.baseVh - vb) > 40) {
+            const safeGuess = 320;
+            off = Math.max(280, Math.min(340, safeGuess));
+          }
+        }
+        if (!Number.isFinite(off) || off < 0) off = 0;
+        return off;
       };
-
+      const setKbOffset = (px) => {
+        const n = Math.max(0, Math.round(px || 0));
+        if (n === kbState.last) return;
+        kbState.last = n;
+        try { root.style.setProperty('--kb-offset', n + 'px'); } catch {}
+      };
       const applyKeyboardOffset = () => {
         if (!isMobileNow()) {
-          root.style.removeProperty('--kb-offset');
+          kbState.active = false;
+          kbState.baseVh = 0;
+          kbState.baseIh = 0;
+          setKbOffset(0);
+          try { document.body.classList.remove('kb-open'); } catch {}
           return;
         }
         if (igScrollFix.on) {
-          root.style.setProperty('--kb-offset', '0px');
+          setKbOffset(0);
+          try { document.body.classList.remove('kb-open'); } catch {}
           return;
         }
-        const offset = computeKeyboardOffset();
-        root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
+        const off = computeKbOffsetVV();
+        setKbOffset(off);
+        try { document.body.classList.toggle('kb-open', kbState.active && off > 0); } catch {}
       };
       const kickIntoView = () => {
         if (!isMobileNow() || !inputEl) return;
@@ -8241,19 +8244,27 @@ div.innerHTML = DOMPurify.sanitize(html, {
         }, 60);
       };
       if (inputEl) {
-        inputEl.addEventListener('focus', () => {
-          updateBaseLayoutH();
+        inputEl.addEventListener('focusin', () => {
+          kbState.active = true;
+          kbState.baseIh = Math.max(0, Math.round(window.innerHeight || 0));
+          try {
+            const vv = window.visualViewport;
+            kbState.baseVh = vv && Number.isFinite(vv.height) ? Math.max(0, Math.round(vv.height || 0)) : 0;
+          } catch { kbState.baseVh = 0; }
           if (isInstagramNow()) {
             setIgScrollFix(true);
-            [0, 60, 160, 260, 420, 620].forEach((d) => setTimeout(() => { try { applyKeyboardOffset(); } catch {} }, d));
           }
+          [0, 80, 180, 350, 600].forEach((d) => setTimeout(() => { try { applyKeyboardOffset(); } catch {} }, d));
           kickIntoView();
         });
-        inputEl.addEventListener('blur', () => setTimeout(() => {
-          updateBaseLayoutH();
+        inputEl.addEventListener('focusout', () => setTimeout(() => {
+          if (isTextActive()) return;
+          kbState.active = false;
+          kbState.baseIh = 0;
+          kbState.baseVh = 0;
           setIgScrollFix(false);
           applyKeyboardOffset();
-        }, 120));
+        }, 150));
       }
       if (inputWrap && inputEl) {
         const tryFocus = () => {
@@ -8277,7 +8288,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
           const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
           setFooterHeightPx(h, false);
         } catch {}
-        updateBaseLayoutH();
         try {
           if (igScrollFix.on) {
             setIgScrollFix(false);
@@ -8301,7 +8311,6 @@ div.innerHTML = DOMPurify.sanitize(html, {
           try { vk.addEventListener('geometrychange', normalize, { passive: true }); } catch {}
         }
       } catch {}
-      updateBaseLayoutH();
       try { applyKeyboardOffset(); } catch {}
     }
     async function arcaImage(prompt, size) {
