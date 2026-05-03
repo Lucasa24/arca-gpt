@@ -1393,14 +1393,24 @@
       transform: translate3d(0, 0, 0);
     }
     body.kb-open .fixed-footer {
-      will-change: transform;
-      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      top: var(--footer-vv-top, auto) !important;
+      bottom: auto !important;
+      transform: none !important;
+      will-change: top;
       transition: none !important;
+      z-index: 999999;
+      box-sizing: border-box;
     }
     body.arca-iab.kb-open .fixed-footer,
     html.arca-iab body.kb-open .fixed-footer {
+      top: auto !important;
+      bottom: 0 !important;
       transform: none !important;
       will-change: auto !important;
+      z-index: 100 !important;
     }
     #iabEditDock {
       position: fixed;
@@ -8140,8 +8150,8 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const initNormalMobileKeyboardFooter = (() => {
         let wired = false;
-        const state = { focused: false, last: -1, outTimer: 0, baseInnerH: 0, baseVb: 0 };
-        const pulses = [0, 80, 180, 350, 600, 900];
+        const state = { focused: false, open: false, top: null, outTimer: 0, baseInnerH: 0, baseVb: 0, portalOn: false, anchor: null, inputOn: false };
+        const pulses = [0, 50, 100, 180, 300, 500, 800, 1200, 1600];
         const isTextTarget = (t) => {
           try {
             if (!t) return false;
@@ -8155,19 +8165,20 @@ div.innerHTML = DOMPurify.sanitize(html, {
           const body = document.body;
           if (body && body.classList.contains('arca-iab')) return false;
           if (document.documentElement.classList.contains('arca-iab')) return false;
+          if (document.documentElement.classList.contains('iab-edit')) return false;
           const ua = String(navigator.userAgent || '');
           if (!/(Android|iPhone|iPad|iPod)/i.test(ua)) return false;
           if (/\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua)) return false;
           return true;
         };
-        const setOpen = (on) => {
-          try { document.body && document.body.classList.toggle('kb-open', !!on); } catch {}
+        const isDebug = () => {
+          try { if (/\bkbdebug=1\b/i.test(String(location.search || ''))) return true; } catch {}
+          try { return localStorage.getItem('kbdebug') === '1'; } catch {}
+          return false;
         };
-        const setOffset = (px) => {
-          const n = Math.max(0, Math.round(px || 0));
-          if (n === state.last) return;
-          state.last = n;
-          try { root.style.setProperty('--kb-offset', n + 'px'); } catch {}
+        const log = (obj) => {
+          if (!isDebug()) return;
+          try { console.log('[kb-vv]', obj); } catch {}
         };
         const getVb = () => {
           let vb = window.innerHeight || 0;
@@ -8177,72 +8188,123 @@ div.innerHTML = DOMPurify.sanitize(html, {
           } catch {}
           return Math.max(0, Math.round(vb || 0));
         };
-        const computeOffset = () => {
-          let off = 0;
-          try {
-            const vv = window.visualViewport;
-            if (vv && Number.isFinite(vv.height)) {
-              off = Math.max(0, (window.innerHeight - vv.height - (vv.offsetTop || 0)));
-            }
-          } catch {}
-          if (!Number.isFinite(off) || off < 0) off = 0;
-          return off;
+        const getVv = () => {
+          try { return window.visualViewport; } catch {}
+          return null;
         };
-        const computeOffsetWithFallback = () => {
-          let off = computeOffset();
+        const getFooterH = () => {
+          try { return Math.max(0, Math.round(footer.getBoundingClientRect().height || 0)); } catch {}
+          return 0;
+        };
+        const ensurePortal = (on) => {
+          if (!footer) return;
+          if (on) {
+            if (state.portalOn) return;
+            try {
+              const p = footer.parentNode;
+              if (p && p !== document.body) {
+                const a = document.createElement('span');
+                a.setAttribute('aria-hidden', 'true');
+                a.style.display = 'none';
+                try { p.insertBefore(a, footer); } catch {}
+                state.anchor = a;
+                document.body.appendChild(footer);
+                state.portalOn = true;
+              }
+            } catch {}
+            return;
+          }
+          if (!state.portalOn) return;
+          try {
+            if (state.anchor && state.anchor.parentNode) state.anchor.parentNode.insertBefore(footer, state.anchor);
+          } catch {}
+          try { if (state.anchor) state.anchor.remove(); } catch {}
+          state.anchor = null;
+          state.portalOn = false;
+        };
+        const setOpen = (on) => {
+          const next = !!on;
+          if (state.open === next) return;
+          state.open = next;
+          try { document.body && document.body.classList.toggle('kb-open', next); } catch {}
+          try { root.style.setProperty('--kb-offset', '0px'); } catch {}
+          if (!next) {
+            try { root.style.setProperty('--footer-vv-top', 'auto'); } catch {}
+            try { root.style.removeProperty('--footer-vv-top'); } catch {}
+            ensurePortal(false);
+          } else {
+            ensurePortal(true);
+          }
+        };
+        const setTop = (px) => {
+          const n = Math.max(0, Math.round(px || 0));
+          if (state.top === n) return;
+          state.top = n;
+          try { root.style.setProperty('--footer-vv-top', n + 'px'); } catch {}
+        };
+        const computeKeyboardOpen = () => {
           const vb = getVb();
           const innerH = Math.max(0, Math.round(window.innerHeight || 0));
           const baseInnerH = Math.max(0, Math.round(state.baseInnerH || innerH));
           const baseVb = Math.max(0, Math.round(state.baseVb || vb));
-          const keyboardLikelyOpen = (baseVb > 0 && vb > 0 && (baseVb - vb) > 40) || (baseInnerH > 0 && innerH > 0 && (baseInnerH - innerH) > 40);
-
-          if (state.focused && keyboardLikelyOpen && off <= 0) {
-            const safe = Math.max(280, Math.min(340, Math.round((baseInnerH || innerH || 0) * 0.33) || 320));
-            off = safe;
-            const cap = Math.max(0, (baseInnerH || innerH || 0) - 120);
-            if (cap > 0) off = Math.min(off, cap);
-          }
-          if (!Number.isFinite(off) || off < 0) off = 0;
-          return off;
+          const byVb = baseVb > 0 && vb > 0 ? (baseVb - vb) : 0;
+          const byInner = baseInnerH > 0 && innerH > 0 ? (baseInnerH - innerH) : 0;
+          return Math.max(byVb, byInner);
         };
-        const validateAndCorrect = (off) => {
-          if (!off || off <= 0) return off;
+        const computeTop = () => {
+          const margin = 12;
+          const fh = getFooterH();
+          const vv = getVv();
+          if (vv && Number.isFinite(vv.height)) {
+            const visibleBottom = (vv.offsetTop || 0) + vv.height;
+            return Math.max(0, Math.round(visibleBottom - fh - margin));
+          }
+          const innerH = Math.max(0, Math.round(window.innerHeight || 0));
+          const delta = computeKeyboardOpen();
+          const estKb = delta > 40 ? delta : 320;
+          return Math.max(0, Math.round(innerH - estKb - fh - margin));
+        };
+        const validateAndCorrect = (top) => {
           const margin = 12;
           let vb = 0;
           try {
-            const vv = window.visualViewport;
+            const vv = getVv();
             if (vv && Number.isFinite(vv.height)) vb = (vv.offsetTop || 0) + vv.height;
             else vb = window.innerHeight || 0;
           } catch { vb = window.innerHeight || 0; }
           vb = Math.max(0, vb);
           let bottom = 0;
           try { bottom = (footer.getBoundingClientRect().bottom || 0); } catch {}
-          if (!bottom || !vb) return off;
+          if (!bottom || !vb) return top;
           const overflow = bottom - (vb - margin);
-          if (overflow > 0) return off + overflow;
-          return off;
+          if (overflow > 0) return Math.max(0, Math.round(top - overflow - margin));
+          return top;
         };
-        const update = () => {
+        const update = (source = '') => {
           if (!wired) return;
           if (!isNormalMobile()) return;
           if (!state.focused) {
             setOpen(false);
-            setOffset(0);
             return;
           }
-          let off = computeOffsetWithFallback();
-          if (off <= 0) {
+
+          const kbDelta = computeKeyboardOpen();
+          const isKbOpen = kbDelta > 40;
+          if (!isKbOpen) {
             setOpen(false);
-            setOffset(0);
+            log({ source, open: false, kbDelta, innerH: window.innerHeight, vb: getVb() });
             return;
           }
+
           setOpen(true);
-          setOffset(off);
-          off = validateAndCorrect(off);
-          setOffset(off);
+          let top = computeTop();
+          setTop(top);
+          top = validateAndCorrect(top);
+          setTop(top);
+          log({ source, open: true, kbDelta, innerH: window.innerHeight, vb: getVb(), fh: getFooterH(), top });
         };
         const pulse = () => {
-          pulses.forEach((d) => setTimeout(update, d));
+          pulses.forEach((d) => setTimeout(() => update('pulse:' + d), d));
         };
         const onIn = (e) => {
           if (!isNormalMobile()) return;
@@ -8262,9 +8324,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
             state.focused = false;
             state.baseInnerH = 0;
             state.baseVb = 0;
-            setOffset(0);
             setOpen(false);
-          }, 120);
+          }, 150);
+        };
+        const onInput = () => {
+          if (!state.focused) return;
+          update('input');
         };
         const attach = () => {
           if (wired) return;
@@ -8272,12 +8337,13 @@ div.innerHTML = DOMPurify.sanitize(html, {
           document.addEventListener('focusin', onIn, true);
           document.addEventListener('focusout', onOut, true);
           if (window.visualViewport) {
-            try { window.visualViewport.addEventListener('resize', update, { passive: true }); } catch {}
-            try { window.visualViewport.addEventListener('scroll', update, { passive: true }); } catch {}
+            try { window.visualViewport.addEventListener('resize', () => update('vv:resize'), { passive: true }); } catch {}
+            try { window.visualViewport.addEventListener('scroll', () => update('vv:scroll'), { passive: true }); } catch {}
           }
-          window.addEventListener('resize', update, { passive: true });
-          window.addEventListener('orientationchange', () => setTimeout(update, 80), { passive: true });
-          update();
+          window.addEventListener('resize', () => update('win:resize'), { passive: true });
+          window.addEventListener('orientationchange', () => setTimeout(() => update('orientation'), 80), { passive: true });
+          document.addEventListener('input', onInput, true);
+          update('init');
         };
         return attach;
       })();
