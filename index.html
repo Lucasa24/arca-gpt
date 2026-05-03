@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"/>
   <title>﹏𓊝﹏ A Arca - Ritual de Travessia</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <style>
@@ -3228,6 +3228,62 @@
     .arca-mobile #footerResizeHandle { left: 0 !important; }
     .arca-mobile #chatSidebar { transform: translateX(-100%) !important; width: 80%; max-width: 260px; z-index: 998; }
     .arca-mobile #chatSidebar.open { transform: translateX(0) !important; }
+
+    html.arca-mobile:not(.arca-iab),
+    html.arca-mobile:not(.arca-iab) body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    html.arca-mobile:not(.arca-iab) body {
+      min-height: 100%;
+      display: block;
+      justify-content: initial;
+    }
+
+    html.arca-mobile:not(.arca-iab) #mainContent {
+      height: 100dvh;
+      max-height: 100dvh;
+      min-height: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) #response {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 12px;
+      max-width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) #footerResizeHandle {
+      position: relative;
+      left: 0 !important;
+      right: auto;
+      bottom: auto;
+      width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) .fixed-footer {
+      position: relative;
+      left: 0 !important;
+      right: auto;
+      bottom: auto;
+      width: 100% !important;
+      transition: none;
+      max-height: none;
+      max-width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) textarea#userInput {
+      max-height: 30vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     
     @media (max-width: 600px) {
       #mainContent {
@@ -4985,10 +5041,51 @@
       return parts.join('```');
     }
 
+    function isMobileShell() {
+      const root = document.documentElement;
+      return !!(root && root.classList && root.classList.contains('arca-mobile') && !root.classList.contains('arca-iab'));
+    }
+
+    function getChatScroller() {
+      if (!isMobileShell()) return null;
+      return document.getElementById('response');
+    }
+
+    function getScrollTopY() {
+      const scroller = getChatScroller();
+      if (scroller) return scroller.scrollTop || 0;
+      const doc = document.documentElement;
+      return window.scrollY || doc.scrollTop || 0;
+    }
+
+    function getScrollHeightY() {
+      const scroller = getChatScroller();
+      if (scroller) return scroller.scrollHeight || 0;
+      const doc = document.documentElement;
+      return Math.max(doc.scrollHeight || 0, document.body ? document.body.scrollHeight : 0);
+    }
+
+    function getViewportH() {
+      const scroller = getChatScroller();
+      if (scroller) return scroller.clientHeight || 0;
+      const doc = document.documentElement;
+      return window.innerHeight || doc.clientHeight || 0;
+    }
+
+    function scrollToY(y) {
+      const target = Math.max(0, Math.round(Number(y) || 0));
+      const scroller = getChatScroller();
+      if (scroller && typeof scroller.scrollTo === 'function') {
+        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        return;
+      }
+      try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
     function saveThreadViewport(threadId) {
       if (!threadId) return;
       try {
-        localStorage.setItem(`arcaView_${threadId}`, JSON.stringify({ y: Math.max(0, window.scrollY | 0), ts: Date.now() }));
+        localStorage.setItem(`arcaView_${threadId}`, JSON.stringify({ y: Math.max(0, getScrollTopY() | 0), ts: Date.now() }));
       } catch {}
       scheduleUserStateSave(threadId);
     }
@@ -5001,7 +5098,7 @@
       let tries = 0;
       const targetY = Math.max(0, data.y | 0);
       const attempt = () => {
-        window.scrollTo(0, targetY);
+        scrollToY(targetY);
         if (++tries < 6) setTimeout(attempt, 60);
       };
       attempt();
@@ -5015,15 +5112,16 @@
       const msgEls = Array.from(responseDiv.querySelectorAll('.msg'));
       if (!msgEls.length) return;
 
+      const rootRect = responseDiv.getBoundingClientRect();
       let idx = 0;
       for (let i = 0; i < msgEls.length; i++) {
         const r = msgEls[i].getBoundingClientRect();
-        if (r.bottom > 0) { idx = i; break; }
+        if (r.bottom > rootRect.top) { idx = i; break; }
         idx = i;
       }
 
       const r = msgEls[idx].getBoundingClientRect();
-      const offset = Math.max(0, Math.round(-r.top));
+      const offset = Math.max(0, Math.round(rootRect.top - r.top));
       try {
         localStorage.setItem(`arcaScroll_${threadId}`, JSON.stringify({ i: idx, o: offset, ts: Date.now() }));
       } catch {}
@@ -5045,6 +5143,14 @@
 
       const idx = Math.max(0, Math.min(msgEls.length - 1, data.i | 0));
       const el = msgEls[idx];
+      const scroller = getChatScroller();
+      if (scroller) {
+        const maxOff = Math.max(0, (el.offsetHeight || 0) - 8);
+        const off = Math.max(0, Math.min(maxOff, data.o | 0));
+        const target = Math.max(0, Math.round((el.offsetTop || 0) - off));
+        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        return;
+      }
       const docTop = el.getBoundingClientRect().top + window.scrollY;
       const maxOff = Math.max(0, (el.offsetHeight || 0) - 8);
       const off = Math.max(0, Math.min(maxOff, data.o | 0));
@@ -5073,10 +5179,9 @@
 
     function isNearBottom(thresholdPx) {
       const t = typeof thresholdPx === 'number' ? thresholdPx : 140;
-      const doc = document.documentElement;
-      const scrollTop = window.scrollY || doc.scrollTop || 0;
-      const viewport = window.innerHeight || doc.clientHeight || 0;
-      const height = Math.max(doc.scrollHeight || 0, document.body ? document.body.scrollHeight : 0);
+      const scrollTop = getScrollTopY();
+      const viewport = getViewportH();
+      const height = getScrollHeightY();
       return (scrollTop + viewport) >= (height - t);
     }
 
@@ -5085,6 +5190,12 @@
       if (!responseDiv || !responseDiv.children) return;
       const el = responseDiv.children[idx];
       if (!el) return;
+      const scroller = getChatScroller();
+      if (scroller) {
+        const target = Math.max(0, Math.round((el.offsetTop || 0) - 12));
+        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        return;
+      }
       const top = el.getBoundingClientRect().top + window.scrollY;
       const target = Math.max(0, Math.round(top - 12));
       try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
@@ -5097,7 +5208,11 @@
       const msgEl = responseDiv && responseDiv.children ? responseDiv.children[streamingMsgIndex] : null;
       streamingContentEl = msgEl ? msgEl.querySelector('.msg-content') : null;
       if (streamAutoFollow) {
-        try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        const scroller = getChatScroller();
+        if (scroller) scroller.scrollTop = scroller.scrollHeight || 0;
+        else {
+          try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        }
       }
     }
 
@@ -5183,7 +5298,11 @@
         }
       });
       if (streamAutoFollow) {
-        try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        const scroller = getChatScroller();
+        if (scroller) scroller.scrollTop = scroller.scrollHeight || 0;
+        else {
+          try { window.scrollTo(0, document.documentElement.scrollHeight || document.body.scrollHeight); } catch {}
+        }
       }
     }
 
@@ -5963,7 +6082,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
         responseDiv.appendChild(div);
       });
 
-      responseDiv.scrollTop = responseDiv.scrollHeight;
+      if (!isMobileShell()) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      } else if (streamAutoFollow) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      }
     }
 
     function renderMessagesWithLiveMarkdown(isStreaming = false) {
@@ -6048,7 +6171,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
         responseDiv.appendChild(div);
       });
 
-      responseDiv.scrollTop = responseDiv.scrollHeight;
+      if (!isMobileShell()) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      } else if (isStreaming || streamAutoFollow) {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      }
     }
 
     function saveToHistory(userInput, threadId) {
@@ -6764,7 +6891,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       loadSidebar();
 
-      window.addEventListener('scroll', () => {
+      const scrollHandler = () => {
         const tid = localStorage.getItem('threadId');
         if (!tid) return;
         if (currentStreamController) {
@@ -6775,7 +6902,21 @@ div.innerHTML = DOMPurify.sanitize(html, {
           saveThreadViewport(tid);
           saveScrollPositionForThread(tid);
         }, 120);
-      }, { passive: true });
+      };
+
+      const bindChatScroll = () => {
+        const target = isMobileShell() ? document.getElementById('response') : window;
+        if (!target) return;
+        if (window.__arcaChatScrollTarget && window.__arcaChatScrollHandler) {
+          try { window.__arcaChatScrollTarget.removeEventListener('scroll', window.__arcaChatScrollHandler); } catch {}
+        }
+        window.__arcaChatScrollTarget = target;
+        window.__arcaChatScrollHandler = scrollHandler;
+        try { target.addEventListener('scroll', scrollHandler, { passive: true }); } catch { try { target.addEventListener('scroll', scrollHandler); } catch {} }
+      };
+
+      bindChatScroll();
+      window.addEventListener('resize', bindChatScroll, { passive: true });
       
       // 🔄 CARREGAR MENSAGENS DA SESSÃO ATUAL
       const currentThreadId = localStorage.getItem("threadId");
