@@ -1392,32 +1392,22 @@
       will-change: bottom;
       bottom: var(--kb-offset, 0px);
     }
-    .arca-ig.arca-mobile .fixed-footer {
+    #iabEditDock {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      z-index: 20000;
+      display: none;
+    }
+    .arca-iab.iab-edit #iabEditDock {
+      display: block;
+    }
+    .arca-iab.iab-edit #iabEditDock .textarea-container {
+      box-shadow: 0 20px 50px rgba(0,0,0,0.72);
+    }
+    .arca-iab.iab-edit.arca-mobile .fixed-footer {
       bottom: 0 !important;
-      will-change: transform;
-      transform: translate3d(0, calc(-1 * var(--kb-offset, 0px)), 0);
-    }
-    .arca-ig.ig-scrollfix.arca-mobile .fixed-footer {
-      transform: none !important;
-      will-change: top;
-    }
-    .arca-ig.kb-flow.arca-mobile .fixed-footer {
-      position: static !important;
-      left: 0 !important;
-      right: 0 !important;
-      width: 100% !important;
-      bottom: auto !important;
-      top: auto !important;
-      transform: none !important;
-      will-change: auto !important;
-      max-height: none !important;
-      overflow: visible !important;
-    }
-    .arca-ig.kb-flow.arca-mobile #mainContent {
-      padding-bottom: 16px !important;
-    }
-    .arca-ig.kb-flow.arca-mobile #footerResizeHandle {
-      display: none !important;
     }
     .arca-mobile #footerResizeBar {
       display: block;
@@ -8091,184 +8081,67 @@ div.innerHTML = DOMPurify.sanitize(html, {
       footer.addEventListener('pointerup', endDrag);
       footer.addEventListener('pointercancel', endDrag);
 
-      const isInstagramNow = () => {
-        try { return isMobileNow() && document.documentElement.classList.contains('arca-ig'); } catch {}
+      const isIabNow = () => {
+        try { return isMobileNow() && document.documentElement.classList.contains('arca-iab'); } catch {}
         return false;
       };
 
-      const kbFlowFix = { on: false, mainPad: null };
-      const setKbFlowFix = (on) => {
-        const next = !!on;
-        if (!isInstagramNow()) on = false;
-        if (kbFlowFix.on === next) return;
-        kbFlowFix.on = next;
-        const main = document.getElementById('mainContent');
-        if (next) {
-          try { setIgScrollFix(false); } catch {}
-          try { document.documentElement.classList.add('kb-flow'); } catch {}
-          try {
-            if (main) {
-              kbFlowFix.mainPad = main.style.paddingBottom || null;
-              main.style.paddingBottom = '16px';
-            }
-          } catch {}
-          [0, 60, 160, 260, 420].forEach((d) => setTimeout(() => {
-            try { inputEl && inputEl.scrollIntoView && inputEl.scrollIntoView({ block: 'end' }); } catch {}
-            try { window.scrollTo(0, document.body.scrollHeight); } catch {}
-          }, d));
-          return;
+      const iabEdit = { active: false, ts: 0, dock: null, moved: null, placeholder: null };
+      const ensureIabDock = () => {
+        let dock = document.getElementById('iabEditDock');
+        if (dock) return dock;
+        dock = document.createElement('div');
+        dock.id = 'iabEditDock';
+        document.body.appendChild(dock);
+        return dock;
+      };
+      const enterIabEditMode = () => {
+        if (!isIabNow() || !inputEl || iabEdit.active) return;
+        let moved = null;
+        try { moved = inputEl.closest && inputEl.closest('.textarea-container'); } catch {}
+        if (!moved || !moved.parentNode) return;
+
+        const ph = document.createElement('div');
+        ph.style.flex = '1';
+        ph.style.minWidth = '0';
+        try { ph.style.minHeight = Math.max(0, Math.round(moved.getBoundingClientRect().height || 0)) + 'px'; } catch {}
+        ph.setAttribute('aria-hidden', 'true');
+
+        try { moved.parentNode.insertBefore(ph, moved); } catch { return; }
+
+        const dock = ensureIabDock();
+        try { dock.appendChild(moved); } catch { try { ph.remove(); } catch {} return; }
+        try { document.documentElement.classList.add('iab-edit'); } catch {}
+
+        iabEdit.active = true;
+        iabEdit.ts = Date.now ? Date.now() : +new Date();
+        iabEdit.dock = dock;
+        iabEdit.moved = moved;
+        iabEdit.placeholder = ph;
+
+        setTimeout(() => {
+          try { inputEl.focus({ preventScroll: true }); } catch { try { inputEl.focus(); } catch {} }
+        }, 0);
+      };
+      const exitIabEditMode = () => {
+        if (!iabEdit.active) return;
+        try { document.documentElement.classList.remove('iab-edit'); } catch {}
+
+        const moved = iabEdit.moved;
+        const ph = iabEdit.placeholder;
+        try {
+          if (ph && ph.parentNode && moved) ph.parentNode.replaceChild(moved, ph);
+        } catch {
+          try { if (moved && footer) footer.querySelector('.input-group').prepend(moved); } catch {}
+          try { if (ph) ph.remove(); } catch {}
         }
-        try { document.documentElement.classList.remove('kb-flow'); } catch {}
-        try {
-          if (main) {
-            if (kbFlowFix.mainPad == null) main.style.removeProperty('padding-bottom');
-            else main.style.paddingBottom = kbFlowFix.mainPad;
-          }
-        } catch {}
-        kbFlowFix.mainPad = null;
-      };
+        try { if (iabEdit.dock) iabEdit.dock.textContent = ''; } catch {}
 
-      const igScrollFix = { on: false, raf: 0, until: 0, prev: null };
-      const setIgScrollFix = (on) => {
-        if (!isInstagramNow()) on = false;
-        const next = !!on;
-        if (igScrollFix.on === next) return;
-        igScrollFix.on = next;
-        try { if (igScrollFix.raf) cancelAnimationFrame(igScrollFix.raf); } catch {}
-        igScrollFix.raf = 0;
-        igScrollFix.until = 0;
-
-        if (!next) {
-          try { document.documentElement.classList.remove('ig-scrollfix'); } catch {}
-          try {
-            footer.style.removeProperty('position');
-            footer.style.removeProperty('top');
-            footer.style.removeProperty('bottom');
-            footer.style.removeProperty('left');
-            footer.style.removeProperty('right');
-            footer.style.removeProperty('width');
-            footer.style.removeProperty('transform');
-            footer.style.removeProperty('will-change');
-          } catch {}
-          return;
-        }
-
-        try { document.documentElement.classList.add('ig-scrollfix'); } catch {}
-        try {
-          footer.style.position = 'absolute';
-          footer.style.bottom = 'auto';
-          footer.style.left = '0';
-          footer.style.right = '0';
-          footer.style.width = '100%';
-          footer.style.transform = 'none';
-          footer.style.willChange = 'top';
-        } catch {}
-
-        const main = document.getElementById('mainContent') || (footer && footer.parentElement) || null;
-        const getMainTop = () => {
-          if (!main) return 0;
-          try { return (main.getBoundingClientRect().top || 0) + (window.scrollY || 0); } catch {}
-          return 0;
-        };
-        const getScrollY = () => {
-          try { return Number(window.scrollY || 0); } catch {}
-          try { return Number(document.documentElement && document.documentElement.scrollTop || 0); } catch {}
-          try { return Number(document.body && document.body.scrollTop || 0); } catch {}
-          return 0;
-        };
-        const getVisibleBottom = () => {
-          let vb = getScrollY() + (window.innerHeight || 0);
-          try {
-            const vv = window.visualViewport;
-            if (vv && Number.isFinite(vv.height)) vb = getScrollY() + (vv.offsetTop || 0) + vv.height;
-          } catch {}
-          return vb;
-        };
-        const update = () => {
-          if (!igScrollFix.on) return;
-          let fh = 0;
-          try { fh = Math.max(0, footer.getBoundingClientRect().height || 0); } catch {}
-          if (!fh) {
-            try { fh = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110; } catch {}
-          }
-          const topAbs = Math.max(0, Math.round(getVisibleBottom() - fh));
-          const topRel = Math.max(0, Math.round(topAbs - getMainTop()));
-          try { footer.style.top = topRel + 'px'; } catch {}
-        };
-        const loop = () => {
-          if (!igScrollFix.on) return;
-          update();
-          if ((Date.now ? Date.now() : +new Date()) < igScrollFix.until) {
-            igScrollFix.raf = requestAnimationFrame(loop);
-          } else {
-            igScrollFix.raf = 0;
-          }
-        };
-
-        update();
-        igScrollFix.until = (Date.now ? Date.now() : +new Date()) + 1200;
-        igScrollFix.raf = requestAnimationFrame(loop);
-      };
-
-      const updateBaseLayoutH = () => {
-        try {
-          if (!isMobileNow()) return;
-          const prev = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
-          let base = Math.max(prev, Math.max(0, Number(window.innerHeight || 0)));
-          try { base = Math.max(base, Number(document.documentElement && document.documentElement.clientHeight || 0)); } catch {}
-          try {
-            const vv = window.visualViewport;
-            if (vv && Number.isFinite(vv.height)) base = Math.max(base, (vv.offsetTop || 0) + vv.height);
-          } catch {}
-          if (base > 0) window.__arcaBaseLayoutH = base;
-        } catch {}
-      };
-
-      const computeKeyboardOffset = () => {
-        let offset = 0;
-        updateBaseLayoutH();
-        const base = Math.max(0, Number(window.__arcaBaseLayoutH || 0));
-
-        try {
-          const vk = navigator && navigator.virtualKeyboard;
-          const rect = vk && vk.boundingRect;
-          if (rect && Number.isFinite(rect.height) && rect.height > 0) {
-            const ih = Number(window.innerHeight || 0);
-            const by = Number(rect.y || 0);
-            offset = Math.max(0, Math.round(Math.max(rect.height, ih ? (ih - by) : rect.height)));
-            return offset;
-          }
-        } catch {}
-
-        try {
-          const ih = Number(window.innerHeight || 0);
-          if (base > 0 && ih > 0 && (base - ih) > 40) {
-            offset = Math.max(0, base - ih);
-            return offset;
-          }
-        } catch {}
-
-        try {
-          const vv = window.visualViewport;
-          if (vv && Number.isFinite(vv.height)) {
-            const visibleBottom = (vv.offsetTop || 0) + vv.height;
-            if (base > 0) offset = Math.max(0, base - visibleBottom);
-            if (offset <= 0) offset = Math.max(0, (window.innerHeight || 0) - visibleBottom);
-          }
-        } catch {}
-
-        if (!Number.isFinite(offset) || offset < 0) offset = 0;
-        if (offset > 0) return offset;
-
-        try {
-          const ih = Number(window.innerHeight || 0);
-          const ch = Number(document.documentElement && document.documentElement.clientHeight || 0);
-          const visible = Math.min(ih || 0, ch || ih || 0);
-          if (base > 0 && visible > 0 && (base - visible) > 40) offset = Math.max(0, base - visible);
-        } catch {}
-
-        if (!Number.isFinite(offset) || offset < 0) offset = 0;
-        return offset;
+        iabEdit.active = false;
+        iabEdit.ts = 0;
+        iabEdit.dock = null;
+        iabEdit.moved = null;
+        iabEdit.placeholder = null;
       };
 
       const updateBaseInnerH = () => {
@@ -8300,17 +8173,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
           root.style.removeProperty('--kb-offset');
           return;
         }
-        if (!isInstagramNow()) {
-          updateBaseInnerH();
-          const offset = computeKeyboardOffsetDefault();
-          root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
-          return;
-        }
-        if (kbFlowFix.on || igScrollFix.on) {
+        if (isIabNow() || iabEdit.active) {
           root.style.setProperty('--kb-offset', '0px');
           return;
         }
-        const offset = computeKeyboardOffset();
+        updateBaseInnerH();
+        const offset = computeKeyboardOffsetDefault();
         root.style.setProperty('--kb-offset', Math.round(offset) + 'px');
       };
       const kickIntoView = () => {
@@ -8322,24 +8190,12 @@ div.innerHTML = DOMPurify.sanitize(html, {
       };
       if (inputEl) {
         inputEl.addEventListener('focus', () => {
-          updateBaseLayoutH();
-          if (isInstagramNow()) setKbFlowFix(true);
+          if (isIabNow()) enterIabEditMode();
           kickIntoView();
-          const maybeEnableFlow = () => {
-            if (!isMobileNow()) return;
-            if (kbFlowFix.on) return;
-            let off = 0;
-            try { off = parseInt(getComputedStyle(root).getPropertyValue('--kb-offset'), 10) || 0; } catch {}
-            if (off <= 0 && isInstagramNow()) setKbFlowFix(true);
-          };
-          setTimeout(maybeEnableFlow, 420);
-          setTimeout(maybeEnableFlow, 720);
         });
         inputEl.addEventListener('blur', () => setTimeout(() => {
-          updateBaseLayoutH();
           updateBaseInnerH();
-          setIgScrollFix(false);
-          setKbFlowFix(false);
+          if (isIabNow()) exitIabEditMode();
           applyKeyboardOffset();
         }, 120));
       }
@@ -8360,19 +8216,31 @@ div.innerHTML = DOMPurify.sanitize(html, {
         inputWrap.addEventListener('click', () => tryFocus(), { passive: true });
       }
 
+      document.addEventListener('pointerdown', (e) => {
+        if (!iabEdit.active) return;
+        try {
+          if (iabEdit.dock && iabEdit.dock.contains(e.target)) return;
+          if (inputEl && (e.target === inputEl || (e.target && e.target.closest && e.target.closest('#iabEditDock')))) return;
+        } catch {}
+        exitIabEditMode();
+      }, { passive: true });
+
+      try {
+        const invBtn = footer.querySelector('.invocar-btn');
+        if (invBtn) {
+          invBtn.addEventListener('pointerdown', () => {
+            if (!iabEdit.active) return;
+            exitIabEditMode();
+          }, { capture: true, passive: true });
+        }
+      } catch {}
+
       const normalize = () => {
         try {
           const h = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110;
           setFooterHeightPx(h, false);
         } catch {}
-        updateBaseLayoutH();
         updateBaseInnerH();
-        try {
-          if (igScrollFix.on) {
-            setIgScrollFix(false);
-            setIgScrollFix(true);
-          }
-        } catch {}
         try { applyKeyboardOffset(); } catch {}
       };
 
@@ -8390,7 +8258,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
           try { vk.addEventListener('geometrychange', normalize, { passive: true }); } catch {}
         }
       } catch {}
-      updateBaseLayoutH();
+      updateBaseInnerH();
       try { applyKeyboardOffset(); } catch {}
     }
     async function arcaImage(prompt, size) {
