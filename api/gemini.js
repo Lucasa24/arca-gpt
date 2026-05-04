@@ -218,7 +218,7 @@ function extrairTextoStream(data) {
     .join("");
 }
 
-async function chamarModeloStream({ model, prompt, contents, systemInstruction, onChunk }) {
+async function chamarModeloStream({ model, prompt, contents, systemInstruction, onChunk, timeoutMs }) {
   if (!GEMINI_API_KEY) {
     return { ok: false, tipo: "servico_indisponivel" };
   }
@@ -233,10 +233,13 @@ async function chamarModeloStream({ model, prompt, contents, systemInstruction, 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(String(model || ""))}:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_API_KEY)}`;
 
   try {
+    const ac = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const t = ac ? setTimeout(() => ac.abort(), Math.max(1000, Number(timeoutMs) || 55000)) : null;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: ac ? ac.signal : undefined
     });
 
     if (!res.ok) return { ...tratarErro(res.status), status: res.status };
@@ -316,6 +319,8 @@ async function chamarModeloStream({ model, prompt, contents, systemInstruction, 
     };
   } catch {
     return { ok: false, tipo: "erro_rede" };
+  } finally {
+    try { if (typeof t !== "undefined" && t) clearTimeout(t); } catch {}
   }
 }
 
@@ -388,43 +393,42 @@ async function gerarMensagemGeminiStream(prompt, options = {}) {
     return { ...cached.data, cache: true };
   }
 
-  const tipo = classificarPrompt(prompt);
   const modelos = await obterModelos();
-  const modelosOrdenados = selecionarModelosPorTipo(tipo, modelos);
+  const estaveis = Array.isArray(modelos && modelos.estaveis) ? modelos.estaveis : [];
+  const primary = String(process.env.GEMINI_STABLE_MODEL || estaveis[0] || "gemini-1.5-flash");
+  const fallback = String(process.env.GEMINI_STABLE_FALLBACK_MODEL || estaveis.find((m) => String(m).includes("pro")) || "gemini-1.5-pro");
 
-  for (const model of modelosOrdenados.estaveis) {
-    const r = await chamarModeloStream({
-      model,
+  const r1 = await chamarModeloStream({
+    model: primary,
+    prompt,
+    contents: options.contents,
+    systemInstruction: options.systemInstruction,
+    onChunk: options.onChunk,
+    timeoutMs: options.timeoutMs
+  });
+
+  if (r1.ok) {
+    if (cacheKey) CACHE.set(cacheKey, { data: r1, time: Date.now() });
+    return r1;
+  }
+
+  if (r1.tipo === "modelo_indisponivel" && fallback && fallback !== primary) {
+    const r2 = await chamarModeloStream({
+      model: fallback,
       prompt,
       contents: options.contents,
       systemInstruction: options.systemInstruction,
-      onChunk: options.onChunk
+      onChunk: options.onChunk,
+      timeoutMs: options.timeoutMs
     });
-
-    if (r.ok) {
-      if (cacheKey) CACHE.set(cacheKey, { data: r, time: Date.now() });
-      return r;
+    if (r2.ok) {
+      if (cacheKey) CACHE.set(cacheKey, { data: r2, time: Date.now() });
+      return r2;
     }
-
-    if (!deveContinuarFallback(r.tipo)) return r;
+    return r2;
   }
 
-  for (const model of modelosOrdenados.preview) {
-    const r = await chamarModeloStream({
-      model,
-      prompt,
-      contents: options.contents,
-      systemInstruction: options.systemInstruction,
-      onChunk: options.onChunk
-    });
-
-    if (r.ok) {
-      if (cacheKey) CACHE.set(cacheKey, { data: r, time: Date.now() });
-      return r;
-    }
-  }
-
-  return { ok: false, tipo: "todos_fallbacks_falharam" };
+  return r1;
 }
 
 module.exports = {
