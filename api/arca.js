@@ -17,6 +17,13 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 async function handler(req, res) {
+  let keepalive = null;
+  const stopKeepalive = () => {
+    if (!keepalive) return;
+    try { clearInterval(keepalive); } catch {}
+    keepalive = null;
+  };
+
   try {
     const t0 = Date.now();
     console.log('[ARCA] threadId=%s persona=%s', req.body?.threadId, process.env.ARCA_PERSONA || '(unset)');
@@ -31,7 +38,7 @@ async function handler(req, res) {
     const threadId = req.body?.threadId;
     const userId = req.body?.userId; // ID do usuário logado (email ou uuid)
     const api_key = process.env.OPENAI_API_KEY;
-    console.log(`[ARCA][DEBUG] userInput: "${userInput}" (length: ${userInput?.length || 0})`);
+    console.log('[ARCA][DEBUG] userInput_len=%d', userInput?.length || 0);
 
     if (!userInput || !userInput.trim()) {
       res.statusCode = 400;
@@ -63,7 +70,11 @@ async function handler(req, res) {
     console.log('[ARCA][TTFT] sse_open_ms=%d', Date.now() - t0);
 
     // (opcional) ping keepalive
-    const keepalive = setInterval(() => res.write(`: ping\n\n`), 15000);
+    keepalive = setInterval(() => {
+      try { res.write(`: ping\n\n`); } catch {}
+    }, 15000);
+    res.on('close', stopKeepalive);
+    res.on('error', stopKeepalive);
 
     await addMessageToThread(threadId, "user", userInput, userId, req.headers['authorization']);
     const messages = await getThreadMessages(threadId, req.headers['authorization']);
@@ -103,6 +114,9 @@ async function handler(req, res) {
     const nonSys = messages.filter(m => m.role !== 'system');
 
     if (modelMode === 'gemini') {
+      const tGemini = Date.now();
+      let ttftLoggedGemini = false;
+      let presenceTimer = null;
       const systemText = sys
         .map((m) => (m && typeof m.content === "string" ? m.content : ""))
         .filter(Boolean)
@@ -124,6 +138,11 @@ async function handler(req, res) {
         const opening = pickOpening(null);
         res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
         assistantResponse += `_${opening}_\n\n`;
+      } else if (gerarComCreditosStream) {
+        presenceTimer = setTimeout(() => {
+          if (ttftLoggedGemini) return;
+          try { res.write(`data: ${JSON.stringify({ content: "…" })}\n\n`); } catch {}
+        }, 450);
       }
 
       const creditResult = gerarComCreditosStream
@@ -139,6 +158,14 @@ async function handler(req, res) {
           onChunk: (chunk) => {
             const out = String(chunk || "");
             if (!out) return;
+            if (!ttftLoggedGemini) {
+              ttftLoggedGemini = true;
+              if (presenceTimer) {
+                try { clearTimeout(presenceTimer); } catch {}
+                presenceTimer = null;
+              }
+              console.log('[ARCA][GEMINI][TTFT] first_chunk_ms=%d', Date.now() - tGemini);
+            }
             assistantResponse += out;
             res.write(`data: ${JSON.stringify({ content: out })}\n\n`);
           }
@@ -163,6 +190,10 @@ async function handler(req, res) {
       }
 
       if (!creditResult.ok) {
+        if (presenceTimer) {
+          try { clearTimeout(presenceTimer); } catch {}
+          presenceTimer = null;
+        }
         const tipo = creditResult.tipo;
         const msg =
           tipo === "sem_credito"
@@ -175,7 +206,7 @@ async function handler(req, res) {
 
         res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
         res.write(`data: [DONE]\n\n`);
-        clearInterval(keepalive);
+        stopKeepalive();
         return res.end();
       }
 
@@ -186,15 +217,16 @@ async function handler(req, res) {
       }
 
       await addMessageToThread(threadId, "assistant", assistantResponse, userId, req.headers['authorization']);
+      console.log('[ARCA][GEMINI] done_ms=%d model=%s cache=%s', Date.now() - tGemini, creditResult && creditResult.modelo ? creditResult.modelo : '', creditResult && typeof creditResult.cache === 'boolean' ? String(creditResult.cache) : '');
       res.write(`data: [DONE]\n\n`);
-      clearInterval(keepalive);
+      stopKeepalive();
       return res.end();
     }
 
     if (!api_key) {
       res.write(`data: ${JSON.stringify({ content: "⚠️ OPENAI_API_KEY ausente" })}\n\n`);
       res.write(`data: [DONE]\n\n`);
-      clearInterval(keepalive);
+      stopKeepalive();
       return res.end();
     }
 
@@ -287,6 +319,7 @@ async function handler(req, res) {
       console.error("[ARCA] ERRO FATAL no fetch inicial:", err);
       res.write(`data: ${JSON.stringify({ content: `⚠️ Erro de Conexão: ${err.message}` })}\n\n`);
       res.write(`data: [DONE]\n\n`);
+      stopKeepalive();
       return res.end();
     }
     console.log('[ARCA][TTFT] openai_headers_ms=%d', Date.now() - tOpenAI);
@@ -335,12 +368,13 @@ async function handler(req, res) {
         console.error("[ARCA] ERRO FATAL no fetch de Fallback:", err2);
         res.write(`data: ${JSON.stringify({ content: `⚠️ Erro de Conexão no Fallback: ${err2.message}` })}\n\n`);
         res.write(`data: [DONE]\n\n`);
+        stopKeepalive();
         return res.end();
       }
     }
 
     if (!finalRes.ok) {
-      clearInterval(keepalive);
+      stopKeepalive();
       res.statusCode = finalRes.status;
       res.write(`data: ${JSON.stringify({ content: `⚠️ OpenAI Error: ${finalRes.status} ${finalRes.statusText}` })}\n\n`);
       res.write(`data: [DONE]\n\n`);
@@ -382,7 +416,7 @@ async function handler(req, res) {
           await addMessageToThread(threadId, "assistant", assistantResponse, userId, req.headers['authorization']);
           
           res.write(`data: [DONE]\n\n`);
-          clearInterval(keepalive);
+          stopKeepalive();
           return res.end();
         }
         try {
@@ -411,7 +445,6 @@ async function handler(req, res) {
               const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
               
               if (currentPersona !== "tecnico") {
-                const { pickOpening } = require('../lib/memory.js');
                 // Simula uma abertura aleatória para a primeira chunk
                 const opening = pickOpening(null);
                 res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
@@ -434,7 +467,6 @@ async function handler(req, res) {
     const closingPersona = closingThreadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
     
     if (closingPersona !== "tecnico") {
-        const { generateClosing } = require('../lib/memory.js');
         const closing = `\n\n${generateClosing()}`;
         
         // Envia fechamento para o cliente
@@ -450,11 +482,12 @@ async function handler(req, res) {
         console.log(`[ARCA] Resposta salva na thread ${threadId} (len: ${assistantResponse.length})`);
     }
 
-    clearInterval(keepalive);
+    stopKeepalive();
     res.write(`data: [DONE]\n\n`);
     res.end();
 
   } catch (err) {
+    stopKeepalive();
     try {
       res.write(`data: ${JSON.stringify({ content: `⚠️ A Arca silenciou: ${err.message}` })}\n\n`);
       res.write(`data: [DONE]\n\n`);
