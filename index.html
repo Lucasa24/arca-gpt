@@ -423,8 +423,8 @@
     #toggleSidebar {
       display: block;
       position: fixed;
-      top: 6px;
-      left: 14px;
+      top: 22px;
+      left: 10px;
       z-index: 999;
       width: 9px;
       height: 9px;
@@ -460,8 +460,8 @@
     }
     @media (max-width: 768px) {
       #toggleSidebar {
-        top: 6px;
-        left: 18px;
+        top: 18px;
+        left: 10px;
       }
       #toggleSidebar:active {
         transform: scale(0.92);
@@ -8121,18 +8121,25 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const footerHandle = document.getElementById('footerResizeHandle');
       if (!sidebar || !footer || !sidebarHandle || !footerHandle) return;
 
+      const isMobileNow = () => window.innerWidth <= 768;
+
       try {
         const savedW = localStorage.getItem('arcaSidebarWidth');
         if (savedW) root.style.setProperty('--sidebar-width', savedW);
       } catch {}
       try {
-        const savedH = localStorage.getItem('arcaFooterHeight');
+        const key = isMobileNow() ? 'arcaFooterHeightMobile' : 'arcaFooterHeightDesktop';
+        const savedH = localStorage.getItem(key);
         if (savedH) root.style.setProperty('--footer-height', savedH);
+        if (!savedH && !isMobileNow()) {
+          const legacy = localStorage.getItem('arcaFooterHeight');
+          if (legacy) root.style.setProperty('--footer-height', legacy);
+        }
       } catch {}
 
       const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-      const maxFooter = () => Math.round(window.innerHeight * 0.70);
-      const minFooter = () => (window.innerWidth <= 768 ? 78 : 90);
+      const maxFooter = () => Math.round(window.innerHeight * (isMobileNow() ? 0.52 : 0.70));
+      const minFooter = () => (isMobileNow() ? 72 : 90);
 
       const setSidebarWidthPx = (w) => {
         const px = clamp(Math.round(w), 180, 420) + 'px';
@@ -8143,9 +8150,18 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const setFooterHeightPx = (h) => {
         const px = clamp(Math.round(h), minFooter(), maxFooter()) + 'px';
         root.style.setProperty('--footer-height', px);
-        try { localStorage.setItem('arcaFooterHeight', px); } catch {}
+        try {
+          const key = isMobileNow() ? 'arcaFooterHeightMobile' : 'arcaFooterHeightDesktop';
+          localStorage.setItem(key, px);
+          if (!isMobileNow()) localStorage.setItem('arcaFooterHeight', px);
+        } catch {}
         try { positionVoiceBar(); } catch {}
       };
+
+      try {
+        const current = parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10);
+        if (!Number.isNaN(current)) setFooterHeightPx(current);
+      } catch {}
 
       try {
         const ro = new ResizeObserver(() => {
@@ -8176,9 +8192,11 @@ div.innerHTML = DOMPurify.sanitize(html, {
       });
 
       footerHandle.addEventListener('pointerdown', (e) => {
-        if (window.innerWidth <= 768) return;
         try { footerHandle.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
+
+        const prevUserSelect = document.body.style.userSelect;
+        document.body.style.userSelect = 'none';
 
         const onMove = (ev) => {
           setFooterHeightPx(window.innerHeight - ev.clientY);
@@ -8188,14 +8206,52 @@ div.innerHTML = DOMPurify.sanitize(html, {
           footerHandle.removeEventListener('pointermove', onMove);
           footerHandle.removeEventListener('pointerup', onUp);
           footerHandle.removeEventListener('pointercancel', onUp);
+          document.body.style.userSelect = prevUserSelect;
         };
         footerHandle.addEventListener('pointermove', onMove);
         footerHandle.addEventListener('pointerup', onUp);
         footerHandle.addEventListener('pointercancel', onUp);
       });
 
+      footer.addEventListener('pointerdown', (e) => {
+        if (!e || e.button === 2) return;
+        const target = e.target;
+        if (target && typeof target.closest === 'function') {
+          const block = target.closest('textarea,button,input,select,option,label,a,summary,[role="button"],[role="menuitem"],.mode-buttons-container,.input-group,.textarea-container,.corner-menu,.corner-menu-panel');
+          if (block) return;
+        }
+
+        const rect = footer.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        if (y < 0) return;
+
+        try { footer.setPointerCapture(e.pointerId); } catch {}
+        e.preventDefault();
+
+        const prevUserSelect = document.body.style.userSelect;
+        document.body.style.userSelect = 'none';
+
+        const startH = rect.height;
+        const startY = e.clientY;
+
+        const onMove = (ev) => {
+          const dy = startY - ev.clientY;
+          setFooterHeightPx(startH + dy);
+        };
+        const onUp = (ev) => {
+          try { footer.releasePointerCapture(ev.pointerId); } catch {}
+          footer.removeEventListener('pointermove', onMove);
+          footer.removeEventListener('pointerup', onUp);
+          footer.removeEventListener('pointercancel', onUp);
+          document.body.style.userSelect = prevUserSelect;
+        };
+        footer.addEventListener('pointermove', onMove);
+        footer.addEventListener('pointerup', onUp);
+        footer.addEventListener('pointercancel', onUp);
+      });
+
       window.addEventListener('resize', () => {
-        try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 110); } catch {}
+        try { setFooterHeightPx(parseInt(getComputedStyle(root).getPropertyValue('--footer-height'), 10) || 90); } catch {}
       }, { passive: true });
     }
     async function arcaImage(prompt, size) {
