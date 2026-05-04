@@ -114,6 +114,9 @@ async function handler(req, res) {
     const nonSys = messages.filter(m => m.role !== 'system');
 
     if (modelMode === 'gemini') {
+      const tGemini = Date.now();
+      let ttftLoggedGemini = false;
+      let presenceTimer = null;
       const systemText = sys
         .map((m) => (m && typeof m.content === "string" ? m.content : ""))
         .filter(Boolean)
@@ -135,6 +138,11 @@ async function handler(req, res) {
         const opening = pickOpening(null);
         res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
         assistantResponse += `_${opening}_\n\n`;
+      } else if (gerarComCreditosStream) {
+        presenceTimer = setTimeout(() => {
+          if (ttftLoggedGemini) return;
+          try { res.write(`data: ${JSON.stringify({ content: "…" })}\n\n`); } catch {}
+        }, 450);
       }
 
       const creditResult = gerarComCreditosStream
@@ -150,6 +158,14 @@ async function handler(req, res) {
           onChunk: (chunk) => {
             const out = String(chunk || "");
             if (!out) return;
+            if (!ttftLoggedGemini) {
+              ttftLoggedGemini = true;
+              if (presenceTimer) {
+                try { clearTimeout(presenceTimer); } catch {}
+                presenceTimer = null;
+              }
+              console.log('[ARCA][GEMINI][TTFT] first_chunk_ms=%d', Date.now() - tGemini);
+            }
             assistantResponse += out;
             res.write(`data: ${JSON.stringify({ content: out })}\n\n`);
           }
@@ -174,6 +190,10 @@ async function handler(req, res) {
       }
 
       if (!creditResult.ok) {
+        if (presenceTimer) {
+          try { clearTimeout(presenceTimer); } catch {}
+          presenceTimer = null;
+        }
         const tipo = creditResult.tipo;
         const msg =
           tipo === "sem_credito"
@@ -197,6 +217,7 @@ async function handler(req, res) {
       }
 
       await addMessageToThread(threadId, "assistant", assistantResponse, userId, req.headers['authorization']);
+      console.log('[ARCA][GEMINI] done_ms=%d model=%s cache=%s', Date.now() - tGemini, creditResult && creditResult.modelo ? creditResult.modelo : '', creditResult && typeof creditResult.cache === 'boolean' ? String(creditResult.cache) : '');
       res.write(`data: [DONE]\n\n`);
       stopKeepalive();
       return res.end();
