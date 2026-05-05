@@ -3232,6 +3232,7 @@
     .arca-mobile #footerResizeHandle { left: 0 !important; }
     .arca-mobile #chatSidebar { transform: translateX(-100%) !important; width: 80%; max-width: 260px; z-index: 998; }
     .arca-mobile #chatSidebar.open { transform: translateX(0) !important; }
+    .arca-mobile #sidebarResizeHandle { display: none !important; }
 
     html.arca-mobile:not(.arca-iab),
     html.arca-mobile:not(.arca-iab) body {
@@ -3265,11 +3266,7 @@
     }
 
     html.arca-mobile:not(.arca-iab) #footerResizeHandle {
-      position: relative;
-      left: 0 !important;
-      right: auto;
-      bottom: auto;
-      width: 100%;
+      display: none !important;
     }
 
     html.arca-mobile:not(.arca-iab) .fixed-footer {
