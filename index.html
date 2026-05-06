@@ -6831,6 +6831,23 @@ div.innerHTML = DOMPurify.sanitize(html, {
       }
     }
 
+    function closeOverlaysForSidebar() {
+      try { closeCornerMenu(); } catch {}
+      try { closeModal(); } catch {}
+      try { closeProfile(); } catch {}
+      try { closeSaldo(); } catch {}
+      try { closeImageZoom(); } catch {}
+      try { setHelmOpen(false); } catch {}
+      try {
+        const peteca = document.getElementById('modePeteca');
+        if (peteca) peteca.classList.remove('open');
+      } catch {}
+      try {
+        const menu = document.getElementById('itemMenu');
+        if (menu) menu.style.display = 'none';
+      } catch {}
+    }
+
     function openSidebar() {
       if (sidebarOpen) return;
       const sidebar = document.getElementById('chatSidebar');
@@ -6842,8 +6859,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       sidebarOpen = true;
       lastActiveEl = document.activeElement || null;
 
-      try { closeCornerMenu(); } catch {}
-      try { document.getElementById('itemMenu').style.display = 'none'; } catch {}
+      closeOverlaysForSidebar();
 
       const root = document.documentElement;
       root.classList.add('is-sidebar-open');
