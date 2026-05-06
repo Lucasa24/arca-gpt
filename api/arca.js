@@ -140,8 +140,8 @@ async function handler(req, res) {
     };
 
     const systemLimits = {
-      gemini: personaForSpeed === 'tecnico' ? 1500 : 3200,
-      openai_fast: personaForSpeed === 'tecnico' ? 1500 : 3200
+      gemini: personaForSpeed === 'tecnico' ? 1800 : 3600,
+      openai_fast: personaForSpeed === 'tecnico' ? 2200 : 4200
     };
 
     if (modelMode === 'gemini') {
