@@ -1384,14 +1384,14 @@
     .fixed-footer {
       position: fixed;
       bottom: 0;
-      left: var(--sidebar-width);
       right: 0;
+      left: 0;
       background: #0e0e0e;
       padding: 6px 1rem calc(6px + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid #333;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
       font-size: 0.85rem;
-      width: calc(100% - var(--sidebar-width));
+      width: 100%;
       z-index: 100;
       transition: left 0.3s ease, width 0.3s ease;
       height: auto;
@@ -1401,8 +1401,8 @@
     }
     #footerResizeHandle {
       position: fixed;
-      left: var(--sidebar-width);
       right: 0;
+      left: 0;
       bottom: var(--footer-height);
       height: 12px;
       cursor: row-resize;
@@ -1428,10 +1428,6 @@
       z-index: 10000;
     }
 
-    #mainContent.sidebar-hidden .fixed-footer {
-      left: 0;
-      width: 100%;
-    }
     #mainContent.sidebar-hidden #footerResizeHandle {
       left: 0;
     }
