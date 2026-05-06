@@ -3300,6 +3300,7 @@
       overflow: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      scroll-padding-top: 12px;
       padding-bottom: 12px;
       max-width: 100%;
     }
@@ -5112,6 +5113,142 @@
       return !!(root && root.classList && root.classList.contains('arca-mobile') && !root.classList.contains('arca-iab'));
     }
 
+    let viewportSettlingUntil = 0;
+    let pendingViewportIntent = null;
+    let viewportIntentTimer = null;
+    let viewportSettleSeq = 0;
+    let viewportResizeDuringSettle = false;
+    let lastVisualViewportResizeTs = 0;
+    let lastVisualViewportScrollTs = 0;
+    let lastVvHeight = 0;
+    let lastVvOffsetTop = 0;
+
+    function isViewportSettling() {
+      return isMobileShell() && Date.now() < viewportSettlingUntil;
+    }
+
+    function markViewportSettling(ms) {
+      if (!isMobileShell()) return;
+      const now = Date.now();
+      const prevEnd = viewportSettlingUntil;
+      const dur = typeof ms === 'number' ? ms : 550;
+      const end = Math.max(prevEnd, now + Math.max(0, dur));
+      const newCycle = now >= prevEnd;
+      viewportSettlingUntil = end;
+      if (newCycle) viewportResizeDuringSettle = false;
+      viewportSettleSeq++;
+      scheduleViewportIntentFlush();
+    }
+
+    function runViewportIntent(intent) {
+      if (!intent) return;
+      if (intent.kind === 'msgTop') scrollToMessageTopStable(intent.idx);
+      else if (intent.kind === 'bottom') stickToBottomStable();
+      else if (intent.kind === 'y') scrollToYDirect(intent.y);
+    }
+
+    function scheduleViewportIntentFlush() {
+      if (!pendingViewportIntent) return;
+      if (!isMobileShell()) {
+        try { runViewportIntent(pendingViewportIntent); } catch {}
+        pendingViewportIntent = null;
+        return;
+      }
+      if (viewportIntentTimer) {
+        clearTimeout(viewportIntentTimer);
+        viewportIntentTimer = null;
+      }
+      const seq = viewportSettleSeq;
+      const delay = Math.max(0, viewportSettlingUntil - Date.now());
+      viewportIntentTimer = setTimeout(() => {
+        viewportIntentTimer = null;
+        if (seq !== viewportSettleSeq) return scheduleViewportIntentFlush();
+        requestAnimationFrame(() => {
+          try { flushViewportIntent(); } catch {}
+        });
+      }, delay + 16);
+    }
+
+    function flushViewportIntent() {
+      if (!pendingViewportIntent) return;
+      if (isViewportSettling()) return scheduleViewportIntentFlush();
+
+      const intent = pendingViewportIntent;
+      pendingViewportIntent = null;
+
+      runViewportIntent(intent);
+
+      const needsExtra = !!(window.visualViewport && (viewportResizeDuringSettle || (Date.now() - (lastVisualViewportResizeTs || 0) < 220)));
+      viewportResizeDuringSettle = false;
+      if (needsExtra) {
+        setTimeout(() => {
+          try { runViewportIntent(intent); } catch {}
+        }, 120);
+      }
+    }
+
+    function setPendingViewportIntent(intent) {
+      pendingViewportIntent = intent;
+      scheduleViewportIntentFlush();
+    }
+
+    function requestScrollToMessageTopStable(idx) {
+      if (typeof idx !== 'number' || idx < 0) return;
+      if (isViewportSettling()) return setPendingViewportIntent({ kind: 'msgTop', idx });
+      scrollToMessageTopStable(idx);
+    }
+
+    function requestStickToBottomStable() {
+      if (isViewportSettling()) return setPendingViewportIntent({ kind: 'bottom' });
+      stickToBottomStable();
+    }
+
+    (function initViewportStabilizer() {
+      if (window.__arcaViewportStabilizerBound) return;
+      window.__arcaViewportStabilizerBound = true;
+
+      const vv = window.visualViewport;
+      const onResize = () => {
+        lastVisualViewportResizeTs = Date.now();
+        if (!vv) return;
+        try {
+          const h = vv.height || 0;
+          const ot = vv.offsetTop || 0;
+          const changed = h !== lastVvHeight || ot !== lastVvOffsetTop;
+          lastVvHeight = h;
+          lastVvOffsetTop = ot;
+          if (isViewportSettling()) viewportResizeDuringSettle = true;
+          if (changed && pendingViewportIntent) scheduleViewportIntentFlush();
+        } catch {}
+      };
+      const onScroll = () => {
+        lastVisualViewportScrollTs = Date.now();
+        if (!vv) return;
+        try {
+          const ot = vv.offsetTop || 0;
+          const changed = ot !== lastVvOffsetTop;
+          lastVvOffsetTop = ot;
+          if (isViewportSettling()) viewportResizeDuringSettle = true;
+          if (changed && pendingViewportIntent) scheduleViewportIntentFlush();
+        } catch {}
+      };
+
+      if (vv) {
+        try { vv.addEventListener('resize', onResize, { passive: true }); } catch { try { vv.addEventListener('resize', onResize); } catch {} }
+        try { vv.addEventListener('scroll', onScroll, { passive: true }); } catch { try { vv.addEventListener('scroll', onScroll); } catch {} }
+        onResize();
+      } else {
+        try { window.addEventListener('resize', () => { lastVvHeight = window.innerHeight || 0; }, { passive: true }); } catch {}
+      }
+
+      const input = document.getElementById('userInput');
+      if (input && input.dataset.vpBound !== '1') {
+        input.dataset.vpBound = '1';
+        try { input.addEventListener('focus', () => { markViewportSettling(650); }, true); } catch {}
+        try { input.addEventListener('blur', () => { markViewportSettling(650); }, true); } catch {}
+      }
+    })();
+
     function getChatScroller() {
       if (!isMobileShell()) return null;
       return document.getElementById('response');
@@ -5134,11 +5271,14 @@
     function getViewportH() {
       const scroller = getChatScroller();
       if (scroller) return scroller.clientHeight || 0;
+      try {
+        if (window.visualViewport && Number.isFinite(window.visualViewport.height)) return window.visualViewport.height;
+      } catch {}
       const doc = document.documentElement;
       return window.innerHeight || doc.clientHeight || 0;
     }
 
-    function scrollToY(y) {
+    function scrollToYDirect(y) {
       const target = Math.max(0, Math.round(Number(y) || 0));
       const scroller = getChatScroller();
       if (scroller && typeof scroller.scrollTo === 'function') {
@@ -5146,6 +5286,12 @@
         return;
       }
       try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
+    function scrollToY(y) {
+      const target = Math.max(0, Math.round(Number(y) || 0));
+      if (isViewportSettling()) return setPendingViewportIntent({ kind: 'y', y: target });
+      scrollToYDirect(target);
     }
 
     function saveThreadViewport(threadId) {
@@ -5251,7 +5397,7 @@
       return (scrollTop + viewport) >= (height - t);
     }
 
-    function scrollToMessageTopByIndex(idx) {
+    function scrollToMessageTopByIndexDirect(idx) {
       const responseDiv = document.getElementById('response');
       if (!responseDiv || !responseDiv.children) return;
       const el = responseDiv.children[idx];
@@ -5265,6 +5411,44 @@
       const top = el.getBoundingClientRect().top + window.scrollY;
       const target = Math.max(0, Math.round(top - 12));
       try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
+    function scrollToMessageTopByIndex(idx) {
+      if (typeof idx !== 'number' || idx < 0) return;
+      if (isViewportSettling()) return setPendingViewportIntent({ kind: 'msgTop', idx });
+      scrollToMessageTopByIndexDirect(idx);
+    }
+
+    function scrollToMessageTopStable(idx) {
+      if (typeof idx !== 'number' || idx < 0) return;
+      let tries = 0;
+      const attempt = () => {
+        scrollToMessageTopByIndexDirect(idx);
+        if (++tries >= 4) return;
+        requestAnimationFrame(attempt);
+      };
+      attempt();
+    }
+
+    function stickToBottomDirect() {
+      const scroller = getChatScroller();
+      if (scroller) {
+        scroller.scrollTop = scroller.scrollHeight || 0;
+        return;
+      }
+      const doc = document.documentElement;
+      const target = Math.max(doc.scrollHeight || 0, document.body ? document.body.scrollHeight : 0);
+      try { window.scrollTo({ top: target, behavior: 'auto' }); } catch { window.scrollTo(0, target); }
+    }
+
+    function stickToBottomStable() {
+      let tries = 0;
+      const attempt = () => {
+        stickToBottomDirect();
+        if (++tries >= 4) return;
+        requestAnimationFrame(attempt);
+      };
+      attempt();
     }
 
     function primeStreamingUI() {
@@ -5970,11 +6154,9 @@
           const shouldStick = !!streamAutoFollow || isNearBottom(180);
           streamAutoFollow = false;
           renderMessagesWithLiveMarkdown(false);
+          markViewportSettling(650);
           if (shouldStick && lastStreamAssistantIndex >= 0) {
-            requestAnimationFrame(() => {
-              scrollToMessageTopByIndex(lastStreamAssistantIndex);
-              setTimeout(() => scrollToMessageTopByIndex(lastStreamAssistantIndex), 120);
-            });
+            requestScrollToMessageTopStable(lastStreamAssistantIndex);
           }
 
           document.getElementById("userInput").value = "";
@@ -6908,6 +7090,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       main.setAttribute('aria-hidden', 'true');
 
       lockScrollForSidebar();
+      markViewportSettling(650);
 
       const focusables = getSidebarFocusable();
       if (focusables.length) {
@@ -6951,6 +7134,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       main.removeAttribute('aria-hidden');
 
       unlockScrollForSidebar();
+      markViewportSettling(650);
 
       if (sidebarKeydownHandler) {
         document.removeEventListener('keydown', sidebarKeydownHandler, true);
