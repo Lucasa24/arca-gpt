@@ -1399,6 +1399,29 @@
       overflow: visible;
       max-height: 70vh;
     }
+
+    #footerTopGrip {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 14px;
+      cursor: row-resize;
+      touch-action: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #footerTopGrip::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 6px;
+      height: 2px;
+      background: rgba(0, 191, 255, 0.25);
+      opacity: 0.35;
+    }
     #footerResizeHandle {
       position: fixed;
       left: var(--sidebar-width);
@@ -3244,8 +3267,8 @@
 
     .arca-mobile body { display: block; padding: 0; }
     .arca-mobile #mainContent { margin-left: 0 !important; width: 100% !important; }
-    .arca-mobile .fixed-footer { left: 0 !important; width: 100% !important; }
-    .arca-mobile #footerResizeHandle { left: 0 !important; }
+    .arca-mobile .fixed-footer { left: 0 !important; right: 0 !important; width: 100% !important; }
+    .arca-mobile #footerResizeHandle { left: 0 !important; right: 0 !important; width: 100% !important; }
     .arca-mobile #chatSidebar { transform: translateX(-100%) !important; width: 80%; max-width: 260px; z-index: 998; }
     .arca-mobile #chatSidebar.open { transform: translateX(0) !important; }
     .arca-mobile #sidebarResizeHandle { display: none !important; }
@@ -3288,7 +3311,7 @@
     html.arca-mobile:not(.arca-iab) .fixed-footer {
       position: relative;
       left: 0 !important;
-      right: auto;
+      right: 0 !important;
       bottom: auto;
       width: 100% !important;
       transition: none;
@@ -4145,6 +4168,7 @@
     <div id="response"></div>
 
     <div class="fixed-footer">
+      <div id="footerTopGrip" aria-hidden="true"></div>
       <div class="input-group">
         <div class="textarea-container" style="flex: 1;">
           <div id="imagePreview" class="image-preview" aria-live="polite">
@@ -8330,6 +8354,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
       const footer = document.querySelector('.fixed-footer');
       const sidebarHandle = document.getElementById('sidebarResizeHandle');
       const footerHandle = document.getElementById('footerResizeHandle');
+      const footerTopGrip = document.getElementById('footerTopGrip');
       if (!sidebar || !footer || !sidebarHandle || !footerHandle) return;
 
       const isMobileNow = () => window.innerWidth <= 768;
@@ -8423,6 +8448,36 @@ div.innerHTML = DOMPurify.sanitize(html, {
         footerHandle.addEventListener('pointerup', onUp);
         footerHandle.addEventListener('pointercancel', onUp);
       });
+
+      if (footerTopGrip) {
+        footerTopGrip.addEventListener('pointerdown', (e) => {
+          if (!e || e.button === 2) return;
+          try { footerTopGrip.setPointerCapture(e.pointerId); } catch {}
+          e.preventDefault();
+
+          const prevUserSelect = document.body.style.userSelect;
+          document.body.style.userSelect = 'none';
+
+          const rect = footer.getBoundingClientRect();
+          const startH = rect.height;
+          const startY = e.clientY;
+
+          const onMove = (ev) => {
+            const dy = startY - ev.clientY;
+            setFooterHeightPx(startH + dy);
+          };
+          const onUp = (ev) => {
+            try { footerTopGrip.releasePointerCapture(ev.pointerId); } catch {}
+            footerTopGrip.removeEventListener('pointermove', onMove);
+            footerTopGrip.removeEventListener('pointerup', onUp);
+            footerTopGrip.removeEventListener('pointercancel', onUp);
+            document.body.style.userSelect = prevUserSelect;
+          };
+          footerTopGrip.addEventListener('pointermove', onMove);
+          footerTopGrip.addEventListener('pointerup', onUp);
+          footerTopGrip.addEventListener('pointercancel', onUp);
+        });
+      }
 
       footer.addEventListener('pointerdown', (e) => {
         if (!e || e.button === 2) return;
