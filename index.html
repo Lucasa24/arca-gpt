@@ -1419,8 +1419,8 @@
       right: 0;
       top: 6px;
       height: 2px;
-      background: rgba(0, 191, 255, 0.25);
-      opacity: 0.35;
+      background: transparent;
+      opacity: 0;
     }
     #footerResizeHandle {
       position: fixed;
@@ -1439,12 +1439,12 @@
       right: 0;
       top: 5px;
       height: 2px;
-      background: rgba(0, 191, 255, 0.35);
+      background: transparent;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
     #footerResizeHandle:hover::after {
-      opacity: 1;
+      opacity: 0;
     }
     .fixed-footer.peteca-open {
       overflow: visible;
@@ -3290,6 +3290,8 @@
       max-height: 100dvh;
       min-height: 0;
       padding-bottom: 0;
+      padding-left: 0;
+      padding-right: 0;
       overflow: hidden;
       max-width: 100%;
     }
@@ -3301,8 +3303,15 @@
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       scroll-padding-top: 12px;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
       padding-bottom: 12px;
       max-width: 100%;
+    }
+
+    html.arca-mobile:not(.arca-iab) .main-title {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
     }
 
     html.arca-mobile:not(.arca-iab) #footerResizeHandle {
@@ -8667,6 +8676,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         if (!e || e.button === 2) return;
         const target = e.target;
         if (target && typeof target.closest === 'function') {
+          if (target.closest('#footerTopGrip')) return;
           const block = target.closest('textarea,button,input,select,option,label,a,summary,[role="button"],[role="menuitem"],.mode-buttons-container,.input-group,.textarea-container,.corner-menu,.corner-menu-panel');
           if (block) return;
         }
@@ -8674,6 +8684,7 @@ div.innerHTML = DOMPurify.sanitize(html, {
         const rect = footer.getBoundingClientRect();
         const y = e.clientY - rect.top;
         if (y < 0) return;
+        if (y > 14) return;
 
         try { footer.setPointerCapture(e.pointerId); } catch {}
         e.preventDefault();
