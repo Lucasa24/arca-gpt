@@ -5374,8 +5374,21 @@
       if (scroller) {
         const maxOff = Math.max(0, (el.offsetHeight || 0) - 8);
         const off = Math.max(0, Math.min(maxOff, data.o | 0));
-        const target = Math.max(0, Math.round((el.offsetTop || 0) - off));
-        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        let tries = 0;
+        let stable = 0;
+        const attempt = () => {
+          const cTop = scroller.getBoundingClientRect().top;
+          const eTop = el.getBoundingClientRect().top;
+          const dy = (eTop - cTop) + off;
+          if (Number.isFinite(dy) && dy !== 0) scroller.scrollTop = Math.max(0, (scroller.scrollTop || 0) + dy);
+
+          const err = Math.abs((el.getBoundingClientRect().top - scroller.getBoundingClientRect().top) + off);
+          stable = err <= 1 ? (stable + 1) : 0;
+          if (stable >= 2) return;
+          if (++tries >= 10) return;
+          requestAnimationFrame(attempt);
+        };
+        attempt();
         return;
       }
       const docTop = el.getBoundingClientRect().top + window.scrollY;
