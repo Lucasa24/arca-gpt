@@ -4215,6 +4215,10 @@
                   <span class="peteca-fn-indicator" aria-hidden="true"></span>
                   <span class="peteca-fn-label">Técnico</span>
                 </button>
+                <button id="despertarModeBtn" type="button" onclick="setPersonaMode('despertar')" class="peteca-fn-btn" data-persona="despertar">
+                  <span class="peteca-fn-indicator" aria-hidden="true"></span>
+                  <span class="peteca-fn-label">Modo Despertar</span>
+                </button>
               </div>
             </div>
             <div class="mode-divider" aria-hidden="true"></div>
@@ -6005,6 +6009,8 @@
       if (attachedImages.length === 0) {
         if (currentMode === 'tecnico') {
           finalInput = "Modo técnico: " + input;
+        } else if (currentMode === 'despertar') {
+          finalInput = "Modo despertar: " + input;
         } else if (currentMode === 'ritual') {
           finalInput = "Modo ritual: " + input;
         }
@@ -6015,7 +6021,7 @@
         try {
           const visionPrompt = input || "Analise a imagem e dê um diagnóstico executável.";
           const mode = (localStorage.getItem('arcaPersonaMode') || 'ritual');
-          const modePrefix = mode === 'tecnico' ? "Modo técnico: " : "Modo ritual: ";
+          const modePrefix = mode === 'tecnico' ? "Modo técnico: " : mode === 'despertar' ? "Modo despertar: " : "Modo ritual: ";
           const prefixedPrompt = `${modePrefix}${visionPrompt}\n\n**ESPELHO VISUAL**`;
           
           // Adicionar mensagem do usuário com indicação de imagem(ns)
@@ -7688,25 +7694,31 @@ div.innerHTML = DOMPurify.sanitize(html, {
       document.getElementById('portalOptions').style.display = 'flex';
     }
     
-    // Função para alternar entre os modos ritual e técnico
+    // Função para alternar entre os modos ritual, técnico e despertar
     function setPersonaMode(mode) {
+      if (!['ritual', 'tecnico', 'despertar'].includes(mode)) mode = 'ritual';
+
       // Armazena o modo selecionado no localStorage
       localStorage.setItem('arcaPersonaMode', mode);
       
       // Atualiza a aparência dos botões
       const ritualBtn = document.getElementById('ritualModeBtn');
       const tecnicoBtn = document.getElementById('tecnicoModeBtn');
+      const despertarBtn = document.getElementById('despertarModeBtn');
       
       if (ritualBtn) ritualBtn.classList.toggle('active', mode === 'ritual');
       if (tecnicoBtn) tecnicoBtn.classList.toggle('active', mode === 'tecnico');
+      if (despertarBtn) despertarBtn.classList.toggle('active', mode === 'despertar');
       
       // Atualiza o placeholder do textarea de acordo com o modo
       const userInput = document.getElementById('userInput');
       if (userInput) {
         if (mode === 'ritual') {
           userInput.placeholder = 'Escreva com presença. Aqui não há espaço para palavras vazias.';
-        } else {
+        } else if (mode === 'tecnico') {
           userInput.placeholder = 'Digite sua instrução técnica de forma clara e objetiva.';
+        } else {
+          userInput.placeholder = 'Traga a situação. O Modo Despertar encontra o absurdo e devolve lucidez com humor.';
         }
       }
     }
@@ -8057,8 +8069,10 @@ div.innerHTML = DOMPurify.sanitize(html, {
 
       const ritualBtn = document.getElementById('ritualModeBtn');
       const tecnicoBtn = document.getElementById('tecnicoModeBtn');
+      const despertarBtn = document.getElementById('despertarModeBtn');
       if (ritualBtn) ritualBtn.addEventListener('pointerdown', () => setPersonaMode('ritual'));
       if (tecnicoBtn) tecnicoBtn.addEventListener('pointerdown', () => setPersonaMode('tecnico'));
+      if (despertarBtn) despertarBtn.addEventListener('pointerdown', () => setPersonaMode('despertar'));
 
       const autoBtn = document.getElementById('modelAutoBtn');
       const fastBtn = document.getElementById('modelFastBtn');
