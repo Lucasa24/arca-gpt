@@ -3308,6 +3308,10 @@
       padding-bottom: 12px;
       max-width: 100%;
     }
+    
+    html.arca-mobile:not(.arca-iab) #response .msg {
+      scroll-margin-top: 12px;
+    }
 
     html.arca-mobile:not(.arca-iab) .main-title {
       padding-left: 0.75rem;
@@ -5313,6 +5317,7 @@
 
     function restoreThreadViewport(threadId) {
       if (!threadId) return false;
+      if (Date.now() < (window.__arcaSuppressScrollRestoreUntil || 0)) return false;
       let data = null;
       try { data = JSON.parse(localStorage.getItem(`arcaView_${threadId}`) || 'null'); } catch {}
       if (!data || typeof data.y !== 'number') return false;
@@ -5351,6 +5356,7 @@
 
     function restoreScrollPositionForThread(threadId) {
       if (!threadId) return;
+      if (Date.now() < (window.__arcaSuppressScrollRestoreUntil || 0)) return;
       // Tenta primeiro viewport absoluto (mais estável)
       if (restoreThreadViewport(threadId)) return;
       let data;
@@ -5413,8 +5419,12 @@
       if (!el) return;
       const scroller = getChatScroller();
       if (scroller) {
-        const target = Math.max(0, Math.round((el.offsetTop || 0) - 12));
-        try { scroller.scrollTo({ top: target, behavior: 'auto' }); } catch { scroller.scrollTop = target; }
+        const cTop = scroller.getBoundingClientRect().top;
+        const eTop = el.getBoundingClientRect().top;
+        const dy = (eTop - cTop) - 12;
+        if (Number.isFinite(dy) && dy !== 0) {
+          scroller.scrollTop = Math.max(0, (scroller.scrollTop || 0) + dy);
+        }
         return;
       }
       const top = el.getBoundingClientRect().top + window.scrollY;
@@ -5430,10 +5440,35 @@
 
     function scrollToMessageTopStable(idx) {
       if (typeof idx !== 'number' || idx < 0) return;
+      const responseDiv = document.getElementById('response');
+      const el = responseDiv && responseDiv.children ? responseDiv.children[idx] : null;
+      const scroller = getChatScroller();
+      if (!scroller || !el) return scrollToMessageTopByIndexDirect(idx);
+
+      const padPx = 12;
       let tries = 0;
+      let stable = 0;
       const attempt = () => {
-        scrollToMessageTopByIndexDirect(idx);
-        if (++tries >= 4) return;
+        const cTop = scroller.getBoundingClientRect().top;
+        const eTop = el.getBoundingClientRect().top;
+        const dy = (eTop - cTop) - padPx;
+        if (Number.isFinite(dy) && dy !== 0) scroller.scrollTop = Math.max(0, (scroller.scrollTop || 0) + dy);
+
+        const err = Math.abs((el.getBoundingClientRect().top - scroller.getBoundingClientRect().top) - padPx);
+        stable = err <= 1 ? (stable + 1) : 0;
+        if (stable >= 2) return;
+        if (++tries >= 14) {
+          try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
+          requestAnimationFrame(() => {
+            try {
+              const cTop2 = scroller.getBoundingClientRect().top;
+              const eTop2 = el.getBoundingClientRect().top;
+              const dy2 = (eTop2 - cTop2) - padPx;
+              if (Number.isFinite(dy2) && dy2 !== 0) scroller.scrollTop = Math.max(0, (scroller.scrollTop || 0) + dy2);
+            } catch {}
+          });
+          return;
+        }
         requestAnimationFrame(attempt);
       };
       attempt();
@@ -6163,13 +6198,13 @@
           const shouldStick = !!streamAutoFollow || isNearBottom(180);
           streamAutoFollow = false;
           renderMessagesWithLiveMarkdown(false);
-          markViewportSettling(650);
-          if (shouldStick && lastStreamAssistantIndex >= 0) {
-            requestScrollToMessageTopStable(lastStreamAssistantIndex);
-          }
-
           document.getElementById("userInput").value = "";
           document.getElementById("userInput").style.height = "55px";
+          window.__arcaSuppressScrollRestoreUntil = Date.now() + 800;
+          markViewportSettling(650);
+          if (shouldStick && lastStreamAssistantIndex >= 0) {
+            requestAnimationFrame(() => requestAnimationFrame(() => requestScrollToMessageTopStable(lastStreamAssistantIndex)));
+          }
           saveToHistory(input, threadId);
           currentStreamController = null;
           updateInvokeButton(false);
