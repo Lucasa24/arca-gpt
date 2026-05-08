@@ -427,8 +427,7 @@ async function handler(req, res) {
           const threadRecord = global.threadMemory?.get(threadId);
           const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
           
-          // Adiciona fechamento variável apenas para persona ritual
-          if (currentPersona !== "tecnico") {
+          if (currentPersona !== "tecnico" && currentPersona !== "despertar") {
             const closing = `\n\n${generateClosing()}`;
             res.write(`data: ${JSON.stringify({ content: closing })}\n\n`);
             assistantResponse += closing;
@@ -466,7 +465,7 @@ async function handler(req, res) {
               const threadRecord = global.threadMemory?.get(threadId);
               const currentPersona = threadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
               
-              if (currentPersona !== "tecnico") {
+              if (currentPersona !== "tecnico" && currentPersona !== "despertar") {
                 // Simula uma abertura aleatória para a primeira chunk
                 const opening = pickOpening(null);
                 res.write(`data: ${JSON.stringify({ content: opening })}\n\n`);
@@ -488,7 +487,7 @@ async function handler(req, res) {
     const closingThreadRecord = global.threadMemory?.get(threadId);
     const closingPersona = closingThreadRecord?.currentPersona || process.env.ARCA_PERSONA || 'ritual';
     
-    if (closingPersona !== "tecnico") {
+    if (closingPersona !== "tecnico" && closingPersona !== "despertar") {
         const closing = `\n\n${generateClosing()}`;
         
         // Envia fechamento para o cliente
