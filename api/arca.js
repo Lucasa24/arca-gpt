@@ -53,8 +53,8 @@ async function handler(req, res) {
 
     // [NOVO] Atualiza a persona com base no modo enviado pelo frontend
     // Isso garante que se o usuário clicar no botão "Ritual", o backend saiba.
-    const mode = req.body?.mode; // ritual | tecnico
-    if (mode && (mode === 'ritual' || mode === 'tecnico')) {
+    const mode = req.body?.mode; // ritual | tecnico | despertar
+    if (mode && (mode === 'ritual' || mode === 'tecnico' || mode === 'despertar')) {
       console.log(`[ARCA] Atualizando persona para: ${mode}`);
       await setThreadPersona(threadId, mode, req.headers['authorization']);
     }
